@@ -37,7 +37,7 @@ html, body { height: 100%; margin: 0; }
 body { background: var(--bg); color: var(--fg); font: 13.5px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: inherit; text-decoration: none; }
-svg { width: 16px; height: 16px; flex: none; }
+:where(.sidebar, .btn, .icon-btn, .nav-item) svg { width: 16px; height: 16px; flex: none; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
 [hidden] { display: none !important; }
 
@@ -297,3 +297,23 @@ select.input { height: 38px; }
   .suggest { grid-template-columns: minmax(0, 1fr); }
 }
 @media print { .panel, .next, .verbar, .old-note { display: none !important; } .split { display: block; } }
+
+/* BPMN diagrams (bpmn-js) */
+.bpmn-box { border: 1px solid var(--line-strong); border-radius: 10px; overflow: hidden; margin: 0 0 18px; background: #fff; }
+.bpmn-tools, .bpmn-legend { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--surface); flex-wrap: wrap; }
+.bpmn-tools { border-bottom: 1px solid var(--line); }
+.bpmn-tools .btn { height: 28px; padding: 0 10px; font-size: 12.5px; }
+.bpmn-tools .spacer, .bpmn-legend .spacer, .bpmn-full-bar .spacer { flex: 1; }
+.bpmn-canvas { height: 480px; background: #fff; }
+.bpmn-legend { border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); gap: 14px; }
+.bpmn-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bpmn-legend i { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid; }
+.bpmn-legend a { color: var(--accent); }
+.bjs-powered-by { display: none; }
+.bpmn-full { position: fixed; inset: 0; z-index: 50; background: #fff; display: flex; flex-direction: column; }
+.bpmn-full-bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid #e5e6ea; background: #fff; color: #1b1c20; }
+.bpmn-full-bar .btn { background: #fff; color: #1b1c20; border-color: #d6d8de; }
+.bpmn-full-bar .btn.primary { background: #5e6ad2; color: #fff; border-color: transparent; }
+.bpmn-full-canvas { flex: 1; }
+@media print { .bpmn-tools, .bpmn-legend a { display: none !important; } .bpmn-box { break-inside: avoid; } }
+.bpmn-tools .hint { color: var(--faint); font-size: 12px; margin-left: 6px; }

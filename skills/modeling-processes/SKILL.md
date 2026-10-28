@@ -53,32 +53,47 @@ Anything the process needs but the text does not say (who approves, what happens
 
 Always return, in this order:
 
-1. **Diagram choice** — one line.
-2. **Element inventory** — the table from step 2, with a `Source` column quoting the text and an `A` marker on assumptions.
-3. **Diagram as Mermaid** — renders in GitHub, Notion, Confluence, Linear docs and most markdown tools. For BPMN use `flowchart LR` with `subgraph` per lane; circles for events, rounded boxes for tasks, diamonds for gateways.
-4. **BPMN 2.0 XML** — only on request, or when the user mentions Camunda, bpmn.io, Signavio, Bizagi or "importable". Include `bpmndi` layout so it opens cleanly.
-5. **Open questions** — numbered, each tied to the step it blocks, phrased so a stakeholder can answer yes/no or with a name.
-6. **Improvement notes** (optional, max 5) — bottlenecks, redundant hand-offs, missing controls, automation candidates. Keep these separate from the as-is model.
+1. **Diagram choice:** one line.
+2. **Process model:** for BPMN, a real BPMN 2.0 file built with the script in section 5, in a fenced `bpmn` block. It opens in Camunda Modeler, bpmn.io, Signavio and Bizagi, and renders coloured and zoomable in Analyst Kit. For UML views, use Mermaid (section 6).
+3. **Element inventory:** the table from step 2, with a `Source` column quoting the text. Mark assumptions in bold.
+4. **Open questions:** numbered, each tied to the step it blocks, phrased so a stakeholder can answer yes/no or with a name.
+5. **Improvement notes** (optional, max 5): bottlenecks, redundant hand-offs, missing controls, automation candidates. Keep these separate from the as-is model.
 
-## 5. Mermaid conventions
+## 5. Building the BPMN file
 
-```mermaid
-flowchart LR
-  subgraph Customer
-    S((Order placed)) --> A[Submit order]
-  end
-  subgraph Sales
-    A --> B{Credit OK?}
-    B -- Yes --> C[Confirm order]
-    B -- No --> D[Request prepayment]
-  end
-  C --> E(((Order confirmed)))
+Never hand-write coordinates. Write a short JSON spec and let `scripts/build_bpmn.py` do the layout, swimlanes and colours:
+
+```json
+{
+  "pool": "Client · Process name",
+  "lanes": [{"id": "ap", "name": "AP clerk"}, {"id": "fm", "name": "Finance manager"}],
+  "nodes": [
+    {"id": "s", "type": "start", "trigger": "message", "name": "Invoice received", "lane": "ap"},
+    {"id": "a", "type": "user", "name": "Match invoice to PO", "lane": "ap"},
+    {"id": "g", "type": "exclusive", "name": "PO matches?", "lane": "ap"},
+    {"id": "e", "type": "end", "name": "Invoice paid", "lane": "fm"}
+  ],
+  "flows": [{"from": "s", "to": "a"}, {"from": "a", "to": "g"}, {"from": "g", "to": "e", "label": "Yes"}]
+}
 ```
 
-- `((text))` start/intermediate event, `(((text)))` end event, `[text]` task, `{text?}` gateway, `[[text]]` sub-process.
-- For sequence diagrams use `sequenceDiagram` with `autonumber`, `alt/else` for branches and `note` for business rules.
+```bash
+python3 scripts/build_bpmn.py spec.json > process.bpmn
+```
 
-## 6. Quality check before you answer
+- **Node types:** `start`, `end`, `error_end`, `task`, `user` (a person does it), `service` (a system does it), `send`, `receive`, `manual`, `subprocess`, `exclusive`, `parallel`, `inclusive`, `event_gateway`, `timer`, `message`. Events take `"trigger": "message" | "timer" | "error"`.
+- **List lanes in hand-off order**, top to bottom, so most arrows point down and right.
+- **Colours carry meaning, one per kind:** green start, blue work, amber decision, purple wait or message, red end. Shapes stay standard BPMN, so the diagram still reads in black and white. The app shows a legend.
+- The script checks the spec (unknown lanes, nodes or types) and refuses to build a broken file.
+
+## 6. Mermaid for UML and quick sketches
+
+Use Mermaid for sequence, state, class and use-case views, and for a quick sketch in tools that can't open BPMN.
+
+- Sequence: `sequenceDiagram` with `autonumber`, `alt/else` for branches and `note` for business rules.
+- State: `stateDiagram-v2`, one state per business status, transitions labelled with the event that triggers them.
+
+## 7. Quality check before you answer
 
 - [ ] Every task is verb + object and sits in a lane.
 - [ ] Every gateway is a question with labelled exits.
@@ -86,5 +101,6 @@ flowchart LR
 - [ ] Each element traces to a source quote or is marked as an assumption.
 - [ ] Exceptions and rejections are modeled, not just the happy path.
 - [ ] Open questions list everything you had to guess.
+- [ ] The BPMN file was built by the script, not hand-written, and the build reported no errors.
 
 If the source is too thin to model (under ~3 steps or no actors), say so and ask the three questions that would unblock it instead of inventing a process.

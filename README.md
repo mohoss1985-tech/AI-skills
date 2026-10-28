@@ -12,7 +12,7 @@ I'm a Product Owner. I built this to answer one question: *what parts of my anal
 
 | | Skill | You give | You get | Methods |
 |---|---|---|---|---|
-| 1 | [**Process Modeler**](skills/modeling-processes/SKILL.md) | SOPs, meeting notes, policy text | BPMN 2.0 / UML diagram, element inventory traced to the source, open questions for stakeholders | BPMN 2.0, *Method & Style*, UML |
+| 1 | [**Process Modeler**](skills/modeling-processes/SKILL.md) | SOPs, meeting notes, policy text | Colour-coded BPMN 2.0 file with swimlanes (opens in Camunda, bpmn.io, Signavio), steps traced to the source, open questions for stakeholders | BPMN 2.0, *Method & Style*, UML |
 | 2 | [**PRD Writer**](skills/writing-prds/SKILL.md) | A brief or an idea | One-pager or full PRD: problem with evidence, goals and non-goals, metrics with guardrails, traceable requirement IDs | Jobs to be done, MoSCoW, RAID, working backwards |
 | 3 | [**User Stories & Acceptance Criteria**](skills/writing-user-stories/SKILL.md) | Requirements or a PRD section | Sprint-ready stories, Gherkin scenarios, INVEST check, Definition of Ready, Jira or Linear format | Story mapping, INVEST, SPIDR, Example Mapping, BDD |
 | 4 | [**API Test & Documentation**](skills/testing-apis/SKILL.md) | Spec, curl calls or a description | Test matrix tied to business rules, runnable tests, OpenAPI 3.1, reference docs | Equivalence classes, boundary values, OWASP API Top 10, RFC 9457 |
@@ -48,6 +48,7 @@ A minimal, Linear-style workspace for using the skills on real client work. No A
 
 - **Notes in, deliverable out.** Pick a deliverable, paste notes or drop a file, and get a client-ready document.
 - **Conversation next to every document.** Ask questions or request changes. Claude replies in the thread and updates the document. Every earlier version is kept.
+- **Professional process diagrams.** Real BPMN 2.0 drawn with bpmn-js (the engine behind Camunda): colour legend, swimlanes, zoom, full screen, and downloads as `.bpmn`, PNG or SVG. The layout comes from a script ([`build_bpmn.py`](skills/modeling-processes/scripts/build_bpmn.py)), not hand-written coordinates, so every diagram is consistent.
 - **Client handover.** Export to Word (diagrams included) or PDF, or copy as formatted text. *Mark as sent* tracks what each client has received.
 - **One-click next step.** Turn a PRD into user stories, or a process map into a PRD.
 - **Learns how you work.** A profile sets your name on every document ("Prepared by…"), plus language, tone and backlog tool. Claude records preferences it picks up from your feedback.
