@@ -1,0 +1,23 @@
+{
+  "pool": "AI Support assistant · Access blocked journey",
+  "lanes": [{"id": "cu", "name": "Customer"}, {"id": "ai", "name": "AI assistant"}, {"id": "adv", "name": "Advisor"}],
+  "nodes": [
+    {"id": "s", "type": "start", "trigger": "message", "name": "Customer reports blocked access", "lane": "cu"},
+    {"id": "i", "type": "service", "name": "Detect intent and retrieve approved article", "lane": "ai"},
+    {"id": "g", "type": "exclusive", "name": "Approved source found?", "lane": "ai"},
+    {"id": "a", "type": "service", "name": "Answer unlock steps and cite the article", "lane": "ai"},
+    {"id": "f", "type": "user", "name": "Follow unlock steps in the app", "lane": "cu"},
+    {"id": "c", "type": "exclusive", "name": "Access restored?", "lane": "cu"},
+    {"id": "y", "type": "end", "name": "Resolved by assistant", "lane": "cu"},
+    {"id": "h", "type": "service", "name": "Hand off with conversation context", "lane": "ai"},
+    {"id": "v", "type": "user", "name": "Unlock access with the customer", "lane": "adv"},
+    {"id": "e", "type": "end", "name": "Resolved by advisor", "lane": "adv"}
+  ],
+  "flows": [
+    {"from": "s", "to": "i"}, {"from": "i", "to": "g"},
+    {"from": "g", "to": "a", "label": "Yes"}, {"from": "g", "to": "h", "label": "No"},
+    {"from": "a", "to": "f"}, {"from": "f", "to": "c"},
+    {"from": "c", "to": "y", "label": "Yes"}, {"from": "c", "to": "h", "label": "No"},
+    {"from": "h", "to": "v"}, {"from": "v", "to": "e"}
+  ]
+}

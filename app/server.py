@@ -45,6 +45,44 @@ TYPES = [
      "placeholder": "Ask the question in plain words. Add the database type and the tables/columns if you have them…",
      "next": []},
 ]
+TYPES += [
+    {"id": "prioritizing-ai-use-cases", "name": "AI use-case roadmap", "color": "#8e4ec6",
+     "gives": "Candidate use cases for an AI assistant, with volumes if you have them",
+     "gets": "Scored and gated use cases, a value × feasibility view and a Now / Next / Later roadmap",
+     "placeholder": "List the customer requests the assistant could handle, with monthly volumes, where the answers live today, and any constraints…",
+     "next": ["designing-conversational-journeys", "governing-ai-risk"],
+     "example": "Our banking assistant should start handling support. Candidates: access blocked (18k contacts/month), card declined (12k), new phone enrolment (9k, procedure outdated), transfer not received (8k, needs transaction data), disputes (4k, fraud risk). Two use cases per quarter max."},
+    {"id": "designing-conversational-journeys", "name": "Conversation design", "color": "#0e9384",
+     "gives": "A customer need the assistant should handle",
+     "gets": "Journey with branches and hand-off, response rules, user stories with conversational acceptance criteria, test utterances",
+     "placeholder": "Describe the customer need, what 'solved' means, what data the assistant can use, and what it must not do…",
+     "next": ["evaluating-rag-quality", "writing-user-stories"],
+     "example": "Journey: customer's access to the banking app is blocked after 3 wrong codes. Unlock is possible in-app via 'Forgot your code?'. The assistant uses the approved article 'Unlock your access'. Hand off to an advisor if it fails or if the customer mentions fraud."},
+    {"id": "evaluating-rag-quality", "name": "RAG evaluation plan", "color": "#2e90fa",
+     "gives": "The assistant's scope, or test results to analyse",
+     "gets": "Golden test set, metrics, release thresholds, go / no-go report and failure analysis by root cause",
+     "placeholder": "Describe the use cases to test, the knowledge sources, the risks, or paste scored test results (CSV)…",
+     "next": ["governing-ai-risk", "aligning-stakeholders"],
+     "example": "We launch AI Support for 'access blocked' and 'card declined' in 6 weeks. RAG on the help centre and tariff pages. Need an evaluation plan with go/no-go thresholds agreed with data science and compliance, and a production monitoring dashboard."},
+    {"id": "governing-ai-risk", "name": "AI risk & guardrails", "color": "#d92d20",
+     "gives": "What the assistant sees, does and who uses it",
+     "gets": "Risk register, testable guardrail requirements, red-team test cases and a compliance checklist",
+     "placeholder": "Describe the assistant: data it can access, actions it can trigger, users, model provider and hosting…",
+     "next": ["evaluating-rag-quality"],
+     "example": "Customer-facing banking assistant, authenticated users, sees account type and last login errors, can't move money. LLM hosted by a cloud provider in the EU. RAG on help centre + tariffs. Need risks, guardrails and what to confirm with Legal, DPO and Compliance."},
+    {"id": "curating-knowledge-bases", "name": "Knowledge base plan", "color": "#6172f3",
+     "gives": "Your content sources and top customer questions",
+     "gets": "Source audit, coverage gaps, writer-ready content backlog, writing standard and metadata schema",
+     "placeholder": "List the content sources (help centre, PDFs, procedures), owners, review dates, and the top customer questions…",
+     "next": ["evaluating-rag-quality"],
+     "example": "Sources: public help centre (420 articles, owner Digital), tariff PDFs (scanned, owner Pricing), advisor procedures (internal). Top questions: login blocked, card declined abroad, new phone setup, instant transfer fees. Two pages disagree on card limits abroad."},
+    {"id": "aligning-stakeholders", "name": "Steering & alignment", "color": "#667085",
+     "gives": "The situation, the decision or the update to communicate",
+     "gets": "Decision memo, steering committee update, RACI, release notes or change plan, ready for Confluence",
+     "placeholder": "What needs deciding or communicating, to whom, by when, with the key numbers and opinions…",
+     "next": [],
+     "example": "Steerco on Thursday. Evaluation is no-go: one security failure (prompt injection) blocks everything, tariff page outdated for card declined. Options: launch 'access blocked' alone in 2 weeks, or both use cases in 4 weeks. Support and data science favour launching early; marketing wants one launch."},
+]
 TYPE_IDS = {t["id"] for t in TYPES}
 DEFAULT_PROFILE = {"name": "", "title": "Product Owner", "company": "", "tool": "Jira",
                    "language": "English", "tone": "Clear and concise"}
@@ -187,7 +225,7 @@ class Handler(SimpleHTTPRequestHandler):
                 clients = [r[0] for r in conn.execute(
                     "SELECT client FROM requests WHERE client!='' AND is_sample=0 GROUP BY client ORDER BY MAX(updated_at) DESC")]
                 return self.send_json({
-                    "types": [{**t, "example": examples.get(t["id"], "")} for t in TYPES],
+                    "types": [{**t, "example": t.get("example") or examples.get(t["id"], "")} for t in TYPES],
                     "requests": [summary(conn, r) for r in rows],
                     "claude_online": claude_online(conn),
                     "chat_unread": chat_unread,

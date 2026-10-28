@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0"
+  xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0"
+  id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Analyst Kit" exporterVersion="1.0">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_1" name="AI Support assistant · Access blocked journey" processRef="Process_1"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Process_1" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_cu" name="Customer"><bpmn:flowNodeRef>s</bpmn:flowNodeRef><bpmn:flowNodeRef>f</bpmn:flowNodeRef><bpmn:flowNodeRef>c</bpmn:flowNodeRef><bpmn:flowNodeRef>y</bpmn:flowNodeRef></bpmn:lane>
+      <bpmn:lane id="Lane_ai" name="AI assistant"><bpmn:flowNodeRef>i</bpmn:flowNodeRef><bpmn:flowNodeRef>g</bpmn:flowNodeRef><bpmn:flowNodeRef>a</bpmn:flowNodeRef><bpmn:flowNodeRef>h</bpmn:flowNodeRef></bpmn:lane>
+      <bpmn:lane id="Lane_adv" name="Advisor"><bpmn:flowNodeRef>v</bpmn:flowNodeRef><bpmn:flowNodeRef>e</bpmn:flowNodeRef></bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="s" name="Customer reports blocked access"><bpmn:outgoing>Flow_1</bpmn:outgoing><bpmn:messageEventDefinition/></bpmn:startEvent>
+    <bpmn:serviceTask id="i" name="Detect intent and retrieve approved article"><bpmn:incoming>Flow_1</bpmn:incoming><bpmn:outgoing>Flow_2</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="g" name="Approved source found?"><bpmn:incoming>Flow_2</bpmn:incoming><bpmn:outgoing>Flow_3</bpmn:outgoing><bpmn:outgoing>Flow_4</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="a" name="Answer unlock steps and cite the article"><bpmn:incoming>Flow_3</bpmn:incoming><bpmn:outgoing>Flow_5</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:userTask id="f" name="Follow unlock steps in the app"><bpmn:incoming>Flow_5</bpmn:incoming><bpmn:outgoing>Flow_6</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="c" name="Access restored?"><bpmn:incoming>Flow_6</bpmn:incoming><bpmn:outgoing>Flow_7</bpmn:outgoing><bpmn:outgoing>Flow_8</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:endEvent id="y" name="Resolved by assistant"><bpmn:incoming>Flow_7</bpmn:incoming></bpmn:endEvent>
+    <bpmn:serviceTask id="h" name="Hand off with conversation context"><bpmn:incoming>Flow_4</bpmn:incoming><bpmn:incoming>Flow_8</bpmn:incoming><bpmn:outgoing>Flow_9</bpmn:outgoing></bpmn:serviceTask>
+    <bpmn:userTask id="v" name="Unlock access with the customer"><bpmn:incoming>Flow_9</bpmn:incoming><bpmn:outgoing>Flow_10</bpmn:outgoing></bpmn:userTask>
+    <bpmn:endEvent id="e" name="Resolved by advisor"><bpmn:incoming>Flow_10</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="s" targetRef="i"/>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="i" targetRef="g"/>
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="g" targetRef="a" name="Yes"/>
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="g" targetRef="h" name="No"/>
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="a" targetRef="f"/>
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="f" targetRef="c"/>
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="c" targetRef="y" name="Yes"/>
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="c" targetRef="h" name="No"/>
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="h" targetRef="v"/>
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="v" targetRef="e"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="Participant_1_di" bpmnElement="Participant_1" isHorizontal="true" bioc:stroke="#344054" bioc:fill="#ffffff" color:border-color="#344054" color:background-color="#ffffff"><dc:Bounds x="40" y="40" width="1818" height="390"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_cu_di" bpmnElement="Lane_cu" isHorizontal="true" bioc:stroke="#475467" bioc:fill="#f8fafc" color:border-color="#475467" color:background-color="#f8fafc"><dc:Bounds x="74" y="40" width="1784" height="130"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_ai_di" bpmnElement="Lane_ai" isHorizontal="true" bioc:stroke="#475467" bioc:fill="#fcfcfd" color:border-color="#475467" color:background-color="#fcfcfd"><dc:Bounds x="74" y="170" width="1784" height="130"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_adv_di" bpmnElement="Lane_adv" isHorizontal="true" bioc:stroke="#475467" bioc:fill="#f8fafc" color:border-color="#475467" color:background-color="#f8fafc"><dc:Bounds x="74" y="300" width="1784" height="130"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_di" bpmnElement="s" bioc:stroke="#1f7a45" bioc:fill="#e7f6ec" color:background-color="#e7f6ec" color:border-color="#1f7a45"><dc:Bounds x="185" y="87" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="148" y="129" width="110" height="27"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="i_di" bpmnElement="i" bioc:stroke="#1d4ed8" bioc:fill="#e8f0fe" color:background-color="#e8f0fe" color:border-color="#1d4ed8"><dc:Bounds x="328" y="195" width="130" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_di" bpmnElement="g" bioc:stroke="#b54708" bioc:fill="#fff6e0" color:background-color="#fff6e0" color:border-color="#b54708"><dc:Bounds x="558" y="210" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="528" y="176" width="110" height="27"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="a_di" bpmnElement="a" bioc:stroke="#1d4ed8" bioc:fill="#e8f0fe" color:background-color="#e8f0fe" color:border-color="#1d4ed8"><dc:Bounds x="708" y="195" width="130" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="f_di" bpmnElement="f" bioc:stroke="#1d4ed8" bioc:fill="#e8f0fe" color:background-color="#e8f0fe" color:border-color="#1d4ed8"><dc:Bounds x="898" y="65" width="130" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="c_di" bpmnElement="c" bioc:stroke="#b54708" bioc:fill="#fff6e0" color:background-color="#fff6e0" color:border-color="#b54708"><dc:Bounds x="1128" y="80" width="50" height="50"/><bpmndi:BPMNLabel><dc:Bounds x="1098" y="46" width="110" height="27"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="y_di" bpmnElement="y" bioc:stroke="#b42318" bioc:fill="#fdecec" color:background-color="#fdecec" color:border-color="#b42318"><dc:Bounds x="1325" y="87" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="1288" y="129" width="110" height="27"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="h_di" bpmnElement="h" bioc:stroke="#1d4ed8" bioc:fill="#e8f0fe" color:background-color="#e8f0fe" color:border-color="#1d4ed8"><dc:Bounds x="1278" y="195" width="130" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="v_di" bpmnElement="v" bioc:stroke="#1d4ed8" bioc:fill="#e8f0fe" color:background-color="#e8f0fe" color:border-color="#1d4ed8"><dc:Bounds x="1468" y="325" width="130" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_di" bpmnElement="e" bioc:stroke="#b42318" bioc:fill="#fdecec" color:background-color="#fdecec" color:border-color="#b42318"><dc:Bounds x="1705" y="347" width="36" height="36"/><bpmndi:BPMNLabel><dc:Bounds x="1668" y="389" width="110" height="27"/></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="221" y="105"/><di:waypoint x="298" y="105"/><di:waypoint x="298" y="235"/><di:waypoint x="328" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="458" y="235"/><di:waypoint x="558" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="608" y="235"/><di:waypoint x="708" y="235"/><bpmndi:BPMNLabel><dc:Bounds x="643" y="215" width="40" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="583" y="260"/><di:waypoint x="583" y="288"/><di:waypoint x="1343" y="288"/><di:waypoint x="1343" y="275"/><bpmndi:BPMNLabel><dc:Bounds x="607" y="270" width="40" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="838" y="235"/><di:waypoint x="868" y="235"/><di:waypoint x="868" y="105"/><di:waypoint x="898" y="105"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="1028" y="105"/><di:waypoint x="1128" y="105"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="1178" y="105"/><di:waypoint x="1325" y="105"/><bpmndi:BPMNLabel><dc:Bounds x="1236" y="85" width="40" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="1153" y="130"/><di:waypoint x="1153" y="235"/><di:waypoint x="1278" y="235"/><bpmndi:BPMNLabel><dc:Bounds x="1159" y="176" width="40" height="14"/></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_9_di" bpmnElement="Flow_9" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="1408" y="235"/><di:waypoint x="1438" y="235"/><di:waypoint x="1438" y="365"/><di:waypoint x="1468" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10" bioc:stroke="#475467" color:border-color="#475467"><di:waypoint x="1598" y="365"/><di:waypoint x="1705" y="365"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

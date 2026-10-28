@@ -1,86 +1,108 @@
-# AI Skills for Product Owners & Business Analysts
+# AI Skills for Product Owners · Conversational AI, RAG & Business Analysis
 
-**Five AI skills that do the analysis work behind a product backlog, plus Analyst Kit, a local app that turns client notes into ready-to-send deliverables.**
+**Eleven AI skills that do a Product Owner's work on conversational AI and digital products, plus a worked banking case study and Analyst Kit, a local app that turns notes into client-ready deliverables.**
 
-I'm a Product Owner. I built this to answer one question: *what parts of my analysis work can an AI do to a professional standard, if I teach it the methods I actually use?* Each skill packages one industry method (BPMN 2.0, INVEST, Gherkin, MoSCoW, boundary value analysis…) as instructions Claude follows step by step. Every time, it returns a structured result that can be traced back to the source.
+🇫🇷 [Version française](README.fr.md)
 
-![Analyst Kit: a deliverable with its conversation](docs/deliverable.png)
+I'm a Product Owner. I built this to answer one question: *what parts of my product work can an AI do to a professional standard, if I teach it the methods I actually use?* Each skill packages a named method (RAG evaluation metrics, OWASP Top 10 for LLMs, INVEST, Gherkin, BPMN 2.0, MoSCoW…) as instructions Claude follows step by step, with scripts where precision matters. The result is structured, traceable, and ready for Jira or Confluence.
+
+![Access blocked journey for a banking AI assistant, generated as BPMN 2.0](examples/banking-ai-support/journey.png)
 
 ---
 
-## What's inside
+## Track 1 · Conversational AI & RAG product ownership
 
-| | Skill | You give | You get | Methods |
-|---|---|---|---|---|
-| 1 | [**Process Modeler**](skills/modeling-processes/SKILL.md) | SOPs, meeting notes, policy text | Colour-coded BPMN 2.0 file with swimlanes (opens in Camunda, bpmn.io, Signavio), steps traced to the source, open questions for stakeholders | BPMN 2.0, *Method & Style*, UML |
-| 2 | [**PRD Writer**](skills/writing-prds/SKILL.md) | A brief or an idea | One-pager or full PRD: problem with evidence, goals and non-goals, metrics with guardrails, traceable requirement IDs | Jobs to be done, MoSCoW, RAID, working backwards |
-| 3 | [**User Stories & Acceptance Criteria**](skills/writing-user-stories/SKILL.md) | Requirements or a PRD section | Sprint-ready stories, Gherkin scenarios, INVEST check, Definition of Ready, Jira or Linear format | Story mapping, INVEST, SPIDR, Example Mapping, BDD |
-| 4 | [**API Test & Documentation**](skills/testing-apis/SKILL.md) | Spec, curl calls or a description | Test matrix tied to business rules, runnable tests, OpenAPI 3.1, reference docs | Equivalence classes, boundary values, OWASP API Top 10, RFC 9457 |
-| 5 | [**SQL Query Generator**](skills/generating-sql/SKILL.md) | A business question and a schema | Readable SQL with a plain-language walkthrough and validation queries | Metric/grain/filter framing, join fan-out and NULL guards |
+For teams building an LLM assistant or chatbot with retrieval-augmented generation, especially in regulated sectors like banking.
 
-The skills hand work to each other, so a single brief can follow a full delivery path:
+| Skill | What it does | Methods & tools |
+|---|---|---|
+| [**AI use-case roadmap**](skills/prioritizing-ai-use-cases/SKILL.md) | Scores use cases on customer value, business impact, knowledge readiness, feasibility and risk. Applies risk and knowledge gates, then builds a Now / Next / Later roadmap with outcome goals | Weighted scoring, value × feasibility matrix, outcome-based roadmap |
+| [**Conversation design**](skills/designing-conversational-journeys/SKILL.md) | Designs journeys with every branch (clarify, no source, out of scope, frustration, sensitive topics, hand-off to an advisor) and writes stories with conversational acceptance criteria | Intent & utterance design, Gherkin, BPMN journeys |
+| [**RAG evaluation**](skills/evaluating-rag-quality/SKILL.md) | Golden test set, quality metrics, LLM-as-judge with human calibration, go / no-go gates, failure analysis by root cause, production monitoring | Faithfulness, answer relevance, context precision and recall (Ragas definitions), citation accuracy, correct refusal · [`score_eval.py`](skills/evaluating-rag-quality/scripts/score_eval.py) |
+| [**AI risk & guardrails**](skills/governing-ai-risk/SKILL.md) | Risk register, testable guardrail requirements, red-team test cases, compliance checklist for Legal, DPO, Security and Compliance | OWASP Top 10 for LLM Applications 2025, EU AI Act transparency (Art. 50), GDPR, DORA |
+| [**Knowledge base curation**](skills/curating-knowledge-bases/SKILL.md) | Audits content for coverage, freshness and contradictions, sets writing standards that retrieve well and a metadata schema, and turns production logs into a content backlog | Coverage mapping, retrieval-friendly writing, content governance |
+| [**Steering & alignment**](skills/aligning-stakeholders/SKILL.md) | Decision memos for trade-offs, steering committee updates, RACI, release notes, change and adoption plans | Decision log, RACI, change management |
+
+### ▶ Case study: [AI Support for a retail bank's assistant](examples/banking-ai-support/README.md)
+
+A fictional bank extends its assistant to help customers stuck in their digital spaces. The case study walks through the whole loop with real outputs from the skills:
+
+1. **Prioritised six support use cases** and picked two for the first quarter, each with an outcome goal.
+2. **Designed the "access blocked" journey** as a [BPMN file](examples/banking-ai-support/journey.bpmn), including hand-off and fraud branches.
+3. **Ran the evaluation** with [`score_eval.py`](skills/evaluating-rag-quality/scripts/score_eval.py). The verdict was **no-go**: four failures, each traced to its root cause and owner.
+4. **Built the risk register** (prompt injection, data disclosure, outdated tariffs, excessive agency, regulated advice).
+5. **Found the content gaps** behind the wrong answers.
+6. **Wrote the steering committee decision memo.**
+
+## Track 2 · Business analysis & delivery
+
+| Skill | You give | You get | Methods |
+|---|---|---|---|
+| [**Process Modeler**](skills/modeling-processes/SKILL.md) | SOPs, meeting notes, policy text | Colour-coded BPMN 2.0 file with swimlanes (opens in Camunda, bpmn.io, Signavio), steps traced to the source, open questions | BPMN 2.0, *Method & Style*, UML · [`build_bpmn.py`](skills/modeling-processes/scripts/build_bpmn.py) |
+| [**PRD Writer**](skills/writing-prds/SKILL.md) | A brief or an idea | One-pager or full PRD: problem with evidence, goals and non-goals, guardrail metrics, traceable requirement IDs | Jobs to be done, MoSCoW, RAID, working backwards |
+| [**User Stories & Acceptance Criteria**](skills/writing-user-stories/SKILL.md) | Requirements or a PRD section | Sprint-ready stories, Gherkin scenarios, INVEST check, Definition of Ready, Jira or Linear format | Story mapping, INVEST, SPIDR, Example Mapping |
+| [**API Test & Documentation**](skills/testing-apis/SKILL.md) | Spec, curl calls or a description | Test matrix tied to business rules, runnable tests, OpenAPI 3.1, reference docs | Boundary values, OWASP API Top 10, RFC 9457 |
+| [**SQL Query Generator**](skills/generating-sql/SKILL.md) | A business question and a schema | Readable SQL, a plain-language walkthrough and validation queries | Metric / grain / filter framing |
+
+The skills hand work to each other:
 
 ```
-PRD Writer ──► Process Modeler ──► User Stories ──► API Test & Docs ──► SQL (measure the success metrics)
+AI use-case roadmap ─► Conversation design ─► User stories ─► RAG evaluation ─► Steering & alignment
+                              │                                   ▲
+                              └─► AI risk & guardrails ───────────┘  (red-team cases join the golden set)
+Knowledge base curation ─► fixes the "missing content" failures found by RAG evaluation
 ```
 
 ## How each skill is built
 
 Every skill follows the same five-part structure, so the AI works like a specialist rather than a general chatbot:
 
-1. **Trigger:** a precise description of when the skill applies and when it doesn't.
+1. **Trigger:** a precise description of when the skill applies.
 2. **Role & method:** one expert stance and one named method.
-3. **Guardrails:** ask about ambiguities, flag every assumption, never run destructive actions against production.
-4. **Output contract:** fixed sections in a fixed order, ready to paste into Jira, Linear or Confluence.
-5. **Quality gate:** a checklist the AI applies to its own answer before replying, plus a hand-off to the next skill.
+3. **Guardrails:** ask about ambiguities, flag assumptions, frame legal points as items to confirm with the owner, never act on production without confirmation.
+4. **Output contract:** fixed sections in a fixed order, ready for Jira, Confluence or a steering committee.
+5. **Quality gate:** a checklist the AI applies to its own answer, plus a hand-off to the next skill.
 
-This follows Anthropic's [Agent Skills](https://www.claude.com/blog/equipping-agents-for-the-real-world-with-agent-skills) format: plain `SKILL.md` files that Claude loads only when a request matches.
+Where precision matters, the skill ships a script instead of trusting the model. `build_bpmn.py` lays out the diagrams and `score_eval.py` computes the release gates. This follows Anthropic's [Agent Skills](https://www.claude.com/blog/equipping-agents-for-the-real-world-with-agent-skills) format.
 
 ---
 
 ## Analyst Kit: the app
 
-A minimal, Linear-style workspace for using the skills on real client work. No API key needed.
+A minimal, Linear-style workspace for using all eleven skills on real work. No API key needed.
 
-| Home | Chat |
-|---|---|
-| ![Home](docs/home.png) | ![Chat](docs/chat.png) |
+![Analyst Kit: a deliverable with its conversation](docs/deliverable.png)
 
 - **Notes in, deliverable out.** Pick a deliverable, paste notes or drop a file, and get a client-ready document.
-- **Conversation next to every document.** Ask questions or request changes. Claude replies in the thread and updates the document. Every earlier version is kept.
-- **Professional process diagrams.** Real BPMN 2.0 drawn with bpmn-js (the engine behind Camunda): colour legend, swimlanes, zoom, full screen, and downloads as `.bpmn`, PNG or SVG. The layout comes from a script ([`build_bpmn.py`](skills/modeling-processes/scripts/build_bpmn.py)), not hand-written coordinates, so every diagram is consistent.
-- **Client handover.** Export to Word (diagrams included) or PDF, or copy as formatted text. *Mark as sent* tracks what each client has received.
-- **One-click next step.** Turn a PRD into user stories, or a process map into a PRD.
-- **Learns how you work.** A profile sets your name on every document ("Prepared by…"), plus language, tone and backlog tool. Claude records preferences it picks up from your feedback.
-- **Built small on purpose:** Python standard library and SQLite on the back end, plain JavaScript on the front end. Nothing to install.
-
-### Run it
+- **Conversation next to every document.** Ask questions or request changes. Claude replies and updates the document, and every version is kept.
+- **Professional process diagrams.** Real BPMN 2.0 drawn with bpmn-js (the engine behind Camunda): colour legend, swimlanes, zoom, full screen, `.bpmn` / PNG / SVG downloads.
+- **Handover.** Word (diagrams included), PDF or formatted copy. *Mark as sent* tracks what each stakeholder has received.
+- **One-click next step**, for example turning a use-case roadmap into a conversation design, then into an evaluation plan.
+- **Learns how you work:** your name on every document, plus your language, tone and backlog tool.
 
 ```bash
-python3 app/server.py
-# open http://localhost:4317
+python3 app/server.py      # then open http://localhost:4317
 ```
 
-Requests wait in a local queue. Claude, running in a Claude Code session, picks them up with [`app/kit.py`](app/kit.py), writes the deliverable using the matching skill, and posts it back.
+Requests wait in a local queue. Claude, running in a Claude Code session, picks them up with [`app/kit.py`](app/kit.py), applies the matching skill and posts the result back.
 
 ## Use the skills directly
 
-- **Claude Code:** copy any folder from `skills/` into `~/.claude/skills/` (personal) or `.claude/skills/` in a repository (shared with your team).
+- **Claude Code:** copy any folder from `skills/` into `~/.claude/skills/` or a repository's `.claude/skills/`.
 - **claude.ai:** zip a skill folder and upload it under *Settings → Capabilities → Skills*.
-
-Claude loads a skill automatically when your request matches its description.
 
 ## Repository layout
 
 ```
-skills/   the five skills, one SKILL.md each
-app/      Analyst Kit (server.py, kit.py, static/ front end, seed/ sample deliverables)
-site/     one-page showcase of the skills (build.py embeds each SKILL.md)
-docs/     screenshots
+skills/     eleven skills, one SKILL.md each (+ scripts/ and templates/ where needed)
+examples/   banking-ai-support: end-to-end case study with BPMN, evaluation data and report
+app/        Analyst Kit (server.py, kit.py, static/ front end, seed/ samples)
+site/       one-page showcase of the business-analysis skills
+docs/       screenshots
 ```
 
 ## References
 
-[OMG BPMN 2.0.2](https://www.omg.org/spec/BPMN/2.0.2/) · Bruce Silver, *BPMN Method and Style* · Bill Wake, INVEST · Mike Cohn, SPIDR · Matt Wynne, Example Mapping · [Gherkin reference](https://cucumber.io/docs/gherkin/reference/) · [The Linear Method](https://linear.app/method) · [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.0) · [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) · [OWASP API Security Top 10](https://owasp.org/API-Security/)
+[OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) · [Ragas metrics](https://docs.ragas.io/en/stable/references/metrics.html) · EU AI Act, Art. 50 · [OMG BPMN 2.0.2](https://www.omg.org/spec/BPMN/2.0.2/) · Bruce Silver, *BPMN Method and Style* · Bill Wake, INVEST · Mike Cohn, SPIDR · Matt Wynne, Example Mapping · [Gherkin](https://cucumber.io/docs/gherkin/reference/) · [The Linear Method](https://linear.app/method) · [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.0) · [OWASP API Security Top 10](https://owasp.org/API-Security/)
 
-All sample clients and figures in this repository are fictional.
+All organisations and figures in this repository are fictional. Regulatory points are summaries to confirm with legal and compliance owners, not legal advice.

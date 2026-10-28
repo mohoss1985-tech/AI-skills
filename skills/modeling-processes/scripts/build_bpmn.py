@@ -134,7 +134,7 @@ def build(spec):
         x, y, w, h = box[i]
         return x + w / 2, y + h / 2
 
-    exits = defaultdict(set)
+    exits, under = defaultdict(set), set()
 
     def edge_points(f):
         sx, sy, sw, sh = box[f["from"]]
@@ -145,7 +145,13 @@ def build(spec):
             yb = max(sy + sh, ty + th) + 18
             return [(scx, sy + sh), (scx, yb), (tcx, yb), (tcx, ty + th)]
         if abs(scy - tcy) < 1:
-            return [(sx + sw, scy), (tx, tcy)]
+            blocked = any(abs(mid(o)[1] - scy) < 1 and scx < mid(o)[0] < tcx for o in box if o not in (f["from"], f["to"]))
+            if not blocked:
+                return [(sx + sw, scy), (tx, tcy)]
+            yb = scy - ROW_H / 2 + ROW_H - 12                 # skip over steps in between: go under them
+            exits[f["from"]].add("bottom")
+            under.add(f["id"])
+            return [(scx, sy + sh), (scx, yb), (tcx, yb), (tcx, ty + th)]
         side = "top" if tcy < scy else "bottom"
         if kind(by_id[f["from"]]["type"]) == "gateway" and side not in exits[f["from"]]:
             exits[f["from"]].add(side)                       # leave a gateway from top/bottom once per side
@@ -203,7 +209,8 @@ def build(spec):
         label = ""
         if kind(n["type"]) != "activity":
             lw = 110
-            label = f'<bpmndi:BPMNLabel><dc:Bounds x="{x + w / 2 - lw / 2:.0f}" y="{y + h + 6:.0f}" width="{lw}" height="27"/></bpmndi:BPMNLabel>'
+            ly = y - 34 if kind(n["type"]) == "gateway" else y + h + 6   # decision names above the diamond
+            label = f'<bpmndi:BPMNLabel><dc:Bounds x="{x + w / 2 - lw / 2:.0f}" y="{ly:.0f}" width="{lw}" height="27"/></bpmndi:BPMNLabel>'
         expanded = ' isExpanded="false"' if n["type"] == "subprocess" else ""
         di.append(f'      <bpmndi:BPMNShape id="{n["id"]}_di" bpmnElement="{n["id"]}"{expanded}{attrs(n["type"])}>'
                   f'<dc:Bounds x="{x:.0f}" y="{y:.0f}" width="{w}" height="{h}"/>{label}</bpmndi:BPMNShape>')
@@ -212,8 +219,8 @@ def build(spec):
         wps = "".join(f'<di:waypoint x="{px:.0f}" y="{py:.0f}"/>' for px, py in pts)
         label = ""
         if f.get("label"):
-            (ax, ay), (bx, by) = pts[0], pts[1]
-            lx, lyy = (ax + 6, (ay + by) / 2 - 7) if abs(ax - bx) < 1 else ((ax + bx) / 2 - 15, ay - 20)
+            (ax, ay), (bx, by) = (pts[1], pts[2]) if f["id"] in under else (pts[0], pts[1])
+            lx, lyy = (ax + 6, (ay + by) / 2 - 7) if abs(ax - bx) < 1 else ((ax + 24, ay - 18) if f["id"] in under else ((ax + bx) / 2 - 15, ay - 20))
             label = f'<bpmndi:BPMNLabel><dc:Bounds x="{lx:.0f}" y="{lyy:.0f}" width="40" height="14"/></bpmndi:BPMNLabel>'
         di.append(f'      <bpmndi:BPMNEdge id="{f["id"]}_di" bpmnElement="{f["id"]}" '
                   f'bioc:stroke="#475467" color:border-color="#475467">{wps}{label}</bpmndi:BPMNEdge>')
