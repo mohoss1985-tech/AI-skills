@@ -1,0 +1,522 @@
+<title>Analyst Skill Kit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: product-docs shell — sticky skill index on the left, one continuous column of skill specs on the right. */
+:root {
+  --bg: #fbfbfc;
+  --surface: #ffffff;
+  --sunken: #f3f4f7;
+  --fg: #16181d;
+  --muted: #5d6270;
+  --faint: #8b90a0;
+  --line: #e4e6ec;
+  --accent: #4353c9;
+  --accent-soft: #eceefb;
+  --ok: #1f7a4d;
+  --warn: #9a5b00;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0f12; --surface: #15171c; --sunken: #1b1e24; --fg: #e8e9ee; --muted: #a0a4b3; --faint: #6e7385;
+    --line: #262a33; --accent: #8f9bff; --accent-soft: #1d2140; --ok: #5fcf96; --warn: #e8b05c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e0f12; --surface: #15171c; --sunken: #1b1e24; --fg: #e8e9ee; --muted: #a0a4b3; --faint: #6e7385;
+  --line: #262a33; --accent: #8f9bff; --accent-soft: #1d2140; --ok: #5fcf96; --warn: #e8b05c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 600; letter-spacing: -0.02em; }
+p { margin: 0; }
+code, pre, .mono { font-family: var(--mono); }
+
+.shell { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; padding-block: 56px 96px; }
+@media (max-width: 860px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 32px 64px; } }
+
+/* Sidebar */
+.side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 32px); align-self: start; display: flex; flex-direction: column; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.01em; }
+.mark { width: 22px; height: 22px; border-radius: 6px; background: var(--fg); display: grid; place-items: center; }
+.mark svg { width: 12px; height: 12px; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); margin-bottom: 6px; font-weight: 500; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); font-size: 14px; }
+.nav a:hover { background: var(--sunken); color: var(--fg); text-decoration: none; }
+.nav a.on { background: var(--sunken); color: var(--fg); }
+.nav .k { font-family: var(--mono); font-size: 11px; color: var(--faint); width: 22px; }
+.side-foot { font-size: 12px; color: var(--faint); line-height: 1.5; }
+@media (max-width: 860px) {
+  .side { position: static; gap: 16px; }
+  .nav { flex-direction: row; overflow-x: auto; gap: 4px; margin: 0 -4px; padding: 0 4px 4px; }
+  .nav-label, .side-foot, .nav .k { display: none; }
+  .nav a { white-space: nowrap; border: 1px solid var(--line); }
+}
+
+/* Intro */
+.main { display: flex; flex-direction: column; gap: 72px; min-width: 0; }
+.intro { display: flex; flex-direction: column; gap: 20px; max-width: 680px; }
+.eyebrow { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.intro h1 { font-size: clamp(30px, 4.4vw, 44px); line-height: 1.08; letter-spacing: -0.035em; }
+.intro h1 span { color: var(--faint); }
+.lede { font-size: 17px; color: var(--muted); max-width: 60ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 12px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--surface); white-space: nowrap; }
+
+/* Anatomy */
+.section-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.section-head h2 { font-size: 22px; }
+.section-head p { color: var(--muted); max-width: 62ch; }
+.anatomy { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.anatomy > div { padding: 18px 16px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--line); min-width: 0; }
+.anatomy > div:last-child { border-right: 0; }
+.anatomy .n { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+.anatomy h3 { font-size: 14px; letter-spacing: -0.01em; }
+.anatomy p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+@media (max-width: 860px) {
+  .anatomy { grid-template-columns: minmax(0, 1fr); }
+  .anatomy > div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .anatomy > div:last-child { border-bottom: 0; }
+}
+
+/* Skill blocks */
+.skill { display: flex; flex-direction: column; gap: 24px; scroll-margin-top: 32px; padding-top: 40px; border-top: 1px solid var(--line); }
+.skill-top { display: flex; flex-direction: column; gap: 10px; }
+.skill-id { display: flex; gap: 10px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--faint); flex-wrap: wrap; }
+.skill-id .slug { color: var(--accent); background: var(--accent-soft); padding: 1px 7px; border-radius: 4px; }
+.skill h2 { font-size: 26px; }
+.skill .sum { color: var(--muted); max-width: 64ch; }
+.meta { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px 20px; font-size: 14px; }
+.meta dt { color: var(--faint); font-size: 13px; }
+.meta dd { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+@media (max-width: 560px) { .meta { grid-template-columns: minmax(0, 1fr); gap: 4px; } .meta dd { margin-bottom: 10px; } }
+
+.demo { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.demo-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--faint); gap: 12px; }
+.demo-bar b { color: var(--muted); font-weight: 500; }
+.demo-body { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+.demo-body > div { padding: 18px 18px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.demo-in { background: var(--sunken); border-right: 1px solid var(--line); }
+.lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); font-weight: 500; }
+.quote { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+@media (max-width: 760px) { .demo-body { grid-template-columns: minmax(0, 1fr); } .demo-in { border-right: 0; border-bottom: 1px solid var(--line); } }
+
+pre.code { margin: 0; font-size: 12.5px; line-height: 1.6; background: var(--sunken); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; color: var(--fg); }
+.c { color: var(--faint); }
+.kw { color: var(--accent); }
+.mermaid { margin: 0; background: transparent; overflow-x: auto; }
+
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--faint); font-size: 12px; background: var(--sunken); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 12px; }
+.p1 { color: var(--warn); font-family: var(--mono); font-size: 12px; }
+.p2 { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+
+.out-list { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; margin: 0; padding-left: 18px; }
+.out-list li::marker { color: var(--faint); }
+.mini h4 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+.mini p { font-size: 13.5px; color: var(--muted); }
+.mini { display: flex; flex-direction: column; gap: 12px; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.ck { font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--line); color: var(--ok); }
+.ck.no { color: var(--warn); }
+
+details.src { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+details.src summary { list-style: none; cursor: pointer; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+details.src summary::-webkit-details-marker { display: none; }
+details.src summary .path { font-family: var(--mono); font-size: 12.5px; color: var(--fg); overflow-wrap: anywhere; }
+details.src summary .tog { font-size: 12px; color: var(--faint); white-space: nowrap; }
+details.src[open] summary .tog::after { content: " ↑"; }
+details.src:not([open]) summary .tog::after { content: " ↓"; }
+.src-body { border-top: 1px solid var(--line); position: relative; }
+.src-body pre { margin: 0; padding: 16px; max-height: 520px; overflow: auto; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.copy { position: absolute; top: 10px; right: 14px; font: 500 12px var(--sans); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.copy:hover { border-color: var(--faint); }
+
+/* Install + sources */
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 760px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.panel { border: 1px solid var(--line); border-radius: var(--r); padding: 18px; background: var(--surface); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel h3 { font-size: 15px; }
+.panel p, .panel li { font-size: 13.5px; color: var(--muted); }
+.panel ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.sources { columns: 2; column-gap: 32px; font-size: 13.5px; padding-left: 18px; margin: 0; }
+.sources li { break-inside: avoid; margin-bottom: 6px; color: var(--muted); }
+@media (max-width: 760px) { .sources { columns: 1; } }
+.foot { font-size: 12px; color: var(--faint); border-top: 1px solid var(--line); padding-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+</style>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M1 9 L4.5 3 L7 7 L9 4.5 L11 9" fill="none" stroke="var(--bg)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      Analyst Skill Kit
+    </div>
+    <nav class="nav" aria-label="Skills">
+      <div class="nav-label">Skills</div>
+      <a href="#process"><span class="k">01</span>Process Modeler</a>
+      <a href="#api"><span class="k">02</span>API Test &amp; Docs</a>
+      <a href="#prd"><span class="k">03</span>PRD Writer</a>
+      <a href="#sql"><span class="k">04</span>SQL Generator</a>
+      <a href="#stories"><span class="k">05</span>Stories &amp; AC</a>
+      <div class="nav-label" style="margin-top:18px">Kit</div>
+      <a href="#anatomy"><span class="k">—</span>How they're built</a>
+      <a href="#install"><span class="k">—</span>Install</a>
+    </nav>
+    <p class="side-foot">Five Claude Agent Skills for product owners and business analysts. Each one is a plain SKILL.md you can read below.</p>
+  </aside>
+
+  <main class="main">
+    <header class="intro">
+      <div class="eyebrow">v1.0 · 5 skills · Claude Code &amp; claude.ai</div>
+      <h1>The analysis work behind a backlog, <span>packaged as AI experts.</span></h1>
+      <p class="lede">From a messy SOP to a process model, a PRD, user stories with testable criteria, the SQL that proves the metric and the API tests that check the build. Each skill follows a named industry method and returns the same structured output every time.</p>
+      <div class="facts">
+        <span class="chip">BPMN 2.0</span><span class="chip">UML</span><span class="chip">INVEST</span><span class="chip">SPIDR</span>
+        <span class="chip">Gherkin / BDD</span><span class="chip">Example Mapping</span><span class="chip">MoSCoW</span><span class="chip">RAID</span>
+        <span class="chip">OpenAPI 3.1</span><span class="chip">Boundary value analysis</span><span class="chip">OWASP API Top 10</span>
+      </div>
+    </header>
+
+    <section id="anatomy" style="scroll-margin-top:32px">
+      <div class="section-head">
+        <h2>How each skill is built</h2>
+        <p>Every skill follows the same five-part structure, so the agent behaves like a specialist and not a general chatbot. The order matters: Claude reads them top to bottom when the skill loads.</p>
+      </div>
+      <div class="anatomy">
+        <div><span class="n">1</span><h3>Trigger</h3><p>A precise description that tells Claude when to load the skill, and when not to.</p></div>
+        <div><span class="n">2</span><h3>Role &amp; method</h3><p>One expert stance and one named method, such as BPMN Method &amp; Style or INVEST.</p></div>
+        <div><span class="n">3</span><h3>Guardrails</h3><p>Clarify ambiguity, flag every assumption, refuse unsafe actions on production data.</p></div>
+        <div><span class="n">4</span><h3>Output contract</h3><p>Fixed sections in a fixed order, so results are comparable and paste straight into Jira, Linear or Confluence.</p></div>
+        <div><span class="n">5</span><h3>Quality gate</h3><p>A checklist the agent runs on its own answer before replying, plus a hand-off to the next skill.</p></div>
+      </div>
+    </section>
+
+    <!-- 01 -->
+    <section class="skill" id="process">
+      <div class="skill-top">
+        <div class="skill-id"><span>01</span><span class="slug">modeling-processes</span></div>
+        <h2>Process Modeler</h2>
+        <p class="sum">Reads SOPs, meeting notes or requirement docs and returns a BPMN 2.0 or UML model. Every box traces back to a sentence in the source, and every gap becomes an open question for the stakeholder.</p>
+      </div>
+      <dl class="meta">
+        <dt>Input</dt><dd><span class="chip">SOPs</span><span class="chip">Meeting notes</span><span class="chip">Policy text</span><span class="chip">Requirements</span></dd>
+        <dt>Output</dt><dd><span class="chip">Element inventory</span><span class="chip">Mermaid diagram</span><span class="chip">BPMN 2.0 XML</span><span class="chip">Open questions</span></dd>
+        <dt>Diagrams</dt><dd><span class="chip">BPMN lanes</span><span class="chip">Sequence</span><span class="chip">Use case</span><span class="chip">State</span><span class="chip">Class</span><span class="chip">Activity</span></dd>
+      </dl>
+      <div class="demo">
+        <div class="demo-bar"><b>Example run</b><span>Accounts payable SOP → BPMN</span></div>
+        <div class="demo-body">
+          <div class="demo-in">
+            <span class="lbl">Source text</span>
+            <p class="quote">"Supplier invoices arrive in the AP inbox. The AP clerk matches each invoice to its purchase order. If it doesn't match, it goes back to the supplier. Matched invoices above €5,000 need sign-off from the finance manager. Approved invoices are scheduled in the next payment run."</p>
+            <span class="lbl">Open questions raised</span>
+            <ol class="out-list">
+              <li>What happens when the finance manager rejects an invoice?</li>
+              <li>Is there an SLA on approval, and who is notified if it's missed?</li>
+            </ol>
+          </div>
+          <div>
+            <span class="lbl">Generated model</span>
+<pre class="mermaid">
+flowchart LR
+  subgraph ap [AP clerk]
+    S((Invoice received)) --> A[Match invoice to PO]
+    A --> B{PO matches?}
+    B -- No --> R[Return to supplier]
+    B -- Yes --> C{Amount over 5k EUR?}
+  end
+  subgraph fm [Finance manager]
+    C -- Yes --> D[Approve invoice]
+  end
+  subgraph tr [Treasury]
+    C -- No --> E[Schedule payment run]
+    D --> E
+  end
+  R --> X(((Invoice returned)))
+  E --> Y(((Invoice scheduled)))
+</pre>
+          </div>
+        </div>
+      </div>
+      <details class="src"><summary><span class="path">skills/modeling-processes/SKILL.md</span><span class="tog">View source</span></summary><div class="src-body"><button class="copy" type="button">Copy</button><pre>{{modeling-processes}}</pre></div></details>
+    </section>
+
+    <!-- 02 -->
+    <section class="skill" id="api">
+      <div class="skill-top">
+        <div class="skill-id"><span>02</span><span class="slug">testing-apis</span></div>
+        <h2>API Test &amp; Documentation</h2>
+        <p class="sum">Turns a spec, a Postman collection or a few curl calls into a test matrix tied to business rules, runnable tests, an OpenAPI 3.1 file and a reference page another team can integrate from.</p>
+      </div>
+      <dl class="meta">
+        <dt>Input</dt><dd><span class="chip">OpenAPI / Swagger</span><span class="chip">Postman</span><span class="chip">curl</span><span class="chip">Plain description</span></dd>
+        <dt>Output</dt><dd><span class="chip">Test matrix</span><span class="chip">pytest / Postman / Playwright</span><span class="chip">OpenAPI 3.1</span><span class="chip">Coverage summary</span></dd>
+        <dt>Techniques</dt><dd><span class="chip">Equivalence classes</span><span class="chip">Boundary values</span><span class="chip">BOLA checks</span><span class="chip">RFC 9457 errors</span></dd>
+      </dl>
+      <div class="demo">
+        <div class="demo-bar"><b>Example run</b><span>POST /v1/refunds</span></div>
+        <div class="demo-body">
+          <div class="demo-in">
+            <span class="lbl">Business rule</span>
+            <p class="quote">"A refund can't exceed the amount captured on the original payment. Only the merchant who owns the payment can refund it."</p>
+<pre class="code">POST /v1/refunds
+{ "payment_id": "pay_8Hk2",
+  "amount": 4500,
+  "currency": "EUR" }</pre>
+          </div>
+          <div>
+            <span class="lbl">Test matrix (excerpt)</span>
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>ID</th><th>Case</th><th>Expect</th><th>Pri</th></tr></thead>
+              <tbody>
+                <tr><td class="num">RF-01</td><td>Refund equal to captured amount</td><td class="num">201</td><td class="p2">P2</td></tr>
+                <tr><td class="num">RF-02</td><td>Captured + 1 cent</td><td class="num">422</td><td class="p1">P1</td></tr>
+                <tr><td class="num">RF-03</td><td>Amount = 0 or negative</td><td class="num">422</td><td class="p2">P2</td></tr>
+                <tr><td class="num">RF-04</td><td>Another merchant's payment</td><td class="num">404</td><td class="p1">P1</td></tr>
+                <tr><td class="num">RF-05</td><td>Same Idempotency-Key twice</td><td class="num">201, one refund</td><td class="p1">P1</td></tr>
+              </tbody>
+            </table></div>
+<pre class="code"><span class="kw">def</span> test_refund_cannot_exceed_capture(api, captured_payment):
+    r = api.post(<span class="c">"/v1/refunds"</span>, json={
+        <span class="c">"payment_id"</span>: captured_payment.id,
+        <span class="c">"amount"</span>: captured_payment.amount + 1})
+    <span class="kw">assert</span> r.status_code == 422
+    <span class="kw">assert</span> r.json()[<span class="c">"type"</span>].endswith(<span class="c">"/refund-exceeds-capture"</span>)</pre>
+          </div>
+        </div>
+      </div>
+      <details class="src"><summary><span class="path">skills/testing-apis/SKILL.md</span><span class="tog">View source</span></summary><div class="src-body"><button class="copy" type="button">Copy</button><pre>{{testing-apis}}</pre></div></details>
+    </section>
+
+    <!-- 03 -->
+    <section class="skill" id="prd">
+      <div class="skill-top">
+        <div class="skill-id"><span>03</span><span class="slug">writing-prds</span></div>
+        <h2>PRD Writer</h2>
+        <p class="sum">Writes a one-pager or full PRD that leads with the problem and its evidence. Goals, non-goals and guardrail metrics come before features, and every requirement gets an ID linked to a goal so tickets stay traceable.</p>
+      </div>
+      <dl class="meta">
+        <dt>Input</dt><dd><span class="chip">Brief</span><span class="chip">Research notes</span><span class="chip">Idea</span><span class="chip">Existing PRD to review</span></dd>
+        <dt>Output</dt><dd><span class="chip">One-pager</span><span class="chip">Full PRD</span><span class="chip">Review verdict</span><span class="chip">Linear project draft</span></dd>
+        <dt>Frameworks</dt><dd><span class="chip">Jobs to be done</span><span class="chip">MoSCoW</span><span class="chip">RAID</span><span class="chip">Working backwards</span></dd>
+      </dl>
+      <div class="demo">
+        <div class="demo-bar"><b>Example run</b><span>Brief → one-pager</span></div>
+        <div class="demo-body">
+          <div class="demo-in">
+            <span class="lbl">Brief</span>
+            <p class="quote">"Customers keep emailing support to change their delivery address after ordering. Can we let them do it themselves?"</p>
+            <span class="lbl">Questions the skill asked first</span>
+            <ol class="out-list">
+              <li>How many tickets a month, and what share of all tickets?</li>
+              <li>Until which fulfilment status can an address still change?</li>
+            </ol>
+          </div>
+          <div class="mini">
+            <span class="lbl">Draft (excerpt)</span>
+            <div><h4>Problem</h4><p>About 1,900 tickets a month (14% of volume) ask to change a delivery address. Median handling time is 6 minutes, and 9% arrive after the parcel has shipped.</p></div>
+            <div><h4>Goals · Non-goals</h4><p>G1 Halve address-change tickets in 90 days. G2 Cut mis-deliveries from late changes. <br>Non-goal: changing the address after hand-over to the carrier.</p></div>
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Metric</th><th>Type</th><th>Baseline</th><th>Target</th></tr></thead>
+              <tbody>
+                <tr><td>Address-change tickets / month</td><td>Primary</td><td class="num">1,900</td><td class="num">≤ 950</td></tr>
+                <tr><td>Orders shipped to wrong address</td><td>Guardrail</td><td class="num">0.4%</td><td class="num">≤ 0.4%</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+      <details class="src"><summary><span class="path">skills/writing-prds/SKILL.md</span><span class="tog">View source</span></summary><div class="src-body"><button class="copy" type="button">Copy</button><pre>{{writing-prds}}</pre></div></details>
+    </section>
+
+    <!-- 04 -->
+    <section class="skill" id="sql">
+      <div class="skill-top">
+        <div class="skill-id"><span>04</span><span class="slug">generating-sql</span></div>
+        <h2>SQL Query Generator</h2>
+        <p class="sum">Restates a business question as metric, grain, filters and time window, then writes readable CTE-based SQL for your dialect, with a plain-language walkthrough and validation queries that catch the classic wrong-number bugs.</p>
+      </div>
+      <dl class="meta">
+        <dt>Input</dt><dd><span class="chip">Business question</span><span class="chip">Schema / DDL</span><span class="chip">Existing query</span></dd>
+        <dt>Output</dt><dd><span class="chip">SQL</span><span class="chip">Step-by-step explanation</span><span class="chip">Validation checks</span><span class="chip">Assumptions</span></dd>
+        <dt>Dialects</dt><dd><span class="chip">PostgreSQL</span><span class="chip">BigQuery</span><span class="chip">Snowflake</span><span class="chip">SQL Server</span><span class="chip">MySQL</span></dd>
+      </dl>
+      <div class="demo">
+        <div class="demo-bar"><b>Example run</b><span>PostgreSQL · read-only</span></div>
+        <div class="demo-body">
+          <div class="demo-in">
+            <span class="lbl">Question</span>
+            <p class="quote">"What share of new customers order again within 30 days, by month of first order?"</p>
+            <span class="lbl">Restated</span>
+            <ol class="out-list">
+              <li>Metric: % of first-time buyers with a 2nd paid order within 30 days</li>
+              <li>Grain: one row per first-order month</li>
+              <li>Excludes: cancelled orders, test accounts</li>
+            </ol>
+          </div>
+          <div>
+            <span class="lbl">Query</span>
+<pre class="code"><span class="kw">WITH</span> paid_orders <span class="kw">AS</span> (  <span class="c">-- real, paid orders only</span>
+  <span class="kw">SELECT</span> o.customer_id, o.created_at
+  <span class="kw">FROM</span> orders o
+  <span class="kw">JOIN</span> customers c <span class="kw">ON</span> c.id = o.customer_id
+  <span class="kw">WHERE</span> o.status = 'paid' <span class="kw">AND NOT</span> c.is_test
+),
+first_order <span class="kw">AS</span> (  <span class="c">-- each customer's first purchase</span>
+  <span class="kw">SELECT</span> customer_id, <span class="kw">MIN</span>(created_at) <span class="kw">AS</span> first_at
+  <span class="kw">FROM</span> paid_orders <span class="kw">GROUP BY</span> customer_id
+)
+<span class="kw">SELECT</span>
+  <span class="kw">DATE_TRUNC</span>('month', f.first_at) <span class="kw">AS</span> cohort_month,
+  <span class="kw">COUNT</span>(*) <span class="kw">AS</span> new_customers,
+  <span class="kw">ROUND</span>(100.0 * <span class="kw">COUNT</span>(*) <span class="kw">FILTER</span> (<span class="kw">WHERE EXISTS</span> (
+    <span class="kw">SELECT</span> 1 <span class="kw">FROM</span> paid_orders p
+    <span class="kw">WHERE</span> p.customer_id = f.customer_id
+      <span class="kw">AND</span> p.created_at &gt; f.first_at
+      <span class="kw">AND</span> p.created_at &lt; f.first_at + <span class="kw">INTERVAL</span> '30 days'
+  )) / <span class="kw">NULLIF</span>(<span class="kw">COUNT</span>(*), 0), 1) <span class="kw">AS</span> repeat_30d_pct
+<span class="kw">FROM</span> first_order f
+<span class="kw">GROUP BY</span> 1 <span class="kw">ORDER BY</span> 1;</pre>
+          </div>
+        </div>
+      </div>
+      <details class="src"><summary><span class="path">skills/generating-sql/SKILL.md</span><span class="tog">View source</span></summary><div class="src-body"><button class="copy" type="button">Copy</button><pre>{{generating-sql}}</pre></div></details>
+    </section>
+
+    <!-- 05 -->
+    <section class="skill" id="stories">
+      <div class="skill-top">
+        <div class="skill-id"><span>05</span><span class="slug">writing-user-stories</span></div>
+        <h2>User Stories &amp; Acceptance Criteria</h2>
+        <p class="sum">Breaks a PRD or process step into sprint-sized stories, checks each against INVEST, splits the big ones with SPIDR and writes Gherkin scenarios from Example Mapping. Outputs Jira-style stories or Linear-style issues.</p>
+      </div>
+      <dl class="meta">
+        <dt>Input</dt><dd><span class="chip">PRD requirement</span><span class="chip">Process step</span><span class="chip">Feature idea</span><span class="chip">Existing backlog</span></dd>
+        <dt>Output</dt><dd><span class="chip">Story</span><span class="chip">Gherkin scenarios</span><span class="chip">INVEST report</span><span class="chip">Definition of Ready</span></dd>
+        <dt>Methods</dt><dd><span class="chip">Story mapping</span><span class="chip">INVEST</span><span class="chip">SPIDR</span><span class="chip">Example Mapping</span><span class="chip">BDD</span></dd>
+      </dl>
+      <div class="demo">
+        <div class="demo-bar"><b>Example run</b><span>FR-3 from the PRD → story</span></div>
+        <div class="demo-body">
+          <div class="demo-in">
+            <span class="lbl">Story</span>
+            <p class="quote"><b style="color:var(--fg);font-weight:600">Let customers change their delivery address before dispatch</b><br>As a customer who just ordered, I want to edit my delivery address from the order page, so that my parcel reaches me without contacting support.</p>
+            <span class="lbl">INVEST check</span>
+            <div class="checks"><span class="ck">I ✓</span><span class="ck">N ✓</span><span class="ck">V ✓</span><span class="ck">E ✓</span><span class="ck no">S — split by Rules</span><span class="ck">T ✓</span></div>
+            <p class="quote">Split: international addresses and re-pricing of shipping moved to a follow-up story.</p>
+          </div>
+          <div>
+            <span class="lbl">Acceptance criteria</span>
+<pre class="code"><span class="kw">Scenario:</span> Address changed before the order is picked
+  <span class="kw">Given</span> order #10482 has status "Paid"
+  <span class="kw">When</span> the customer saves a new address in Lyon
+  <span class="kw">Then</span> the order page shows the new address
+  <span class="kw">And</span> the customer receives a confirmation email
+
+<span class="kw">Scenario:</span> Change blocked once the parcel is packed
+  <span class="kw">Given</span> order #10482 has status "Packed"
+  <span class="kw">When</span> the customer opens the address form
+  <span class="kw">Then</span> the fields are read-only
+  <span class="kw">And</span> the page reads "Your parcel is packed.
+      Contact support to redirect it."</pre>
+          </div>
+        </div>
+      </div>
+      <details class="src"><summary><span class="path">skills/writing-user-stories/SKILL.md</span><span class="tog">View source</span></summary><div class="src-body"><button class="copy" type="button">Copy</button><pre>{{writing-user-stories}}</pre></div></details>
+    </section>
+
+    <section id="install" class="skill" style="gap:16px">
+      <div class="section-head" style="margin-bottom:8px">
+        <h2>Install and chain them</h2>
+        <p>The skills hand work to each other, so one brief can travel the whole way to tested software.</p>
+      </div>
+      <div class="two">
+        <div class="panel">
+          <h3>Install</h3>
+          <ul>
+            <li><b style="color:var(--fg);font-weight:500">Claude Code:</b> put each folder in <code>~/.claude/skills/</code> (personal) or <code>.claude/skills/</code> in a repo (shared with the team).</li>
+            <li><b style="color:var(--fg);font-weight:500">claude.ai:</b> zip a skill folder and upload it under Settings → Capabilities → Skills.</li>
+            <li>Claude loads a skill on its own when your request matches its description.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>A typical chain</h3>
+          <ul>
+            <li><b style="color:var(--fg);font-weight:500">PRD Writer</b> frames the problem and requirements FR-1…n</li>
+            <li><b style="color:var(--fg);font-weight:500">Process Modeler</b> draws the to-be flow for review</li>
+            <li><b style="color:var(--fg);font-weight:500">Stories &amp; AC</b> turns each FR into sprint-ready work</li>
+            <li><b style="color:var(--fg);font-weight:500">API Test &amp; Docs</b> derives tests from the same rules</li>
+            <li><b style="color:var(--fg);font-weight:500">SQL Generator</b> measures the success metrics after launch</li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Methods and references</h3>
+        <ul class="sources">
+          <li><a href="https://www.omg.org/spec/BPMN/2.0.2/" target="_blank" rel="noopener">OMG BPMN 2.0.2 specification</a></li>
+          <li>Bruce Silver, <i>BPMN Method and Style</i></li>
+          <li><a href="https://www.omg.org/spec/UML/" target="_blank" rel="noopener">OMG UML specification</a></li>
+          <li>Bill Wake, INVEST criteria for user stories</li>
+          <li>Mike Cohn, SPIDR story splitting</li>
+          <li>Matt Wynne, Example Mapping</li>
+          <li><a href="https://cucumber.io/docs/gherkin/reference/" target="_blank" rel="noopener">Cucumber Gherkin reference</a></li>
+          <li><a href="https://linear.app/method" target="_blank" rel="noopener">The Linear Method</a></li>
+          <li><a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener">RFC 9457 Problem Details for HTTP APIs</a></li>
+          <li><a href="https://owasp.org/API-Security/" target="_blank" rel="noopener">OWASP API Security Top 10</a></li>
+          <li><a href="https://spec.openapis.org/oas/v3.1.0" target="_blank" rel="noopener">OpenAPI 3.1 specification</a></li>
+          <li><a href="https://www.claude.com/blog/equipping-agents-for-the-real-world-with-agent-skills" target="_blank" rel="noopener">Anthropic, Agent Skills</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <footer class="foot"><span>Analyst Skill Kit · v1.0</span><span>Example data on this page is illustrative.</span></footer>
+  </main>
+</div>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var pre = btn.parentElement.querySelector('pre');
+    var done = function (t) { btn.textContent = t; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); };
+    var select = function () { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); done('Selected'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(pre.textContent).then(function () { done('Copied'); }, select);
+    } else { select(); }
+  });
+});
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting && map[e.target.id]) {
+        links.forEach(function (a) { a.classList.remove('on'); });
+        map[e.target.id].classList.add('on');
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+})();
+</script>

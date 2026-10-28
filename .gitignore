@@ -1,0 +1,8 @@
+# Local data and tooling
+app/data/
+.claude/
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+.env
