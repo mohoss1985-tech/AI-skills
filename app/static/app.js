@@ -302,9 +302,31 @@
       <div class="page-head"><div class="crumb"><a href="#/">Home</a><span>›</span><span>${esc(t.name)}</span></div>
         <h1>${esc(t.name)}</h1><p>You give: ${esc(t.gives.toLowerCase())}. You get: ${esc(t.gets.toLowerCase())}.</p></div>
       <div><a class="btn primary big" href="#/new/${id}">New ${esc(t.name)}</a></div>
+      ${tryHtml(t)}
       <div><h2 class="section-title">All ${esc(t.name)} deliverables <span class="count">${reqs.length}</span></h2><div id="list">${listHtml(reqs)}</div></div>
     </div>`;
+    wireTry(main, t);
     return { tick: () => { $('#list').innerHTML = listHtml(S.requests.filter((r) => r.type === id)); } };
+  }
+
+  // Ready-made scenarios: open the finished sample, or start a new deliverable from realistic notes.
+  function tryHtml(t) {
+    const samples = S.requests.filter((r) => r.is_sample && r.type === t.id).sort((a, b) => a.id - b.id);
+    const ex = (t.examples || []).filter((e) => e.notes);
+    if (!samples.length && !ex.length) return '';
+    return `<div><h2 class="section-title">Try it</h2><div class="try">
+      ${samples.map((s) => `<a class="try-card sample" href="#/d/${s.id}"><span class="tag">Finished sample</span><b>${esc(s.title)}</b><span>${esc(s.client)}</span></a>`).join('')}
+      ${ex.map((e, i) => `<button type="button" class="try-card" data-ex="${i}"><span class="tag">Scenario</span><b>${esc(e.label)}</b><span>${esc(e.notes.slice(0, 110))}…</span></button>`).join('')}
+    </div></div>`;
+  }
+  function wireTry(root, t) {
+    root.querySelectorAll('[data-ex]').forEach((b) => (b.onclick = () => startExample(t.id, +b.dataset.ex)));
+  }
+  function startExample(typeId, i) {
+    const e = (typeOf(typeId).examples || [])[i];
+    if (!e) return;
+    S.preset = { type: typeId, title: e.title, client: e.client, notes: e.notes };
+    if (location.hash === '#/new/' + typeId) route(); else location.hash = '#/new/' + typeId;
   }
 
   function viewNew(typeId, preset = {}) {
@@ -324,7 +346,7 @@
           <textarea class="textarea" id="f-notes"></textarea>
           <span class="help">Paste anything: meeting notes, an email thread, a spec. You can also drop a .txt, .md or .csv file into the box.</span></div>
         <div class="form-foot">
-          <div class="left"><button type="button" class="btn ghost" id="f-example">Fill with an example</button></div>
+          <div class="left"><span class="ex-label">Try a scenario:</span><div class="chips" id="f-examples"></div></div>
           <div style="display:flex;align-items:center;gap:12px"><span class="err" id="f-err"></span><button class="btn primary big" type="submit">Create deliverable <kbd>⌘↵</kbd></button></div>
         </div>
       </form></div>`;
@@ -333,13 +355,21 @@
       $('#seg').innerHTML = S.types.map((x) => `<button type="button" data-t="${x.id}" class="${x.id === type ? 'on' : ''}">${sq(x)}${esc(x.name)}</button>`).join('');
       $('#expect').innerHTML = `<b>You'll get:</b> ${esc(t.gets)}.`;
       $('#f-notes').placeholder = t.placeholder;
+      $('#f-examples').innerHTML = (t.examples || []).filter((e) => e.notes).map((e, i) => `<button type="button" class="chip" data-ex="${i}">${esc(e.label)}</button>`).join('');
     };
     paint();
     $('#f-client').value = preset.client || S.clients[0] || '';
     $('#f-title').value = preset.title || '';
     $('#f-notes').value = preset.notes || '';
     $('#seg').onclick = (e) => { const b = e.target.closest('button'); if (b) { type = b.dataset.t; paint(); } };
-    $('#f-example').onclick = () => { $('#f-notes').value = typeOf(type).example; };
+    $('#f-examples').onclick = (e) => {
+      const b = e.target.closest('[data-ex]');
+      if (!b) return;
+      const ex = typeOf(type).examples[+b.dataset.ex];
+      $('#f-notes').value = ex.notes;
+      if (ex.title) $('#f-title').value = ex.title;
+      if (ex.client) $('#f-client').value = ex.client + ' (sample)';
+    };
     const ta = $('#f-notes');
     ta.addEventListener('dragover', (e) => e.preventDefault());
     ta.addEventListener('drop', (e) => {
@@ -618,6 +648,11 @@
     else S.view = viewHome();
     main.scrollTop = 0;
   }
+  window.Kit = {
+    state: S, typeOf, startExample, toast, esc,
+    ask: async (text) => { await post('/api/chat', { body: text }); },
+    fill: (i) => { const b = document.querySelector(`#f-examples [data-ex="${i}"]`); if (b) { b.click(); return true; } return false; },
+  };
   addEventListener('hashchange', route);
   main.addEventListener('click', (e) => { const c = e.target.closest('[data-href]'); if (c) location.hash = c.dataset.href; });
   document.addEventListener('keydown', (e) => {

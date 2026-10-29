@@ -42,7 +42,7 @@ A fictional bank extends its assistant to help customers stuck in their digital 
 | [**PRD Writer**](skills/writing-prds/SKILL.md) | A brief or an idea | One-pager or full PRD: problem with evidence, goals and non-goals, guardrail metrics, traceable requirement IDs | Jobs to be done, MoSCoW, RAID, working backwards |
 | [**User Stories & Acceptance Criteria**](skills/writing-user-stories/SKILL.md) | Requirements or a PRD section | Sprint-ready stories, Gherkin scenarios, INVEST check, Definition of Ready, Jira or Linear format | Story mapping, INVEST, SPIDR, Example Mapping |
 | [**API Test & Documentation**](skills/testing-apis/SKILL.md) | Spec, curl calls or a description | Test matrix tied to business rules, runnable tests, OpenAPI 3.1, reference docs | Boundary values, OWASP API Top 10, RFC 9457 |
-| [**SQL Query Generator**](skills/generating-sql/SKILL.md) | A business question and a schema | Readable SQL, a plain-language walkthrough and validation queries | Metric / grain / filter framing |
+| [**SQL Query Generator**](skills/generating-sql/SKILL.md) | A business question and a schema | Readable SQL, a plain-language walkthrough and validation queries. Samples include [chatbot containment with resolution](app/seed/12-sql-containment.md) and [fraud decline bursts](app/seed/13-sql-fraud.md) (window functions, gaps and islands, `LATERAL`) | Metric / grain / filter framing |
 
 The skills hand work to each other:
 
@@ -74,6 +74,8 @@ A minimal, Linear-style workspace for using all eleven skills on real work. No A
 ![Analyst Kit: a deliverable with its conversation](docs/deliverable.png)
 
 - **Notes in, deliverable out.** Pick a deliverable, paste notes or drop a file, and get a client-ready document.
+- **Try before you write.** Every skill ships a finished sample, and each AI skill has three realistic scenarios (banking support, insurance, advisor copilot, go-live…) that fill the form in one click.
+- **Built-in Guide.** An instant help chatbot that knows every skill, the jargon (faithfulness, prompt injection, containment, AI Act Art. 50…) and the app. It suggests what to paste, opens samples, and hands anything else to Claude.
 - **Conversation next to every document.** Ask questions or request changes. Claude replies and updates the document, and every version is kept.
 - **Professional process diagrams.** Real BPMN 2.0 drawn with bpmn-js (the engine behind Camunda): colour legend, swimlanes, zoom, full screen, `.bpmn` / PNG / SVG downloads.
 - **Handover.** Word (diagrams included), PDF or formatted copy. *Mark as sent* tracks what each stakeholder has received.

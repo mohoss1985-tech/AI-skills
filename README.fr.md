@@ -34,6 +34,6 @@ Une banque fictive étend son assistant conversationnel à l'accompagnement des 
 ## Également inclus
 
 - **Analyse métier :** [Process Modeler](skills/modeling-processes/SKILL.md) (BPMN 2.0 en couleurs, avec couloirs, ouvrable dans Camunda ou Signavio), [PRD Writer](skills/writing-prds/SKILL.md), [API Test & Documentation](skills/testing-apis/SKILL.md), [SQL Query Generator](skills/generating-sql/SKILL.md).
-- **Analyst Kit** : une application minimaliste inspirée de Linear. On colle ses notes, Claude rédige le livrable, on échange avec lui dans un fil de discussion, puis on exporte en Word ou PDF. Voir le [README principal](README.md#analyst-kit-the-app).
+- **Analyst Kit** : une application minimaliste inspirée de Linear. On colle ses notes, Claude rédige le livrable, on échange avec lui dans un fil de discussion, puis on exporte en Word ou PDF. Chaque compétence a un livrable d'exemple et des scénarios prêts à tester, et un **Guide** (chatbot d'aide instantané) explique les compétences, le vocabulaire et l'application. Voir le [README principal](README.md#analyst-kit-the-app).
 
 Les organisations et les chiffres présentés sont fictifs. Les points réglementaires sont des synthèses, à valider avec les équipes juridique et conformité.

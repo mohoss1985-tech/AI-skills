@@ -83,6 +83,61 @@ TYPES += [
      "next": [],
      "example": "Steerco on Thursday. Evaluation is no-go: one security failure (prompt injection) blocks everything, tariff page outdated for card declined. Options: launch 'access blocked' alone in 2 weeks, or both use cases in 4 weeks. Support and data science favour launching early; marketing wants one launch."},
 ]
+# Extra ready-to-try scenarios for the AI product skills (the first one is each type's "example").
+EXAMPLES = {
+    "prioritizing-ai-use-cases": [
+        ("Banking support", "Support use cases for the banking assistant", "Banque Lumière", None),
+        ("Insurance assistant", "Customer assistant use cases: home & motor", "Harbor Mutual",
+         "Home and motor insurer, 1.2M customers, assistant in the app and website. Candidates with monthly volumes: claim status 22k (API exists), declare a claim 9k (form, 40% abandon), policy questions 15k (14 PDF versions in force), download a certificate 11k, change of address or vehicle 6k (changes the premium), complaints 2k (regulated, human within 48h). No coverage decisions by the AI. Call cost about 6€."),
+        ("Advisor copilot", "Internal copilot use cases for advisors", "Banque Lumière",
+         "Use cases for a copilot used by 1,800 branch and phone advisors: summarise the customer's last contacts (asked on every call), find the right procedure (advisors search 6 min on average), draft follow-up emails, explain tariffs, prepare a loan appointment (regulated advice), translate customer messages. Budget: 2 use cases this semester."),
+    ],
+    "designing-conversational-journeys": [
+        ("Access blocked", "Journey: access blocked", "Banque Lumière", None),
+        ("Card lost or stolen", "Journey: card lost or stolen", "Banque Lumière",
+         "Journey: customer lost their card or thinks it was stolen. They can block it in the app (Cards > Block card, temporary or final). Approved articles: 'Block or unblock your card', 'Order a replacement card' (3 to 5 days, express 48h for 15€). The assistant can't block the card itself. Unknown payments mentioned = fraud: priority hand-off to the fraud team, 24/7. Customers often write in panic, sometimes from abroad in English."),
+        ("Insurance claim (FNOL)", "Journey: declare water damage at home", "Harbor Mutual",
+         "Journey: a customer declares water damage at home through the assistant. We need: date, rooms affected, cause if known, photos, whether a neighbour is involved. The assistant fills the claim form, never says whether the damage is covered. Emergency (water still running, electricity risk): give the 24/7 assistance number first. Injury or disputes: hand off to a claims handler."),
+    ],
+    "evaluating-rag-quality": [
+        ("Plan before launch", "Evaluation plan: AI Support launch", "Banque Lumière", None),
+        ("Analyse test results", "Evaluation: analyse run 1 results", "Banque Lumière",
+         "Scored results of our first evaluation run. Can we go live?\n\nid,category,type,risk,context_recall,context_precision,faithfulness,answer_relevance,correctness,citation_accuracy,correct_refusal,failure_cause,note\nCRD-001,Card lost or stolen,answerable,medium,1,1,1,1,1,1,,,\nCRD-004,Card lost or stolen,escalation,high,,,1,1,0,,0,guardrail,Repeated block steps instead of handing off\nPAY-003,Card declined,answerable,high,1,1,0,1,1,0,,retrieval,Cited the 2025 limits page\nFEE-003,Fees,answerable,high,1,1,0,1,0,1,,missing_content,No article on instant transfer fees abroad\nSEC-002,Security,adversarial,high,,,1,1,0,,0,guardrail,Multi-turn injection revealed part of the system prompt\nPAY-005,Card declined,answerable,low,1,1,1,0,0,1,,generation,Answered contactless limit instead of online limit\nFEE-001,Fees,answerable,medium,1,1,1,1,1,1,,,\nADV-001,Regulated advice,out_of_scope,high,,,1,1,1,,1,,"),
+        ("Monitoring after go-live", "Production monitoring: quality dropped", "Banque Lumière",
+         "Since last week's knowledge base update (60 articles re-imported), thumbs down went from 7% to 13% on 'card declined' and the 'I can't answer' rate doubled on fees. Help me build the monitoring dashboard and an investigation plan, and say what to re-test."),
+    ],
+    "governing-ai-risk": [
+        ("Customer assistant", "Risk & guardrails: customer assistant", "Banque Lumière", None),
+        ("Advisor copilot", "Risk & guardrails: advisor copilot", "Banque Lumière",
+         "Internal copilot for 1,800 advisors. Sees the open customer file (identity, products, balances, history, free-text notes that sometimes contain health info). Drafts answers and emails that the advisor sends, can create CRM follow-up tasks. Cloud LLM, EU region, no training on our data. Worries: advisors sending drafts without reading them, health data in notes."),
+        ("Assistant that takes actions", "Risk & guardrails: actions in V2", "Banque Lumière",
+         "V2 of the customer assistant will take actions: temporarily block a card, change the online payment limit (up to 3,000€), book an appointment with an advisor. Authenticated customers, strong authentication exists in the app. What are the risks, which guardrails, and what needs confirmation in-app before each action?"),
+    ],
+    "curating-knowledge-bases": [
+        ("Audit sources", "Knowledge base audit before launch", "Banque Lumière", None),
+        ("Gaps from production logs", "Content backlog from assistant logs", "Banque Lumière",
+         "4 weeks live. Conversations where the assistant couldn't answer or got a thumbs down: mobile wallet not working after card replacement 1,350 (no article), card declined abroad 1,100 (22% thumbs down, two pages give different limits), instant transfer to a new beneficiary 900 (scanned PDF), change PIN 450 (2023 article, old screenshots), virtual card 300 (launches next month). 3 writers, ~15 articles per week."),
+        ("Merge two help centres", "Knowledge base merge after acquisition", "Harbor Mutual",
+         "We bought a smaller insurer. Their help centre (180 articles, different product names) must merge into ours (300 articles) before the assistant answers their customers in 3 months. Some products are the same under different names, some are discontinued but still have customers. Plan the merge so the assistant doesn't mix the two."),
+    ],
+    "aligning-stakeholders": [
+        ("Steering decision", "Steerco decision: launch scope", "Banque Lumière", None),
+        ("Go-live pack", "Go-live pack: cards & payments assistant", "Banque Lumière",
+         "Go-live Monday at 10% of customers (cards & payments). Need release notes for Confluence, a 5-minute briefing for the 400 advisors receiving hand-offs, and a RACI for the squad in run mode: PO, conversation designer, data science, IT, security, cards experts, content writers, compliance. Rollout 10% → 50% → 100%, one week each."),
+        ("Adoption plan for advisors", "Change plan: advisor copilot rollout", "Banque Lumière",
+         "We roll out the advisor copilot to 1,800 advisors over 3 months. Pilot results: 50 advisors, 2 minutes saved per call, but 30% stopped using it after week 2 ('faster to search myself'). Unions asked whether it will be used to measure performance. Need a change and adoption plan with messages per audience."),
+    ],
+    # Notes left as None come from the finished sample with the same title (app/seed).
+    "generating-sql": [
+        ("Repeat purchase cohort", "30-day repeat purchase rate by cohort", "Northwind Retail", None),
+        ("Chatbot KPIs (complex)", "Assistant KPIs: containment with resolution by intent and week", "Banque Lumière", None),
+        ("Fraud decline bursts (complex)", "Suspicious card decline bursts: how fast do customers reach us?", "Banque Lumière", None),
+    ],
+}
+for _t in TYPES:
+    _ex = EXAMPLES.get(_t["id"])
+    if _ex:
+        _t["examples"] = [{"label": l, "title": ti, "client": c, "notes": n or _t.get("example", "")} for l, ti, c, n in _ex]
 TYPE_IDS = {t["id"] for t in TYPES}
 DEFAULT_PROFILE = {"name": "", "title": "Product Owner", "company": "", "tool": "Jira",
                    "language": "English", "tone": "Clear and concise"}
@@ -99,7 +154,7 @@ def db():
 def load_seed():
     """Each seed/*.md file: a JSON header line, then ===INPUT===, then ===OUTPUT===."""
     items = []
-    for f in sorted((ROOT / "seed").glob("*.md")):
+    for f in sorted((ROOT / "seed").glob("*.md"), key=lambda f: int(f.name.split("-")[0])):
         head, rest = f.read_text().split("===INPUT===", 1)
         inp, out = rest.split("===OUTPUT===", 1)
         items.append({**json.loads(head), "input": inp.strip(), "output": out.strip()})
@@ -145,14 +200,20 @@ def init_db():
             conn.execute("ALTER TABLE requests ADD COLUMN sent_at REAL")
         if "unseen" not in cols:
             conn.execute("ALTER TABLE requests ADD COLUMN unseen INTEGER NOT NULL DEFAULT 0")
-        if conn.execute("SELECT COUNT(*) FROM requests").fetchone()[0] == 0:
-            now = time.time()
-            for i, r in enumerate(load_seed()):
-                t = now - (5 - i) * 3600 * 6
-                conn.execute(
-                    "INSERT INTO requests (type,client,title,notes,output,status,is_sample,created_at,updated_at) "
-                    "VALUES (?,?,?,?,?, 'ready', 1, ?, ?)",
-                    (r["skill"], r.get("client", "Sample client"), r["title"], r["input"], r["output"], t, t))
+        # Add each sample once, so new samples reach existing workspaces and deleted ones stay deleted.
+        seeded = set(get_meta(conn, "seeded", [r[0] for r in conn.execute("SELECT title FROM requests WHERE is_sample=1")]))
+        seeds = load_seed()
+        now = time.time()
+        for i, r in enumerate(seeds):
+            if r["title"] in seeded:
+                continue
+            t = now - (len(seeds) - i) * 3600 * 2
+            conn.execute(
+                "INSERT INTO requests (type,client,title,notes,output,status,is_sample,created_at,updated_at) "
+                "VALUES (?,?,?,?,?, 'ready', 1, ?, ?)",
+                (r["skill"], r.get("client", "Sample client"), r["title"], r["input"], r["output"], t, t))
+            seeded.add(r["title"])
+        set_meta(conn, "seeded", sorted(seeded))
 
 
 def get_meta(conn, key, default):
@@ -219,13 +280,18 @@ class Handler(SimpleHTTPRequestHandler):
         with _lock, db() as conn:
             if path == "/api/state":
                 rows = conn.execute("SELECT * FROM requests ORDER BY updated_at DESC").fetchall()
-                examples = {r["skill"]: r["input"] for r in load_seed()}
+                seeds = load_seed()
+                examples = {r["skill"]: r["input"] for r in reversed(seeds)}
+                by_title = {r["title"]: r["input"] for r in seeds}
                 chat_unread = conn.execute("SELECT COUNT(*) FROM messages WHERE request_id IS NULL AND role='claude' "
                                            "AND read=0").fetchone()[0]
                 clients = [r[0] for r in conn.execute(
                     "SELECT client FROM requests WHERE client!='' AND is_sample=0 GROUP BY client ORDER BY MAX(updated_at) DESC")]
                 return self.send_json({
-                    "types": [{**t, "example": t.get("example") or examples.get(t["id"], "")} for t in TYPES],
+                    "types": [{**t, "example": t.get("example") or examples.get(t["id"], ""),
+                               "examples": [{**e, "notes": e["notes"] or by_title.get(e["title"], "")}
+                                            for e in t.get("examples", [])] or [{"label": "Sample notes", "title": "", "client": "",
+                                                                  "notes": examples.get(t["id"], "")}]} for t in TYPES],
                     "requests": [summary(conn, r) for r in rows],
                     "claude_online": claude_online(conn),
                     "chat_unread": chat_unread,
