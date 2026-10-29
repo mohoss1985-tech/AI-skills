@@ -43,6 +43,12 @@
       tips: '- Name the **decision** in one sentence: the memo is built around it.\n- Give the cost of **not deciding** (a lost slot, a delay).\n- Ask for several artefacts at once: release notes + briefing + RACI.',
       when: 'getting a **decision or alignment**: decision memo, steerco update, RACI, release notes, change plan',
     },
+    'managing-xray-tests': {
+      keys: ['xray', 'test case', 'test cases', 'test plan', 'test execution', 'test set', ' qa ', 'test coverage', 'regression', 'import tests', 'testing in jira'],
+      paste: '- The **stories and acceptance criteria** (or the PRD section)\n- The **Jira project key** and the **story keys**\n- **Xray Cloud or Server / Data Center** (if unknown, you get both)\n- Who runs the tests: testers by hand, Cucumber automation, or a script\n- Or **test results** to import (a CSV, a JUnit report, an evaluation run)',
+      tips: '- Give the story keys: the tests get linked and Jira shows coverage per story.\n- Give existing test keys to **update** tests instead of duplicating them.\n- For a chatbot, ask for the golden set as Generic tests: each evaluation run then lands in the Test Plan.',
+      when: 'turning stories or test results into **Xray tests and import files**, for Xray Cloud and Server / Data Center',
+    },
     'modeling-processes': {
       keys: ['process', 'bpmn', 'diagram', 'flowchart', 'swimlane', 'sop', 'procedure', 'workflow', 'uml', 'map'],
       paste: '- **Who** does each step (roles or teams)\n- The steps **in order**\n- **Decisions** and what happens in each case\n- What happens **when something goes wrong**',
@@ -131,9 +137,56 @@
     [['which', 'what deliverable', 'which skill', 'recommend', 'i need', 'i want', 'should i use'], null, null],
   ];
 
+  // ---------- Xray knowledge ----------
+  const XR = '#/new/managing-xray-tests';
+  const XRAY = [
+    [['cloud', 'server', 'data center', 'datacenter', ' dc ', 'difference', 'version', 'flavor', 'flavour'], 'Xray Cloud vs Server / Data Center',
+      '| | Cloud | Server / Data Center |\n|---|---|---|\n| Result statuses | `PASSED` `FAILED` `TODO` `EXECUTING` | `PASS` `FAIL` `TODO` `EXECUTING` |\n| Creating a test from results | `testInfo.type` | `testInfo.testType` |\n| API | `xray.cloud.getxray.app/api/v2` | `<your-jira>/rest/raven/2.0` |\n| Login for the API | Client ID + secret → token (24 h) | Jira personal access token |\n\nThe skill generates **both versions** from the same tests, so you don\'t need to know which one you have to start.',
+      [{ label: 'Which one do I have?', say: 'How do I know if we use Xray Cloud or Server?' }]],
+    [['which one do i have', 'how do i know', 'do we use', 'know if'], 'Cloud or Server: how to tell',
+      '- Your Jira address ends with **atlassian.net** → **Xray Cloud**.\n- Your Jira is on your company\'s own domain (e.g. `jira.mybank.com`) → **Server / Data Center**.\n- Still unsure: ask the Jira admin, or look at *Apps › Manage apps*: the Xray app name says Cloud or Data Center.'],
+    [['test type', 'manual', 'cucumber', 'generic', 'automated', 'which type', 'gherkin'], 'Which test type?',
+      '- **Manual**: a person follows steps (*Action · Data · Expected result*). Best for journeys you check on screen: wording, quick replies, the hand-off screen.\n- **Cucumber**: a Gherkin scenario. Best when acceptance criteria are already *Given / When / Then* and the team automates them. One `.feature` file per story.\n- **Generic**: an automated test known only by its name. Best for RAG evaluation questions, red-team cases, API checks: the results import creates them.'],
+    [['test set', 'test plan', 'test execution', 'execution', 'plan vs', 'set vs', 'organis', 'organiz'], 'Test Set, Test Plan, Test Execution',
+      '- **Test Set**: a reusable group of tests (*Cards regression*, *Red-team*).\n- **Test Plan**: what must pass for a **release**, across environments. It shows the overall status.\n- **Test Execution**: **one run** of some tests, on one version and one environment, with each result.\n\nTypical flow: tests → grouped in Sets → added to the release Plan → each run is an Execution inside the Plan.'],
+    [['precondition', 'background', 'pre condition'], 'Preconditions',
+      'A **Precondition** is a Jira issue describing the starting state ("customer logged in with one active card"). Reuse it across tests. In Cucumber, the `Background` of a feature file becomes a Precondition on import. For manual tests imported by CSV, the skill puts the precondition in the description.'],
+    [['coverage', 'requirement status', 'nok', 'uncovered', 'link to story', 'linked', 'traceab'], 'Requirement coverage',
+      'Each test is linked to its story with a **"Tests"** link. The story then shows a coverage status: **OK** (all its tests passed), **NOK** (one failed), **NOT RUN**, or **UNCOVERED** (no test). In the CSV the *Requirement* column creates the link; in a `.feature` file the story key tag above `Feature:` does it.'],
+    [['csv', 'test case importer', 'import test', 'import manual', 'mapping', 'excel', 'spreadsheet'], 'Importing manual tests (CSV)',
+      '1. Jira › Xray › **Test Case Importer** › CSV, delimiter `,`, UTF-8.\n2. Map **Test ID** → *Test Case Identifier* (it groups the step rows), Summary, Description, Test Type, Priority, *Test Repository Path*, each **Requirement** column → link "Tests", each **Labels** column → Labels, **Action · Data · Expected Result** → step fields.\n3. Tick **Create folders** if needed.\n4. **Save the configuration file** at the end: next imports take one click.\n\nStart with 2–3 tests to check the mapping.',
+      [{ label: 'See a ready CSV', href: XR }]],
+    [['feature file', 'import cucumber', 'feature', '.feature'], 'Importing Cucumber tests',
+      'Without API: Xray › **Import Cucumber Tests**, upload the `.feature` files (or a zip).\nWith API: `POST …/import/feature?projectKey=LUM` (Cloud: `/api/v2`, Server/DC: `/rest/raven/1.0`).\n\nTag the story key **above `Feature:`** (e.g. `@LUM-412`) to link the tests. Tag a scenario with an existing test key to **update** it instead of creating a new one.'],
+    [['import result', 'results', 'execution result', 'json', 'xray json', 'upload result', 'junit'], 'Importing results',
+      'Open the Test Execution › **Import Execution Results** › Xray JSON, or call `POST …/import/execution`. The skill writes `results.json` in the right vocabulary for your flavor. Xray also accepts JUnit, TestNG, NUnit, Robot and Cucumber JSON reports directly from automation.'],
+    [['not valid', 'not a valid', 'valid xray format', 'invalid', 'error', 'de serializ', 'deserializ', 'fail to import', 'rejected', 'does not work', 'doesnt work'], 'Import errors: the usual causes',
+      '- **"Not a valid Xray format"**: Cloud wants `PASSED`/`FAILED`, Server/DC wants `PASS`/`FAIL`. Use the file built for your flavor.\n- **Server/DC refuses a field**: its schema rejects unknown fields; for new tests it\'s `testType`, not `type`.\n- **CSV: missing fields** after Excel export: empty cells with spaces, wrong delimiter or encoding. Save as CSV UTF-8.\n- **Requirement not linked**: the story key doesn\'t exist or isn\'t a story/requirement type in your Xray settings.\n- **Labels split oddly**: Jira labels can\'t contain spaces.\n\nPaste the exact error into the chat with Claude if it\'s something else.'],
+    [['duplicate', 'twice', 'created again', 'double'], 'Avoiding duplicate tests',
+      'Importing results for a test **without a key** creates a new test. So either import the tests first and reuse their keys in the results, or skip the test import and let the results file create the tests in one go. The import guide flags any test at risk.'],
+    [['api key', 'client id', 'client secret', 'token', ' pat ', 'authenticat', 'credentials', 'login'], 'API access',
+      '**Cloud:** an Xray admin creates an API key (*Xray settings › API Keys*) → Client ID + Client Secret → exchanged for a token valid 24 h.\n**Server/DC:** a Jira **personal access token** (*Profile › Personal Access Tokens*).\n\nKeep them in environment variables (`$XRAY_CLIENT_ID`, `$JIRA_PAT`), never in a file or a chat. No API access? Every import also works from the Xray screens.'],
+    [['folder', 'repository', 'test repository', 'organise tests'], 'Test Repository folders',
+      'Organise tests **by product area**, not by sprint: `/Assistant/Cards/Lost or stolen`. Folders are separated by `/`; the CSV *Test Repository Path* column creates them when *Create folders* is ticked.'],
+    [['rag', 'evaluation', 'golden', 'eval run', 'eval results', 'evaluation results', 'chatbot quality', 'llm'], 'Chatbot evaluation in Xray',
+      'Each golden-set question becomes a **Generic test** (`rag-eval.<id>`), and each evaluation run becomes a **Test Execution** in the release Test Plan. A question passes only if every scored metric passed; failed metrics and root cause go in the comment. One command converts the scored CSV.',
+      [{ label: 'Try: Eval run → Xray', example: ['managing-xray-tests', 1] }]],
+    [['defect', 'bug', 'link bug'], 'Defects',
+      'Link the Jira bug to the failed test run (the `defects` field in `results.json`, or the *Defects* section of the run). The story coverage then shows NOK with the bug, until the test passes again.'],
+    [['environment', 'staging', 'preprod', 'production'], 'Test environments',
+      'Set `testEnvironments` (e.g. `staging`) on the execution. In a Test Plan, Xray then shows the status **per environment**, so "passed on staging, not run on pre-prod" is visible.'],
+    [['generate', 'create tests', 'write tests', 'from stories', 'from my stories', 'start'], 'Create Xray tests from your stories',
+      'Paste your stories and acceptance criteria with the Jira keys. You get the tests, the coverage matrix, and import files for Cloud and Server/DC.',
+      [{ label: 'Try: Stories → Xray tests', example: ['managing-xray-tests', 0] }, { label: 'Start from my notes', href: XR }]],
+  ];
+  const XRAY_SUGG = ['Cloud or Server: what changes?', 'Which test type should I use?', 'Test Set vs Test Plan vs Execution?', 'How do I import the CSV?', "Import says 'not a valid Xray format'", 'Send my eval results to Xray'];
+  function xrayAnswer(t) {
+    let best = null, score = 0;
+    for (const e of XRAY) { const s = hits(t, e[0]); if (s > score) { score = s; best = e; } }
+    return score >= 3 ? { a: `**${best[1]}**\n\n${best[2]}`, acts: best[3] } : null;
+  }
+
   // ---------- state ----------
-  const G = { open: false, msgs: [], busy: false };
-  try { G.open = sessionStorage.getItem('guide-open') === '1'; } catch {}
 
   function context() {
     const r = location.hash.replace(/^#/, '') || '/';
@@ -157,7 +210,8 @@
   }
 
   // ---------- answering ----------
-  const hits = (t, keys) => keys.reduce((n, k) => n + (t.includes(k) ? k.length : 0), 0);
+  // Keys match at the start of a word ("api" must not match "capital").
+  const hits = (t, keys) => keys.reduce((n, k) => n + (t.includes(k[0] === ' ' ? k : ' ' + k) ? k.trim().length : 0), 0);
   function skillIn(t) {
     let best = null, score = 0;
     for (const ty of K().state.types) {
@@ -173,8 +227,9 @@
     const acts = [{ label: `Start ${t.name}`, href: '#/new/' + id }];
     const s = sampleOf(id);
     if (s) acts.push({ label: 'Open the finished sample', href: '#/d/' + s.id });
-    const what = h.when || t.gets.toLowerCase();
-    return { a: `${lead ? `${lead}**${t.name}**. It's for ${what}.` : `**${t.name}** is for ${what}.`}\n\n**You give:** ${t.gives.toLowerCase()}.\n**You get:** ${t.gets.toLowerCase()}.`, acts };
+    const low = (x) => x[0].toLowerCase() + x.slice(1);
+    const what = h.when || low(t.gets);
+    return { a: `${lead ? `${lead}**${t.name}**. It's for ${what}.` : `**${t.name}** is for ${what}.`}\n\n**You give:** ${low(t.gives)}.\n**You get:** ${low(t.gets)}.`, acts };
   }
 
   function answer(raw) {
@@ -182,6 +237,11 @@
     const c = context();
     const sk = skillIn(t);
     const target = (sk && sk.score >= 3 ? sk.id : null) || c.type;
+
+    if (c.type === 'managing-xray-tests' || / xray /.test(t)) {
+      const x = xrayAnswer(t);
+      if (x && !/\b(paste|fill|scenario|sample|tips?)\b/.test(t)) return x;
+    }
 
     const pick = { a: 'Tell me what you need in a few words, for example *"decide which use cases first"*, *"check if the bot is good enough"* or *"prepare the steerco"*. Or pick one:', acts: K().state.types.slice(5).concat(K().state.types.slice(0, 5)).map((ty) => ({ label: ty.name, href: '#/type/' + ty.id })) };
     if (/\b(which (deliverable|skill|one)|what should i use|recommend)\b/.test(t) && !(sk && sk.score >= 3)) return pick;
@@ -214,7 +274,7 @@
 
     // glossary
     let term = null, ts = 0;
-    for (const [keys, name, def] of TERMS) { const s = hits(t, keys.map((k) => ' ' + k)); if (s > ts) { ts = s; term = [name, def]; } }
+    for (const [keys, name, def] of TERMS) { const s = hits(t, keys); if (s > ts) { ts = s; term = [name, def]; } }
     const asksDef = /what is|what s|whats|what are|define|meaning|mean|explain|c est quoi|difference/.test(t);
     if (term && (asksDef || t.trim().split(' ').length <= 3)) return { a: `**${term[0]}**\n\n${term[1]}` };
     if (/explain a term|glossary|jargon/.test(t)) return { a: 'Ask me any term, for example:', acts: ['faithfulness', 'context recall', 'golden set', 'prompt injection', 'containment', 'AI Act Art. 50', 'RACI'].map((x) => ({ label: x, say: 'What is ' + x + '?' })) };
@@ -232,72 +292,100 @@
     return null;
   }
 
-  // ---------- UI ----------
+  // ---------- UI: one chat component, used by the floating Guide and by skill pages ----------
   const md = (s) => (window.DOMPurify ? DOMPurify.sanitize(marked.parse(s)) : s);
-  function paint() {
-    const root = $('#guide');
-    root.hidden = !G.open;
-    $('#guide-btn').classList.toggle('on', G.open);
-    if (!G.open) return;
-    const feed = $('#guide-feed');
-    const intro = { role: 'bot', a: `Hi${K().state.profile.name ? ' ' + K().esc(K().state.profile.name.split(' ')[0]) : ''}! I'm the guide. I answer instantly about the deliverables, the jargon and the app. For real work, Claude takes over in the chat.` };
-    feed.innerHTML = [intro, ...G.msgs].map((m, i) => m.role === 'user'
-      ? `<div class="g-msg user">${K().esc(m.text)}</div>`
-      : `<div class="g-msg bot"><div class="md">${md(m.a)}</div>${(m.acts || []).length ? `<div class="g-acts">${m.acts.map((x, j) => `<button class="chip" data-act="${i}:${j}">${K().esc(x.label)}</button>`).join('')}</div>` : ''}</div>`).join('');
-    $('#guide-sugg').innerHTML = suggestions().map((q) => `<button class="chip" data-q="${K().esc(q)}">${K().esc(q)}</button>`).join('');
-    feed.scrollTop = feed.scrollHeight;
-  }
-  function say(text) {
-    text = text.trim();
-    if (!text) return;
-    G.msgs.push({ role: 'user', text });
-    const r = answer(text);
-    G.msgs.push(r ? { role: 'bot', ...r } : {
-      role: 'bot', a: "I don't have a quick answer for that one. Claude can answer it properly in your chat.",
-      acts: [{ label: 'Ask Claude', ask: text }],
+  function makeChat(root, { intro, suggestions, answer: ans, placeholder }) {
+    const C = { msgs: [] };
+    root.insertAdjacentHTML('beforeend', `<div class="g-feed"></div><div class="g-sugg chips"></div>
+      <form class="g-form" autocomplete="off"><input placeholder="${placeholder}"><button class="btn primary" type="submit">Ask</button></form>`);
+    const feed = $('.g-feed', root), sugg = $('.g-sugg', root), form = $('.g-form', root), input = $('input', form);
+    C.paint = () => {
+      feed.innerHTML = [{ role: 'bot', a: intro() }, ...C.msgs].map((m, i) => m.role === 'user'
+        ? `<div class="g-msg user">${K().esc(m.text)}</div>`
+        : `<div class="g-msg bot"><div class="md">${md(m.a)}</div>${(m.acts || []).length ? `<div class="g-acts">${m.acts.map((x, j) => `<button type="button" class="chip" data-act="${i}:${j}">${K().esc(x.label)}</button>`).join('')}</div>` : ''}</div>`).join('');
+      sugg.innerHTML = suggestions().map((q) => `<button type="button" class="chip" data-q="${K().esc(q)}">${K().esc(q)}</button>`).join('');
+      feed.scrollTop = feed.scrollHeight;
+    };
+    C.say = (text) => {
+      text = text.trim();
+      if (!text) return;
+      C.msgs.push({ role: 'user', text });
+      const r = ans(text);
+      C.msgs.push(r ? { role: 'bot', ...r } : {
+        role: 'bot', a: "I don't have a quick answer for that one. Claude can answer it properly in your chat.",
+        acts: [{ label: 'Ask Claude', ask: text }],
+      });
+      C.msgs = C.msgs.slice(-30);
+      C.paint();
+    };
+    const act = async (x) => {
+      if (x.href) location.hash = x.href;
+      else if (x.fill !== undefined) { if (!K().fill(x.fill)) K().startExample(context().type, x.fill); K().toast('Scenario filled in. Press Create deliverable'); }
+      else if (x.example) K().startExample(x.example[0], x.example[1]);
+      else if (x.say) return C.say(x.say);
+      else if (x.ask) { await K().ask(x.ask); location.hash = '#/chat'; C.msgs.push({ role: 'bot', a: 'Sent to Claude. The answer will appear in **Chat with Claude**.' }); }
+      C.paint();
+    };
+    form.onsubmit = (e) => { e.preventDefault(); C.say(input.value); input.value = ''; };
+    root.addEventListener('click', (e) => {
+      const q = e.target.closest('[data-q]'); if (q) return C.say(q.dataset.q);
+      const a = e.target.closest('[data-act]');
+      if (a) { const [i, j] = a.dataset.act.split(':').map(Number); act([null, ...C.msgs][i].acts[j]); }
     });
-    G.msgs = G.msgs.slice(-30);
-    paint();
-  }
-  async function act(x) {
-    if (x.href) location.hash = x.href;
-    else if (x.fill !== undefined) { if (!K().fill(x.fill)) K().startExample(context().type, x.fill); K().toast('Scenario filled in. Press Create deliverable'); }
-    else if (x.example) K().startExample(x.example[0], x.example[1]);
-    else if (x.say) return say(x.say);
-    else if (x.ask) { await K().ask(x.ask); location.hash = '#/chat'; G.msgs.push({ role: 'bot', a: 'Sent to Claude. The answer will appear in **Chat with Claude**.' }); }
-    paint();
-  }
-  function toggle(on = !G.open) {
-    G.open = on;
-    try { sessionStorage.setItem('guide-open', on ? '1' : '0'); } catch {}
-    paint();
-    if (on) setTimeout(() => $('#guide-input').focus(), 0);
+    C.focus = () => input.focus();
+    return C;
   }
 
+  // Floating Guide
+  let guide = null, open = false;
+  try { open = sessionStorage.getItem('guide-open') === '1'; } catch {}
+  function paint() {
+    $('#guide').hidden = !open;
+    $('#guide-btn').classList.toggle('on', open);
+    if (open && guide) guide.paint();
+  }
+  function toggle(on = !open) {
+    open = on;
+    try { sessionStorage.setItem('guide-open', on ? '1' : '0'); } catch {}
+    paint();
+    if (on && guide) setTimeout(guide.focus, 0);
+  }
   function mount() {
     document.body.insertAdjacentHTML('beforeend', `
       <button class="guide-btn" id="guide-btn" aria-label="Open the guide" title="Guide · instant help (?)"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.3 6.2a1.8 1.8 0 1 1 2.5 1.7c-.5.2-.8.6-.8 1.1v.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.4" r=".8" fill="currentColor"/></svg><span>Guide</span></button>
       <section class="guide" id="guide" role="dialog" aria-label="Guide" hidden>
         <header><b>Guide</b><span>Instant answers · no API key</span><button class="icon-btn" id="guide-close" aria-label="Close guide"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></header>
-        <div class="g-feed" id="guide-feed"></div>
-        <div class="g-sugg chips" id="guide-sugg"></div>
-        <form class="g-form" id="guide-form" autocomplete="off"><input id="guide-input" placeholder="Ask about a deliverable, a term, the app…"><button class="btn primary" type="submit">Ask</button></form>
       </section>`);
     $('#guide-btn').onclick = () => toggle();
     $('#guide-close').onclick = () => toggle(false);
-    $('#guide-form').onsubmit = (e) => { e.preventDefault(); const i = $('#guide-input'); say(i.value); i.value = ''; };
-    $('#guide').addEventListener('click', (e) => {
-      const q = e.target.closest('[data-q]'); if (q) return say(q.dataset.q);
-      const a = e.target.closest('[data-act]');
-      if (a) { const [i, j] = a.dataset.act.split(':').map(Number); const all = [null, ...G.msgs]; act(all[i].acts[j]); }
-    });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && G.open) toggle(false);
+      if (e.key === 'Escape' && open) toggle(false);
       if (e.key !== '?' || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
       e.preventDefault(); toggle();
     });
     addEventListener('hashchange', () => setTimeout(paint, 50));
-    const wait = setInterval(() => { if (K() && K().state.loaded) { clearInterval(wait); paint(); } }, 100);
+    const wait = setInterval(() => {
+      if (!(K() && K().state.loaded)) return;
+      clearInterval(wait);
+      guide = makeChat($('#guide'), {
+        intro: () => `Hi${K().state.profile.name ? ' ' + K().esc(K().state.profile.name.split(' ')[0]) : ''}! I'm the guide. I answer instantly about the deliverables, the jargon and the app. For real work, Claude takes over in the chat.`,
+        suggestions, answer, placeholder: 'Ask about a deliverable, a term, the app…',
+      });
+      paint();
+    }, 100);
   }
   mount();
+
+  // Xray assistant, embedded on the Xray tests page
+  window.KitChat = {
+    mountXray(el) {
+      el.className = 'skill-chat';
+      makeChat(el, {
+        intro: () => "I'm the **Xray assistant**. Ask me about Xray Cloud vs Server / Data Center, test types, Test Plans, importing tests or results, and import errors. When you're ready, a scenario above turns your stories or results into import files.",
+        suggestions: () => XRAY_SUGG,
+        answer: (raw) => xrayAnswer(' ' + norm(raw) + ' ') || answer(raw),
+        placeholder: 'Ask anything about Xray…',
+      }).paint();
+    },
+  };
 })();

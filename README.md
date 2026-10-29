@@ -1,6 +1,6 @@
 # AI Skills for Product Owners · Conversational AI, RAG & Business Analysis
 
-**Eleven AI skills that do a Product Owner's work on conversational AI and digital products, plus a worked banking case study and Analyst Kit, a local app that turns notes into client-ready deliverables.**
+**Twelve AI skills that do a Product Owner's work on conversational AI and digital products, plus a worked banking case study and Analyst Kit, a local app that turns notes into client-ready deliverables.**
 
 🇫🇷 [Version française](README.fr.md)
 
@@ -42,6 +42,7 @@ A fictional bank extends its assistant to help customers stuck in their digital 
 | [**PRD Writer**](skills/writing-prds/SKILL.md) | A brief or an idea | One-pager or full PRD: problem with evidence, goals and non-goals, guardrail metrics, traceable requirement IDs | Jobs to be done, MoSCoW, RAID, working backwards |
 | [**User Stories & Acceptance Criteria**](skills/writing-user-stories/SKILL.md) | Requirements or a PRD section | Sprint-ready stories, Gherkin scenarios, INVEST check, Definition of Ready, Jira or Linear format | Story mapping, INVEST, SPIDR, Example Mapping |
 | [**API Test & Documentation**](skills/testing-apis/SKILL.md) | Spec, curl calls or a description | Test matrix tied to business rules, runnable tests, OpenAPI 3.1, reference docs | Boundary values, OWASP API Top 10, RFC 9457 |
+| [**Xray Test Manager**](skills/managing-xray-tests/SKILL.md) | Stories with acceptance criteria, or test / evaluation results | Manual, Cucumber and Generic tests with requirement coverage, plus import files for **Xray Cloud and Server / Data Center** (CSV, `.feature`, Xray JSON) · [examples](skills/managing-xray-tests/examples/README.md) | Test design, Test Plans, Xray JSON · [`build_xray.py`](skills/managing-xray-tests/scripts/build_xray.py) |
 | [**SQL Query Generator**](skills/generating-sql/SKILL.md) | A business question and a schema | Readable SQL, a plain-language walkthrough and validation queries. Samples include [chatbot containment with resolution](app/seed/12-sql-containment.md) and [fraud decline bursts](app/seed/13-sql-fraud.md) (window functions, gaps and islands, `LATERAL`) | Metric / grain / filter framing |
 
 The skills hand work to each other:
@@ -51,6 +52,7 @@ AI use-case roadmap ─► Conversation design ─► User stories ─► RAG ev
                               │                                   ▲
                               └─► AI risk & guardrails ───────────┘  (red-team cases join the golden set)
 Knowledge base curation ─► fixes the "missing content" failures found by RAG evaluation
+User stories + RAG evaluation ─► Xray tests: story coverage and evaluation runs tracked in Jira
 ```
 
 ## How each skill is built
@@ -63,18 +65,19 @@ Every skill follows the same five-part structure, so the AI works like a special
 4. **Output contract:** fixed sections in a fixed order, ready for Jira, Confluence or a steering committee.
 5. **Quality gate:** a checklist the AI applies to its own answer, plus a hand-off to the next skill.
 
-Where precision matters, the skill ships a script instead of trusting the model. `build_bpmn.py` lays out the diagrams and `score_eval.py` computes the release gates. This follows Anthropic's [Agent Skills](https://www.claude.com/blog/equipping-agents-for-the-real-world-with-agent-skills) format.
+Where precision matters, the skill ships a script instead of trusting the model. `build_bpmn.py` lays out the diagrams, `score_eval.py` computes the release gates and `build_xray.py` writes Xray import files for both Cloud and Server / Data Center. This follows Anthropic's [Agent Skills](https://www.claude.com/blog/equipping-agents-for-the-real-world-with-agent-skills) format.
 
 ---
 
 ## Analyst Kit: the app
 
-A minimal, Linear-style workspace for using all eleven skills on real work. No API key needed.
+A minimal, Linear-style workspace for using all twelve skills on real work. No API key needed.
 
 ![Analyst Kit: a deliverable with its conversation](docs/deliverable.png)
 
 - **Notes in, deliverable out.** Pick a deliverable, paste notes or drop a file, and get a client-ready document.
 - **Try before you write.** Every skill ships a finished sample, and each AI skill has three realistic scenarios (banking support, insurance, advisor copilot, go-live…) that fill the form in one click.
+- **Xray assistant.** The Xray tests page has its own chat for Xray questions: Cloud vs Server / Data Center, test types, Test Plans, imports and import errors. Each import file has Copy and Download buttons.
 - **Built-in Guide.** An instant help chatbot that knows every skill, the jargon (faithfulness, prompt injection, containment, AI Act Art. 50…) and the app. It suggests what to paste, opens samples, and hands anything else to Claude.
 - **Conversation next to every document.** Ask questions or request changes. Claude replies and updates the document, and every version is kept.
 - **Professional process diagrams.** Real BPMN 2.0 drawn with bpmn-js (the engine behind Camunda): colour legend, swimlanes, zoom, full screen, `.bpmn` / PNG / SVG downloads.
@@ -96,7 +99,7 @@ Requests wait in a local queue. Claude, running in a Claude Code session, picks 
 ## Repository layout
 
 ```
-skills/     eleven skills, one SKILL.md each (+ scripts/ and templates/ where needed)
+skills/     twelve skills, one SKILL.md each (+ scripts/ and templates/ where needed)
 examples/   banking-ai-support: end-to-end case study with BPMN, evaluation data and report
 app/        Analyst Kit (server.py, kit.py, static/ front end, seed/ samples)
 site/       one-page showcase of the business-analysis skills

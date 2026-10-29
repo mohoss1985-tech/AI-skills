@@ -1,0 +1,8 @@
+Test ID,Summary,Description,Test Type,Priority,Test Repository Path,Requirement,Labels,Labels,Labels,Action,Data,Expected Result
+CARD-T01,"Lost card, one active card: assistant guides the block in under a minute","Precondition: Test customer with exactly one active debit card ending 4821, logged in to the app (staging).",Manual,High,/Assistant/Cards/Lost or stolen,LUM-412,assistant,cards,happy-path,Open the assistant and type: lost my card,Customer: TST-0042,"The assistant answers with the block steps for the card ending 4821, in 3 sentences or fewer"
+CARD-T01,,,,,,,,,,Check the quick replies under the answer,,"""Block my card"" and ""I see payments I don't recognise"" are shown"
+CARD-T01,,,,,,,,,,Check the source line,,"The answer cites the article ""Block or unblock your card"""
+CARD-T01,,,,,,,,,,"Tap ""Block my card"" and follow the steps",,"The Cards screen opens on the card ending 4821; after blocking, its status is Blocked"
+CARD-T02,Several active cards: assistant asks which card before giving steps,Precondition: Test customer with active cards ending 4821 and 1177.,Manual,High,/Assistant/Cards/Lost or stolen,LUM-412,assistant,cards,,Type: my card was stolen,Customer: TST-0057,"The assistant asks which card, with one quick reply per card (4821, 1177)"
+CARD-T02,,,,,,,,,,Check the answer before choosing,,No block steps are shown before a card is chosen
+CARD-T02,,,,,,,,,,Choose the card ending 1177,,"Block steps for the card ending 1177 are shown, with the source"

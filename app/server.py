@@ -83,6 +83,16 @@ TYPES += [
      "next": [],
      "example": "Steerco on Thursday. Evaluation is no-go: one security failure (prompt injection) blocks everything, tariff page outdated for card declined. Options: launch 'access blocked' alone in 2 weeks, or both use cases in 4 weeks. Support and data science favour launching early; marketing wants one launch."},
 ]
+TYPES.append(
+    {"id": "managing-xray-tests", "name": "Xray tests", "color": "#12a594",
+     "gives": "User stories, acceptance criteria or test results, and your Jira project key",
+     "gets": "Tests ready for Xray (manual, Cucumber, generic) with coverage, plus import files for Xray Cloud and Server / Data Center",
+     "placeholder": "Paste the stories and acceptance criteria (or test results), the Jira project and story keys, and whether you use Xray Cloud or Server…",
+     "next": ["aligning-stakeholders"]})
+for _t in TYPES:  # natural hand-offs into Xray
+    if _t["id"] in ("writing-user-stories", "designing-conversational-journeys", "evaluating-rag-quality"):
+        _t["next"] = _t["next"] + ["managing-xray-tests"]
+
 # Extra ready-to-try scenarios for the AI product skills (the first one is each type's "example").
 EXAMPLES = {
     "prioritizing-ai-use-cases": [
@@ -128,6 +138,12 @@ EXAMPLES = {
          "We roll out the advisor copilot to 1,800 advisors over 3 months. Pilot results: 50 advisors, 2 minutes saved per call, but 30% stopped using it after week 2 ('faster to search myself'). Unions asked whether it will be used to measure performance. Need a change and adoption plan with messages per audience."),
     ],
     # Notes left as None come from the finished sample with the same title (app/seed).
+    "managing-xray-tests": [
+        ("Stories → Xray tests", "Xray tests: card lost or stolen (Cloud + Server/DC)", "Banque Lumière", None),
+        ("Eval run → Xray", "Xray: RAG evaluation run tracked in Jira", "Banque Lumière", None),
+        ("Release Test Plan", "Xray Test Plan: assistant release v1.4", "Banque Lumière",
+         "Xray Server / Data Center, project LUM. Release v1.4 of the assistant adds the 'card declined' journey (stories LUM-430 to LUM-433) and changes the hand-off screen. Existing tests: LUM-601 to LUM-640 (cards, access blocked, red-team). Build the Test Plan for v1.4: which existing tests to re-run, which new tests to create, Test Sets (smoke, regression, red-team), environments staging then pre-prod, and what must pass to go live."),
+    ],
     "generating-sql": [
         ("Repeat purchase cohort", "30-day repeat purchase rate by cohort", "Northwind Retail", None),
         ("Chatbot KPIs (complex)", "Assistant KPIs: containment with resolution by intent and week", "Banque Lumière", None),

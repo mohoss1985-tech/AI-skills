@@ -355,3 +355,14 @@ select.input { height: 38px; }
 .g-form input:focus { border-color: var(--accent); }
 @media (max-width: 860px) { .guide-btn { left: 16px; } .guide { left: 16px; } }
 @media print { .guide, .guide-btn { display: none !important; } }
+
+/* File bar above import files */
+.file-bar { display: flex; align-items: center; gap: 6px; margin: 0 0 -1px; padding: 6px 8px 6px 12px; border: 1px solid var(--line); border-radius: 8px 8px 0 0; background: var(--hover); font: 12px var(--mono); color: var(--fg-2); }
+.file-bar span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-bar .btn { height: 26px; padding: 0 9px; font: 500 12px var(--sans); }
+.file-bar + pre { border-top-left-radius: 0; border-top-right-radius: 0; }
+
+/* Inline skill chat (Xray assistant) */
+.skill-chat { border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; height: 460px; overflow: hidden; }
+.skill-chat .g-feed { padding: 14px 16px; }
+.skill-chat .g-msg { max-width: 80%; }

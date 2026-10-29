@@ -41,6 +41,7 @@
     const t = document.documentElement.dataset.theme;
     return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
   };
+  const lower1 = (s) => (s ? s[0].toLowerCase() + s.slice(1) : '');
   const fileName = (s) => (s || 'deliverable').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60);
   const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; };
   const prepared = () => {
@@ -151,6 +152,22 @@
       p.canvas.toBlob((blob) => download(base + '.png', blob));
     }));
   }
+  // Import files (CSV, .feature, JSON…) get Copy and Download, named after the file name written just above the block.
+  const FILE_EXT = { csv: 'csv', gherkin: 'feature', json: 'json', sql: 'sql', yaml: 'yaml', xml: 'xml', bash: 'sh' };
+  function addFileBar(code) {
+    const lang = (code.className.match(/language-(\w+)/) || [])[1];
+    if (!FILE_EXT[lang]) return;
+    const pre = code.parentElement, prev = pre.previousElementSibling;
+    const named = prev && (prev.textContent.match(/[\w.-]+\.(csv|feature|json|sql|ya?ml|xml|sh)\b/) || [])[0];
+    const name = named || (fileName((document.querySelector('.paper-head h1') || {}).textContent) + '.' + FILE_EXT[lang]);
+    const bar = document.createElement('div');
+    bar.className = 'file-bar no-print';
+    bar.innerHTML = `<span>${esc(name)}</span><button class="btn" data-copy>Copy</button>${lang === 'bash' ? '' : '<button class="btn" data-dl>Download</button>'}`;
+    bar.querySelector('[data-copy]').onclick = async () => { try { await navigator.clipboard.writeText(code.textContent); toast('Copied'); } catch { toast("Couldn't copy"); } };
+    const dl = bar.querySelector('[data-dl]');
+    if (dl) dl.onclick = () => download(name, new Blob([code.textContent], { type: lang === 'json' ? 'application/json' : 'text/plain;charset=utf-8' }));
+    pre.before(bar);
+  }
   async function renderMarkdown(el, md) {
     el.innerHTML = DOMPurify.sanitize(marked.parse(md || '', { gfm: true }));
     await Promise.all([...el.querySelectorAll('pre > code')].filter(isBpmn).map(async (code) => {
@@ -160,6 +177,7 @@
       code.parentElement.replaceWith(box);
       await renderBpmnBox(box, xml);
     }));
+    el.querySelectorAll('pre > code[class*="language-"]').forEach(addFileBar);
     await Promise.all([...el.querySelectorAll('pre > code.language-mermaid')].map(async (code) => {
       const box = document.createElement('div');
       box.className = 'mermaid-box';
@@ -300,12 +318,14 @@
     const reqs = S.requests.filter((r) => r.type === id);
     main.innerHTML = `<div class="page">
       <div class="page-head"><div class="crumb"><a href="#/">Home</a><span>›</span><span>${esc(t.name)}</span></div>
-        <h1>${esc(t.name)}</h1><p>You give: ${esc(t.gives.toLowerCase())}. You get: ${esc(t.gets.toLowerCase())}.</p></div>
+        <h1>${esc(t.name)}</h1><p>You give: ${esc(lower1(t.gives))}. You get: ${esc(lower1(t.gets))}.</p></div>
       <div><a class="btn primary big" href="#/new/${id}">New ${esc(t.name)}</a></div>
       ${tryHtml(t)}
+      ${id === 'managing-xray-tests' ? '<div><h2 class="section-title">Xray assistant</h2><div id="xray-chat"></div></div>' : ''}
       <div><h2 class="section-title">All ${esc(t.name)} deliverables <span class="count">${reqs.length}</span></h2><div id="list">${listHtml(reqs)}</div></div>
     </div>`;
     wireTry(main, t);
+    if ($('#xray-chat') && window.KitChat) window.KitChat.mountXray($('#xray-chat'));
     return { tick: () => { $('#list').innerHTML = listHtml(S.requests.filter((r) => r.type === id)); } };
   }
 
@@ -598,6 +618,7 @@
       if (!svg) continue;
       try { const p = await svgToPng(svg); box.outerHTML = `<p><img src="${p.src}" width="${Math.round(p.w)}"></p>`; } catch {}
     }
+    tmp.querySelectorAll('.file-bar').forEach((b) => b.remove());
     const html = tmp.innerHTML;
     tmp.remove();
     if (prev) root.dataset.theme = prev; else delete root.dataset.theme;
