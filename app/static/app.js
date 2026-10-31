@@ -7,6 +7,7 @@
   const L = (en) => (S.lang === 'fr' && window.KIT_FR && window.KIT_FR[en]) || en;
   const tx = (t, k) => (S.lang === 'fr' && t.fr && t.fr[k]) || t[k];
   const locale = () => (S.lang === 'fr' ? 'fr-FR' : undefined);
+  const colon = () => (S.lang === 'fr' ? ' : ' : ': ');
 
   // ---------- helpers ----------
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -199,6 +200,8 @@
     const prev = S.loaded ? new Map(S.requests.map((r) => [r.id, r])) : null;
     const prevChat = S.chatUnread;
     const st = await api('/api/state');
+    // Samples exist per language (English: Visa rules, French: CB rules); your own deliverables always show.
+    st.requests = st.requests.filter((r) => !r.is_sample || !r.lang || r.lang === S.lang);
     Object.assign(S, { types: st.types, groups: st.groups || [], requests: st.requests, online: st.claude_online, chatUnread: st.chat_unread, profile: st.profile, learned: st.learned, clients: st.clients });
     if (prev) {
       const here = location.hash;
@@ -299,7 +302,7 @@
       ${!p.name ? `<div class="notice"><p>${L('Add your name and company so every document says “Prepared by you”, and tell Claude how you like to work.')}</p><a class="btn" href="#/profile">${L('Set up profile')}</a></div>` : ''}
       <div><h2 class="section-title">${L('Start a deliverable')}</h2>${(S.groups.length ? S.groups : [{ id: 'all', en: '' }]).map((g) => `
         <div class="type-group">${g.en ? `<h3>${esc(S.lang === 'fr' ? g.fr : g.en)}</h3>` : ''}<div class="types compact">${S.types.filter((t) => g.id === 'all' || t.group === g.id).map((t) => `
-        <div class="type" data-href="#/new/${t.id}" title="${L('You give')}: ${esc(tx(t, 'gives'))}"><div class="t">${sq(t)}${esc(tx(t, 'name'))}</div><p>${esc(tx(t, 'gets'))}</p></div>`).join('')}</div></div>`).join('')}</div>
+        <div class="type" data-href="#/new/${t.id}" title="${L('You give')}${colon()}${esc(tx(t, 'gives'))}"><div class="t">${sq(t)}${esc(tx(t, 'name'))}</div><p>${esc(tx(t, 'gets'))}</p></div>`).join('')}</div></div>`).join('')}</div>
       <div><h2 class="section-title">${L('Your deliverables')}</h2>
         <div class="toolbar"><input class="input" id="q" placeholder="${L('Search by title or client')}" value="${esc(S.q)}"><div class="chips" id="filters"></div></div>
         <div id="list"></div></div>
@@ -329,28 +332,94 @@
     return { tick: paint };
   }
 
+  // ---------- documents: the privileged source of a deliverable ----------
+  const ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.pptx';
+  const KIND_LABEL = { pdf: 'PDF', word: 'Word', excel: 'Excel', table: 'CSV', text: 'Text', image: 'Image', slides: 'PowerPoint', file: 'File' };
+  const kindOf = (name) => {
+    const e = (name.match(/\.(\w+)$/) || [])[1] || '';
+    return { pdf: 'pdf', doc: 'word', docx: 'word', xls: 'excel', xlsx: 'excel', csv: 'table', txt: 'text', md: 'text', png: 'image', jpg: 'image', jpeg: 'image', pptx: 'slides' }[e.toLowerCase()] || 'file';
+  };
+  const size = (n) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+  const readFile = (f) => new Promise((ok, bad) => { const rd = new FileReader(); rd.onload = () => ok({ name: f.name, data: rd.result }); rd.onerror = bad; rd.readAsDataURL(f); });
+  function dropHtml(hint) {
+    return `<div class="drop" tabindex="0"><input type="file" multiple accept="${ACCEPT}" hidden>
+      <div class="drop-main"><b>${L('Drop documents here')}</b> <span>${L('or')}</span> <button type="button" class="btn small" data-pick>${L('Choose files')}</button></div>
+      <span class="drop-hint">${esc(hint || L('PDF, Word, Excel, PowerPoint, CSV or images. Claude treats them as the main source.'))}</span></div>`;
+  }
+  function wireDrop(el, onFiles) {
+    const input = $('input', el);
+    $('[data-pick]', el).onclick = () => input.click();
+    input.onchange = () => { onFiles([...input.files]); input.value = ''; };
+    el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('over'));
+    el.addEventListener('drop', (e) => { e.preventDefault(); el.classList.remove('over'); onFiles([...e.dataTransfer.files]); });
+  }
+  function filesHtml(list, scope, removable) {
+    if (!list.length) return '';
+    return `<ul class="files">${list.map((f) => `<li><span class="fkind ${f.kind || kindOf(f.name)}">${L(KIND_LABEL[f.kind || kindOf(f.name)])}</span>
+      ${scope ? `<a href="/files/${scope}/${encodeURIComponent(f.name)}" target="_blank" rel="noopener">${esc(f.name)}</a>` : `<span>${esc(f.name)}</span>`}
+      <span class="fsize">${size(f.size)}</span>${removable ? `<button type="button" class="btn ghost small" data-rmfile="${esc(f.name)}">${L('Remove')}</button>` : ''}</li>`).join('')}</ul>`;
+  }
+  async function upload(scope, files) {
+    const payload = await Promise.all(files.map(readFile));
+    return post('/api/files', { scope, files: payload });
+  }
+
+  // ---------- guided questions ----------
+  const qLabel = (q) => q[S.lang] || q.en;
+  function questionsHtml(t, answers) {
+    const qs = t.questions || [];
+    if (!qs.length) return '';
+    return `<div class="field"><label>${L('Quick questions')}</label><span class="help">${L('Short answers are enough. Required ones are marked *.')}</span>
+      <div class="qgrid">${qs.map((q) => {
+        const v = answers[q.id] || '';
+        const id = 'q-' + q.id, lab = `<label for="${id}">${esc(qLabel(q))}${q.req ? ' <i class="req">*</i>' : ''}</label>`;
+        if (q.kind === 'select') {
+          const opts = (q.opts && (q.opts[S.lang] || q.opts.en)) || [];
+          return `<div class="q">${lab}<select class="input" id="${id}" data-q="${q.id}"><option value="">—</option>${opts.map((o) => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`;
+        }
+        const ph = q.ph ? (q.ph[S.lang] || q.ph.en) : '';
+        return `<div class="q ${q.kind === 'number' ? 'narrow' : ''}">${lab}<input class="input" id="${id}" data-q="${q.id}" type="${q.kind === 'number' ? 'number' : 'text'}" value="${esc(v)}" placeholder="${esc(ph)}" maxlength="300"></div>`;
+      }).join('')}</div></div>`;
+  }
+
   function viewType(id) {
     const t = typeOf(id);
     const reqs = S.requests.filter((r) => r.type === id);
+    const scope = 'skill-' + id;
     main.innerHTML = `<div class="page">
       <div class="page-head"><div class="crumb"><a href="#/">${L('Home')}</a><span>›</span><span>${esc(tx(t, 'name'))}</span></div>
-        <h1>${esc(tx(t, 'name'))}</h1><p>${L('You give')}: ${esc(lower1(tx(t, 'gives')))}. ${L('You get')}: ${esc(lower1(tx(t, 'gets')))}.</p></div>
-      <div class="type-actions"><a class="btn primary big" href="#/new/${id}">${L('New deliverable')}</a>${templateOf(t) ? `<a class="btn big" href="#/new/${id}" data-tpl="${id}">${L('Use the template')}</a>` : ''}</div>
+        <h1>${esc(tx(t, 'name'))}</h1><p>${L('You give')}${colon()}${esc(lower1(tx(t, 'gives')))}. ${L('You get')}${colon()}${esc(lower1(tx(t, 'gets')))}.</p></div>
+      <div class="type-actions"><a class="btn primary big" href="#/new/${id}">${L('New deliverable')}</a></div>
       ${tryHtml(t)}
-      ${templateOf(t) ? `<details class="box tpl-box"><summary>${L('Template')}</summary><div class="inner"><p class="help">${L("Fill in what you know, delete what doesn't apply. Claude asks for the rest.")}</p><pre class="tpl">${esc(templateOf(t))}</pre></div></details>` : ''}
+      <div><h2 class="section-title">${L('Knowledge for this skill')}</h2>
+        <div class="box"><div class="inner"><p class="help">${L('Documents used for every deliverable of this type: scheme rules, internal procedures, templates, glossaries. Upload once, Claude reads them every time.')}</p>
+          <div id="kn-list"></div>${dropHtml(L('Scheme rules, procedures, templates: PDF, Word, Excel, PowerPoint or images.'))}</div></div></div>
       ${id === 'managing-xray-tests' ? `<div><h2 class="section-title">${L('Xray assistant')}</h2><div id="xray-chat"></div></div>` : ''}
       <div><h2 class="section-title">${L('Your deliverables')} <span class="count">${reqs.length}</span></h2><div id="list">${listHtml(reqs)}</div></div>
     </div>`;
     wireTry(main, t);
-    main.querySelectorAll('[data-tpl]').forEach((a) => (a.onclick = (e) => { e.preventDefault(); S.preset = { type: id, notes: templateOf(t) }; location.hash = '#/new/' + id; }));
+    const paintKn = async () => {
+      const { files } = await api('/api/files?scope=' + scope);
+      $('#kn-list').innerHTML = filesHtml(files, scope, true) || `<div class="empty-note">${L('No documents yet.')}</div>`;
+      $('#kn-list').querySelectorAll('[data-rmfile]').forEach((b) => (b.onclick = async () => {
+        await api(`/api/files?scope=${scope}&name=${encodeURIComponent(b.dataset.rmfile)}`, { method: 'DELETE' }); paintKn();
+      }));
+    };
+    paintKn();
+    wireDrop($('.drop', main), async (files) => {
+      try { await upload(scope, files); toast(L('Added to the skill knowledge')); paintKn(); } catch (e) { toast(e.message); }
+    });
     if ($('#xray-chat') && window.KitChat) window.KitChat.mountXray($('#xray-chat'));
     return { tick: () => { $('#list').innerHTML = listHtml(S.requests.filter((r) => r.type === id)); } };
   }
 
   // Ready-made scenarios: open the finished sample, or start a new deliverable from realistic notes.
+  // English scenarios follow Visa rules, French ones CB rules.
+  const exsOf = (t) => ((S.lang === 'fr' && t.examples_fr && t.examples_fr.length ? t.examples_fr : t.examples) || []);
   function tryHtml(t) {
     const samples = S.requests.filter((r) => r.is_sample && r.type === t.id).sort((a, b) => a.id - b.id);
-    const ex = (t.examples || []).filter((e) => e.notes);
+    const ex = exsOf(t).filter((e) => e.notes);
     if (!samples.length && !ex.length) return '';
     return `<div><h2 class="section-title">${L('Try it')}</h2><div class="try">
       ${samples.map((s) => `<a class="try-card sample" href="#/d/${s.id}"><span class="tag">${L('Finished sample')}</span><b>${esc(s.title)}</b><span>${esc(s.client)}</span></a>`).join('')}
@@ -358,87 +427,103 @@
     </div></div>`;
   }
   const exLabel = (e) => (S.lang === 'fr' && e.label_fr) || e.label;
-  const templateOf = (t) => (t.template && (t.template[S.lang] || t.template.en)) || '';
   function wireTry(root, t) {
     root.querySelectorAll('[data-ex]').forEach((b) => (b.onclick = () => startExample(t.id, +b.dataset.ex)));
   }
   function startExample(typeId, i) {
-    const e = (typeOf(typeId).examples || [])[i];
+    const e = exsOf(typeOf(typeId))[i];
     if (!e) return;
-    S.preset = { type: typeId, title: e.title, client: e.client, notes: e.notes };
+    S.preset = { type: typeId, title: e.title, client: e.client, notes: e.notes, answers: e.answers };
     if (location.hash === '#/new/' + typeId) route(); else location.hash = '#/new/' + typeId;
   }
 
   function viewNew(typeId, preset = {}) {
     let type = typeId || S.types[0].id;
+    let answers = { ...(preset.answers || {}) };
+    let pending = [];
     main.innerHTML = `<div class="page">
       <div class="page-head"><div class="crumb"><a href="#/">${L('Home')}</a><span>›</span><span>${L('New deliverable')}</span></div>
-        <h1>${L('New deliverable')}</h1><p>${L('Rough notes are fine. Claude asks in the chat if something is missing.')}</p></div>
+        <h1>${L('New deliverable')}</h1><p>${L('Answer a few short questions and add your documents. Claude treats the documents as the main source and asks if something is missing.')}</p></div>
       <form class="form" id="new-form" autocomplete="off">
         <div class="field"><label>${L('What do you need?')}</label><div class="seg" id="seg"></div></div>
         <div class="expect" id="expect"></div>
         <div class="two">
-          <div class="field"><label for="f-client">${L('Client or project')}</label><input class="input" id="f-client" list="client-list" placeholder="${L('e.g. Hexa card scheme')}">
+          <div class="field"><label for="f-client">${L('Client or project')}</label><input class="input" id="f-client" list="client-list" placeholder="${L('e.g. Harbor Bank, card issuing')}">
             <datalist id="client-list">${S.clients.map((c) => `<option value="${esc(c)}">`).join('')}</datalist></div>
-          <div class="field"><label for="f-title">${L('Title')}</label><input class="input" id="f-title" placeholder="${L('e.g. Fraud score in authorisation')}"></div>
+          <div class="field"><label for="f-title">${L('Title')}</label><input class="input" id="f-title" placeholder="${L('e.g. Lost card declaration')}"></div>
         </div>
-        <div class="field"><div class="label-row"><label for="f-notes">${L('Your notes')}</label><button type="button" class="btn small" id="f-template">${L('Use the template')}</button></div>
+        <div id="f-questions"></div>
+        <div class="field"><label>${L('Documents (main source)')}</label>${dropHtml()}<div id="f-files"></div></div>
+        <div class="field"><label for="f-notes">${L('Notes')} <span class="opt">${L('optional')}</span></label>
           <textarea class="textarea" id="f-notes"></textarea>
-          <span class="help">${L('Paste anything: meeting notes, an email thread, a spec. You can also drop a .txt, .md or .csv file into the box.')}</span></div>
+          <span class="help">${L('Anything else: meeting notes, an email thread, context the documents don\'t cover.')}</span></div>
         <div class="form-foot">
           <div class="left"><span class="ex-label">${L('Try a scenario:')}</span><div class="chips" id="f-examples"></div></div>
-          <div style="display:flex;align-items:center;gap:12px"><span class="err" id="f-err"></span><button class="btn primary big" type="submit">${L('Create deliverable')} <kbd>⌘↵</kbd></button></div>
+          <div style="display:flex;align-items:center;gap:12px"><span class="err" id="f-err"></span><button class="btn primary big" type="submit" id="f-submit">${L('Create deliverable')} <kbd>⌘↵</kbd></button></div>
         </div>
       </form></div>`;
+    const readAnswers = () => main.querySelectorAll('[data-q]').forEach((el) => { answers[el.dataset.q] = el.value.trim(); });
     const paint = () => {
       const t = typeOf(type);
       const btn = (x) => `<button type="button" data-t="${x.id}" class="${x.id === type ? 'on' : ''}">${sq(x)}${esc(tx(x, 'name'))}</button>`;
       $('#seg').innerHTML = S.groups.length
         ? S.groups.map((g) => `<div class="seg-group"><span>${esc(S.lang === 'fr' ? g.fr : g.en)}</span>${S.types.filter((x) => x.group === g.id).map(btn).join('')}</div>`).join('')
         : S.types.map(btn).join('');
-      $('#expect').innerHTML = `<b>${L("You'll get")}:</b> ${esc(tx(t, 'gets'))}.`;
+      $('#expect').innerHTML = `<b>${L("You'll get")}${colon().trimEnd()}</b> ${esc(tx(t, 'gets'))}.`;
+      $('#f-questions').innerHTML = questionsHtml(t, answers);
       $('#f-notes').placeholder = tx(t, 'placeholder');
-      $('#f-template').hidden = !templateOf(t);
-      $('#f-examples').innerHTML = (t.examples || []).filter((e) => e.notes).map((e, i) => `<button type="button" class="chip" data-ex="${i}">${esc(exLabel(e))}</button>`).join('');
+      $('#f-examples').innerHTML = exsOf(t).filter((e) => e.notes).map((e, i) => `<button type="button" class="chip" data-ex="${i}">${esc(exLabel(e))}</button>`).join('');
+    };
+    const paintFiles = () => {
+      $('#f-files').innerHTML = filesHtml(pending.map((f) => ({ name: f.name, size: f.size })), null, true);
+      $('#f-files').querySelectorAll('[data-rmfile]').forEach((b) => (b.onclick = () => { pending = pending.filter((f) => f.name !== b.dataset.rmfile); paintFiles(); }));
     };
     paint();
     $('#f-client').value = preset.client || S.clients[0] || '';
     $('#f-title').value = preset.title || '';
     $('#f-notes').value = preset.notes || '';
-    $('#seg').onclick = (e) => { const b = e.target.closest('button'); if (b) { type = b.dataset.t; paint(); } };
+    $('#seg').onclick = (e) => { const b = e.target.closest('button'); if (b) { readAnswers(); type = b.dataset.t; answers = {}; paint(); } };
     $('#f-examples').onclick = (e) => {
       const b = e.target.closest('[data-ex]');
       if (!b) return;
-      const ex = typeOf(type).examples[+b.dataset.ex];
+      const ex = exsOf(typeOf(type))[+b.dataset.ex];
       $('#f-notes').value = ex.notes;
       if (ex.title) $('#f-title').value = ex.title;
-      if (ex.client) $('#f-client').value = ex.client + ' (sample)';
+      if (ex.client) $('#f-client').value = ex.client + (S.lang === 'fr' ? ' (exemple)' : ' (sample)');
+      if (ex.answers) { answers = { ...ex.answers }; paint(); }
     };
-    const ta = $('#f-notes');
-    $('#f-template').onclick = () => {
-      const tpl = templateOf(typeOf(type));
-      if (ta.value.trim()) { ta.value = ta.value.trimEnd() + '\n\n' + tpl; toast(L('Template added below your notes')); } else ta.value = tpl;
-      ta.focus(); ta.setSelectionRange(ta.value.indexOf(':') + 2, ta.value.indexOf(':') + 2);
-    };
-    ta.addEventListener('dragover', (e) => e.preventDefault());
-    ta.addEventListener('drop', (e) => {
-      const f = e.dataTransfer.files[0];
-      if (!f) return;
-      e.preventDefault();
-      const rd = new FileReader();
-      rd.onload = () => { ta.value = (ta.value ? ta.value + '\n\n' : '') + rd.result; if (!$('#f-title').value) $('#f-title').value = f.name.replace(/\.\w+$/, ''); };
-      rd.readAsText(f);
+    wireDrop($('.drop', main), (files) => {
+      const bad = files.filter((f) => !ACCEPT.split(',').includes((f.name.match(/\.\w+$/) || [''])[0].toLowerCase()));
+      if (bad.length) toast(L('Not supported') + ': ' + bad.map((f) => f.name).join(', '));
+      pending = pending.concat(files.filter((f) => !bad.includes(f) && !pending.some((p) => p.name === f.name)));
+      paintFiles();
+      if (!$('#f-title').value && pending[0]) $('#f-title').value = pending[0].name.replace(/\.\w+$/, '');
     });
     const submit = async () => {
+      readAnswers();
+      const missing = (typeOf(type).questions || []).filter((q) => q.req && !answers[q.id]);
+      main.querySelectorAll('.q.missing').forEach((el) => el.classList.remove('missing'));
+      if (missing.length) {
+        missing.forEach((q) => $('#q-' + q.id).closest('.q').classList.add('missing'));
+        $('#f-err').textContent = L('Answer the questions marked *'); $('#q-' + missing[0].id).focus(); return;
+      }
+      const btn = $('#f-submit');
+      btn.disabled = true; $('#f-err').textContent = pending.length ? L('Uploading documents…') : '';
       try {
-        const { id } = await post('/api/requests', { type, client: $('#f-client').value, title: $('#f-title').value, notes: ta.value });
+        const files = await Promise.all(pending.map(readFile));
+        const { id } = await post('/api/requests', { type, client: $('#f-client').value, title: $('#f-title').value, notes: $('#f-notes').value, answers, files });
         location.hash = '#/d/' + id;
-      } catch (err) { $('#f-err').textContent = err.message; }
+      } catch (err) { $('#f-err').textContent = err.message; btn.disabled = false; }
     };
     $('#new-form').onsubmit = (e) => { e.preventDefault(); submit(); };
     $('#new-form').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit(); } });
-    setTimeout(() => (preset.notes ? $('#f-title') : ta).focus(), 0);
+    setTimeout(() => { const first = main.querySelector('[data-q]'); (preset.notes ? $('#f-title') : first || $('#f-notes')).focus(); }, 0);
     return null;
+  }
+
+  function answersHtml(t, answers) {
+    const rows = (t.questions || []).filter((q) => answers && answers[q.id]);
+    return rows.length ? `<dl class="answers">${rows.map((q) => `<dt>${esc(qLabel(q))}</dt><dd>${esc(answers[q.id])}</dd>`).join('')}</dl>` : '';
   }
 
   async function viewDeliverable(id) {
@@ -457,7 +542,11 @@
             ${prepared() ? `<span class="prepared">${prepared()}</span>` : ''}
           </header><div id="doc"></div></article>
           <div id="next"></div>
-          <details class="box"><summary>${L('Your original notes')}</summary><div class="inner"><div class="notes">${esc(r.notes)}</div></div></details>
+          <div class="box"><div class="inner sources">
+            <h3>${L('Documents for this deliverable')}</h3><div id="src-list"></div>
+            ${dropHtml(L('Add evidence or a newer version: Claude uses it when you ask for changes.'))}
+            <div id="kn-mini"></div></div></div>
+          <details class="box"><summary>${L('Your original notes')}</summary><div class="inner">${answersHtml(t, r.answers)}<div class="notes">${esc(r.notes)}</div></div></details>
           <div><button class="btn ghost" id="a-del">${L('Delete this deliverable')}</button></div>
         </div>
         <aside class="panel" id="panel">
@@ -471,6 +560,20 @@
         </aside>
       </div></div>`;
 
+    const paintSources = () => {
+      $('#src-list').innerHTML = filesHtml(r.sources || [], 'req-' + r.id, false) || `<div class="empty-note">${L('No documents yet.')}</div>`;
+      $('#kn-mini').innerHTML = (r.knowledge || []).length ? `<p class="help">${L('Also read from the skill knowledge')}${colon().trimEnd()}</p>${filesHtml(r.knowledge, 'skill-' + r.type, false)}` : '';
+    };
+    paintSources();
+    wireDrop($('.sources .drop', main), async (files) => {
+      try {
+        const { saved } = await upload('req-' + r.id, files);
+        r = await api('/api/requests/' + id); paintSources();
+        const ta = $('#composer textarea');
+        ta.value = (S.lang === 'fr' ? `J'ai ajouté ${saved.join(', ')}. Utilise-le comme source principale et mets à jour le document.` : `I added ${saved.join(', ')}. Use it as the main source and update the document.`);
+        ta.focus(); toast(L('Document added. Send the message to update the deliverable'));
+      } catch (e) { toast(e.message); }
+    });
     const paintActions = () => {
       const ready = r.status === 'ready';
       const vers = r.versions.length;
@@ -699,7 +802,7 @@
     main.scrollTop = 0;
   }
   window.Kit = {
-    state: S, typeOf, startExample, toast, esc, L, tx,
+    state: S, typeOf, startExample, toast, esc, L, tx, exsOf,
     ask: async (text) => { await post('/api/chat', { body: text }); },
     fill: (i) => { const b = document.querySelector(`#f-examples [data-ex="${i}"]`); if (b) { b.click(); return true; } return false; },
   };

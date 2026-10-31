@@ -1,0 +1,10 @@
+target_table,target_field,type,mandatory,source_table,source_field,transformation,default,rule,allowed
+fraud_report,transaction_id,varchar(23),Y,fraud_case_txn,arn,TRIM(src.arn),,DQ-01,
+fraud_report,pan_token,varchar(19),Y,fraud_case,card_token,src.card_token (never the PAN),,DQ-02,
+fraud_report,fraud_type,varchar(2),Y,fraud_case,fraud_reason,translation table T-01,,DQ-03,0|1|2|3|4|5|6
+fraud_report,transaction_date,date,Y,fraud_case_txn,txn_date,src.txn_date,,DQ-04,
+fraud_report,fraud_reported_date,date,Y,fraud_case,confirmed_at,CAST(src.confirmed_at AS DATE),,DQ-04,
+fraud_report,amount_minor,bigint,Y,fraud_case_txn,amount,"ROUND(src.amount * 100)",,DQ-05,
+fraud_report,currency,varchar(3),Y,fraud_case_txn,currency,UPPER(src.currency),,DQ-05,EUR|USD|GBP
+fraud_report,entry_mode,varchar(12),N,fraud_case_txn,pos_entry,translation table T-02,,DQ-03,CHIP|CONTACTLESS|ECOM|MAGSTRIPE|MANUAL
+fraud_report,case_id,varchar(12),Y,fraud_case,case_no,src.case_no,,DQ-01,

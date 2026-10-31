@@ -34,12 +34,9 @@ window.KIT_FR = {
   'Your deliverables': 'Vos livrables', 'Search by title or client': 'Rechercher par titre ou client', 'All': 'Tous', 'In progress': 'En cours', 'Ready to send': 'Prêts à envoyer',
   // type page
   'Try it': 'Essayer', 'Finished sample': 'Exemple terminé', 'Scenario': 'Scénario', 'Xray assistant': 'Assistant Xray', 'deliverables': 'livrables', 'All of type': 'Tous les livrables',
-  'Template': 'Modèle', 'Use the template': 'Utiliser le modèle',
-  'Fill in what you know, delete what doesn\'t apply. Claude asks for the rest.': 'Remplissez ce que vous savez, supprimez ce qui ne s\'applique pas. Claude demande le reste.',
   // new
   'Rough notes are fine. Claude asks in the chat if something is missing.': 'Des notes brutes suffisent. Claude demande dans la conversation s\'il manque quelque chose.',
   'What do you need?': 'De quoi avez-vous besoin ?', 'You\'ll get': 'Vous obtiendrez', 'Client or project': 'Client ou projet', 'Title': 'Titre',
-  'e.g. Hexa card scheme': 'ex. Schéma de cartes Hexa', 'e.g. Fraud score in authorisation': 'ex. Score de fraude en autorisation', 'Your notes': 'Vos notes',
   'Paste anything: meeting notes, an email thread, a spec. You can also drop a .txt, .md or .csv file into the box.': 'Collez ce que vous avez : notes de réunion, fil d\'e-mails, spécification. Vous pouvez aussi déposer un fichier .txt, .md ou .csv dans la zone.',
   'Try a scenario:': 'Essayer un scénario :', 'Create deliverable': 'Créer le livrable', 'Template added below your notes': 'Modèle ajouté sous vos notes',
   // deliverable
@@ -73,4 +70,20 @@ window.KIT_FR = {
   "Claude adds notes here from your feedback, so you don't repeat yourself. Remove anything that's wrong.": 'Claude note ici vos retours pour que vous n\'ayez pas à vous répéter. Supprimez ce qui est faux.',
   'Remove': 'Retirer', 'Nothing yet. As you give feedback in conversations, Claude notes your preferences here.': 'Rien pour l\'instant. Au fil de vos retours, Claude note ici vos préférences.',
   'Save profile': 'Enregistrer le profil',
+  // documents and guided questions
+  'Drop documents here': 'Déposez vos documents ici', 'or': 'ou', 'Choose files': 'Choisir des fichiers',
+  'PDF, Word, Excel, PowerPoint, CSV or images. Claude treats them as the main source.': 'PDF, Word, Excel, PowerPoint, CSV ou images. Claude les utilise comme source principale.',
+  'PDF': 'PDF', 'Word': 'Word', 'Excel': 'Excel', 'CSV': 'CSV', 'Text': 'Texte', 'Image': 'Image', 'PowerPoint': 'PowerPoint', 'File': 'Fichier',
+  'Quick questions': 'Questions rapides', 'Short answers are enough. Required ones are marked *.': 'Des réponses courtes suffisent. Les questions obligatoires sont marquées *.',
+  'Knowledge for this skill': 'Base documentaire de cette compétence',
+  'Documents used for every deliverable of this type: scheme rules, internal procedures, templates, glossaries. Upload once, Claude reads them every time.': 'Documents utilisés pour chaque livrable de ce type : règles du schéma, procédures internes, modèles, glossaires. Déposez-les une fois, Claude les lit à chaque fois.',
+  'Scheme rules, procedures, templates: PDF, Word, Excel, PowerPoint or images.': 'Règles du schéma, procédures, modèles : PDF, Word, Excel, PowerPoint ou images.',
+  'No documents yet.': 'Aucun document pour l\'instant.', 'Added to the skill knowledge': 'Ajouté à la base documentaire',
+  'Answer a few short questions and add your documents. Claude treats the documents as the main source and asks if something is missing.': 'Répondez à quelques questions courtes et ajoutez vos documents. Claude utilise les documents comme source principale et demande s\'il manque quelque chose.',
+  'e.g. Harbor Bank, card issuing': 'ex. Banque Lumière, monétique émetteur', 'e.g. Lost card declaration': 'ex. Mise en opposition d\'une carte',
+  'Documents (main source)': 'Documents (source principale)', 'Notes': 'Notes', 'optional': 'facultatif',
+  "Anything else: meeting notes, an email thread, context the documents don't cover.": "Tout le reste : notes de réunion, fil d'e-mails, contexte que les documents ne couvrent pas.",
+  'Not supported': 'Non pris en charge', 'Answer the questions marked *': 'Répondez aux questions marquées *', 'Uploading documents…': 'Envoi des documents…',
+  'Documents for this deliverable': 'Documents de ce livrable', 'Add evidence or a newer version: Claude uses it when you ask for changes.': 'Ajoutez une preuve ou une nouvelle version : Claude l\'utilise quand vous demandez une modification.',
+  'Also read from the skill knowledge': 'Également lus dans la base documentaire', 'Document added. Send the message to update the deliverable': 'Document ajouté. Envoyez le message pour mettre à jour le livrable',
 };

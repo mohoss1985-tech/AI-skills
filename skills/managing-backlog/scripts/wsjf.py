@@ -50,23 +50,45 @@ def load(path):
 def plan(rows, capacity):
     # Rank by WSJF, ties broken by in-PI deadline, then smaller job size.
     ranked = sorted(rows, key=lambda r: (-r["wsjf"], r.get("deadline") != "in-pi", r["job_size"]))
-    planned, used, out = [], 0, []
-    pending = list(ranked)
-    progress = True
-    while progress:  # repeat so an item can enter once its dependency is planned
-        progress = False
-        for r in list(pending):
-            ok_deps = all(d in {p["id"] for p in planned} for d in r["depends_on"])
-            if ok_deps and used + r["points"] <= capacity:
-                planned.append(r); used += r["points"]; pending.remove(r); progress = True
-    for r in pending:
-        why = []
-        missing = [d for d in r["depends_on"] if d not in {p["id"] for p in planned}]
-        if missing:
-            why.append("dependency not planned: " + ", ".join(missing))
-        if used + r["points"] > capacity:
-            why.append(f"no capacity left ({capacity - used} pts free, needs {r['points']})")
-        out.append((r, "; ".join(why)))
+    by_id = {r["id"]: r for r in rows}
+    planned, used = [], 0
+
+    def closure(r, seen=()):
+        """The item plus its not-yet-planned dependencies, dependencies first (None on a cycle)."""
+        if r["id"] in seen:
+            return None
+        out = []
+        for d in r["depends_on"]:
+            dep = by_id[d]
+            if dep in planned or dep in out:
+                continue
+            sub = closure(dep, seen + (r["id"],))
+            if sub is None:
+                return None
+            out += [x for x in sub if x not in out]
+        return out + [r]
+
+    # In rank order, an item enters with the dependencies it needs, if they all fit together.
+    for r in ranked:
+        if r in planned:
+            continue
+        group = closure(r)
+        need = sum(x["points"] for x in group) if group else None
+        if group and used + need <= capacity:
+            planned += group
+            used += need
+    out = []
+    for r in ranked:
+        if r in planned:
+            continue
+        group = closure(r)
+        if group is None:
+            why = "circular dependency"
+        else:
+            extra = [x["id"] for x in group if x is not r]
+            need = sum(x["points"] for x in group)
+            why = f"no capacity left ({capacity - used} pts free, needs {need}" + (f" with {', '.join(extra)})" if extra else ")")
+        out.append((r, why))
     return ranked, planned, used, out
 
 

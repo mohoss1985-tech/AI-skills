@@ -1,11 +1,7 @@
 id,dimension,rule,threshold,on_failure,owner
-DQ-01,Uniqueness,One clearing record per ARN (23 digits),100%,Reject the duplicate to the acquirer,Clearing operations
-DQ-02,Validity,Acquirer and merchant identifiers exist in the member referential,100%,Reject the record,Member referential
-DQ-03,Validity,MCC exists in the MCC referential,100%,Reject the record,Clearing operations
-DQ-04,Validity,Card number is a token: no clear PAN in any field (Luhn-valid 16-digit strings are searched),100%,Reject the file and alert security,Security
-DQ-05,Validity,Amount is a positive integer in minor units,100%,Reject the record,Clearing operations
-DQ-06,Validity,Currency and country codes translate with T-01,100%,Reject the record,Clearing operations
-DQ-07,Timeliness,Transaction date is at most 30 days before the clearing date and not in the future,99.5%,Accept with a late-presentment flag,Clearing operations
-DQ-08,Validity,Transaction type and entry mode translate with T-02 and T-03,100%,Reject the record,Clearing operations
-DQ-09,Consistency,ECI is present when entry mode is ECOM,98%,Accept with a flag,LCLF (fraud)
-DQ-10,Consistency,Each purchase matches one authorisation (token + auth code + amount within the tolerance),99%,Accept and report unmatched records,Clearing operations
+DQ-01,Uniqueness,One fraud report per transaction (ARN); a case can have several transactions,100%,Do not send the duplicate,Fraud operations
+DQ-02,Validity,Card number is a token: no clear PAN in any field (search for Luhn-valid 16-digit strings),100%,Block the file and alert security,Security
+DQ-03,Validity,Fraud type and entry mode translate with T-01 and T-02,100%,Hold the record for the analyst,Fraud operations
+DQ-04,Consistency,Fraud reported date is on or after the transaction date,100%,Hold the record for the analyst,Fraud operations
+DQ-05,Validity,Amount is positive and the currency is ISO 4217,100%,Hold the record,Fraud operations
+DQ-06,Timeliness,Reported within the scheme deadline after the fraud is confirmed (deadline to confirm),99%,Escalate to the fraud manager,Fraud operations

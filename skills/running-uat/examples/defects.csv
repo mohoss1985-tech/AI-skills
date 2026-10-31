@@ -1,11 +1,11 @@
-Clé;Résumé;Sévérité;Statut;Créé;Fonctionnalité;Contournement
-HEX-301;Stand-in ignores the threshold when the issuer times out after 2 retries;Bloquant;Ouvert;05/11/2026;Stand-in threshold;non
-HEX-302;Reason codes sent in the wrong order (lowest contribution first);Majeur;Ouvert;06/11/2026;Score in request (RS);oui
-HEX-303;Scoring at 15-16 ms sent as scored but after 17 ms total delay;Majeur;Ouvert;06/11/2026;Not-scored fallback;non
-HEX-304;Stand-in advice missing field RS;Majeur;À retester;07/11/2026;Stand-in threshold;non
-HEX-305;Monthly report label typo 'scorring';Mineur;Ouvert;09/11/2026;Score in clearing;oui
-HEX-306;RS absent for BIN ranges opted in before 02:00 batch rerun;Majeur;Clos;04/11/2026;Score in request (RS);non
-HEX-307;Clearing record keeps score of a reversed authorisation;Mineur;À retester;10/11/2026;Score in clearing;oui
-HEX-308;Issuer asks for score in the authorisation response too;Évolution;Ouvert;10/11/2026;Score in request (RS);non
-HEX-309;Reason code GE shown as 'Geo' in the test tool;Mineur;Rejeté;08/11/2026;Score in request (RS);non
-HEX-310;Score present in acquirer clearing file for 3 records;Majeur;Ouvert;11/11/2026;No score to acquirers;non
+Key;Summary;Severity;Status;Created;Component;Workaround
+CARD-301;PAN not added to the Exception File when the host times out during the block;Blocker;Open;2026-11-05;Exception File listing;no
+CARD-302;Block confirmation screen shows the wrong card when the customer has 2 cards;Major;Open;2026-11-06;Block card in the app;yes
+CARD-303;Phone block not visible in the app for 15 minutes;Major;Open;2026-11-06;Block card by phone;no
+CARD-304;Fraud declaration accepted with a fraud date before the transaction date;Major;Ready for retest;2026-11-07;Fraud declaration;no
+CARD-305;Typo in the replacement card email;Minor;Open;2026-11-09;Replacement card;yes
+CARD-306;Block button missing for virtual cards;Major;Closed;2026-11-04;Block card in the app;no
+CARD-307;Fraud report export includes declined authorisations;Minor;Ready for retest;2026-11-10;Fraud declaration;yes
+CARD-308;Customer wants to unblock a card declared stolen;Enhancement;Open;2026-11-10;Block card in the app;no
+CARD-309;Exception File action code shown as text in the test tool;Minor;Rejected;2026-11-08;Exception File listing;no
+CARD-310;Fraud declaration sent twice for the same transaction;Major;Open;2026-11-11;Fraud declaration;no

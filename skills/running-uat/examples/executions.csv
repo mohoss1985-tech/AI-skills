@@ -1,113 +1,113 @@
 Test Key,Summary,Status,Component,Requirement
-HEX-T001,Score in request (RS) case 1,PASSED,Score in request (RS),HEX-110
-HEX-T002,Score in request (RS) case 2,PASSED,Score in request (RS),HEX-110
-HEX-T003,Score in request (RS) case 3,PASSED,Score in request (RS),HEX-110
-HEX-T004,Score in request (RS) case 4,PASSED,Score in request (RS),HEX-110
-HEX-T005,Score in request (RS) case 5,PASSED,Score in request (RS),HEX-110
-HEX-T006,Score in request (RS) case 6,PASSED,Score in request (RS),HEX-110
-HEX-T007,Score in request (RS) case 7,PASSED,Score in request (RS),HEX-110
-HEX-T008,Score in request (RS) case 8,PASSED,Score in request (RS),HEX-110
-HEX-T009,Score in request (RS) case 9,PASSED,Score in request (RS),HEX-110
-HEX-T010,Score in request (RS) case 10,PASSED,Score in request (RS),HEX-110
-HEX-T011,Score in request (RS) case 11,PASSED,Score in request (RS),HEX-110
-HEX-T012,Score in request (RS) case 12,PASSED,Score in request (RS),HEX-110
-HEX-T013,Score in request (RS) case 13,PASSED,Score in request (RS),HEX-110
-HEX-T014,Score in request (RS) case 14,PASSED,Score in request (RS),HEX-110
-HEX-T015,Score in request (RS) case 15,PASSED,Score in request (RS),HEX-110
-HEX-T016,Score in request (RS) case 16,PASSED,Score in request (RS),HEX-110
-HEX-T017,Score in request (RS) case 17,PASSED,Score in request (RS),HEX-110
-HEX-T018,Score in request (RS) case 18,PASSED,Score in request (RS),HEX-110
-HEX-T019,Score in request (RS) case 19,PASSED,Score in request (RS),HEX-110
-HEX-T020,Score in request (RS) case 20,PASSED,Score in request (RS),HEX-110
-HEX-T021,Score in request (RS) case 21,PASSED,Score in request (RS),HEX-110
-HEX-T022,Score in request (RS) case 22,PASSED,Score in request (RS),HEX-110
-HEX-T023,Score in request (RS) case 23,PASSED,Score in request (RS),HEX-110
-HEX-T024,Score in request (RS) case 24,PASSED,Score in request (RS),HEX-110
-HEX-T025,Score in request (RS) case 25,PASSED,Score in request (RS),HEX-110
-HEX-T026,Score in request (RS) case 26,PASSED,Score in request (RS),HEX-110
-HEX-T027,Score in request (RS) case 27,PASSED,Score in request (RS),HEX-110
-HEX-T028,Score in request (RS) case 28,PASSED,Score in request (RS),HEX-110
-HEX-T029,Score in request (RS) case 29,FAILED,Score in request (RS),HEX-110
-HEX-T030,Score in request (RS) case 30,TODO,Score in request (RS),HEX-110
-HEX-T031,Not-scored fallback case 1,PASSED,Not-scored fallback,HEX-111
-HEX-T032,Not-scored fallback case 2,PASSED,Not-scored fallback,HEX-111
-HEX-T033,Not-scored fallback case 3,PASSED,Not-scored fallback,HEX-111
-HEX-T034,Not-scored fallback case 4,PASSED,Not-scored fallback,HEX-111
-HEX-T035,Not-scored fallback case 5,PASSED,Not-scored fallback,HEX-111
-HEX-T036,Not-scored fallback case 6,PASSED,Not-scored fallback,HEX-111
-HEX-T037,Not-scored fallback case 7,PASSED,Not-scored fallback,HEX-111
-HEX-T038,Not-scored fallback case 8,PASSED,Not-scored fallback,HEX-111
-HEX-T039,Not-scored fallback case 9,PASSED,Not-scored fallback,HEX-111
-HEX-T040,Not-scored fallback case 10,PASSED,Not-scored fallback,HEX-111
-HEX-T041,Not-scored fallback case 11,PASSED,Not-scored fallback,HEX-111
-HEX-T042,Not-scored fallback case 12,PASSED,Not-scored fallback,HEX-111
-HEX-T043,Not-scored fallback case 13,PASSED,Not-scored fallback,HEX-111
-HEX-T044,Not-scored fallback case 14,FAILED,Not-scored fallback,HEX-111
-HEX-T045,Not-scored fallback case 15,FAILED,Not-scored fallback,HEX-111
-HEX-T046,Stand-in threshold case 1,PASSED,Stand-in threshold,HEX-112
-HEX-T047,Stand-in threshold case 2,PASSED,Stand-in threshold,HEX-112
-HEX-T048,Stand-in threshold case 3,PASSED,Stand-in threshold,HEX-112
-HEX-T049,Stand-in threshold case 4,PASSED,Stand-in threshold,HEX-112
-HEX-T050,Stand-in threshold case 5,PASSED,Stand-in threshold,HEX-112
-HEX-T051,Stand-in threshold case 6,PASSED,Stand-in threshold,HEX-112
-HEX-T052,Stand-in threshold case 7,PASSED,Stand-in threshold,HEX-112
-HEX-T053,Stand-in threshold case 8,PASSED,Stand-in threshold,HEX-112
-HEX-T054,Stand-in threshold case 9,PASSED,Stand-in threshold,HEX-112
-HEX-T055,Stand-in threshold case 10,PASSED,Stand-in threshold,HEX-112
-HEX-T056,Stand-in threshold case 11,PASSED,Stand-in threshold,HEX-112
-HEX-T057,Stand-in threshold case 12,PASSED,Stand-in threshold,HEX-112
-HEX-T058,Stand-in threshold case 13,PASSED,Stand-in threshold,HEX-112
-HEX-T059,Stand-in threshold case 14,PASSED,Stand-in threshold,HEX-112
-HEX-T060,Stand-in threshold case 15,PASSED,Stand-in threshold,HEX-112
-HEX-T061,Stand-in threshold case 16,FAILED,Stand-in threshold,HEX-112
-HEX-T062,Stand-in threshold case 17,FAILED,Stand-in threshold,HEX-112
-HEX-T063,Stand-in threshold case 18,FAILED,Stand-in threshold,HEX-112
-HEX-T064,Stand-in threshold case 19,BLOCKED,Stand-in threshold,HEX-112
-HEX-T065,Stand-in threshold case 20,BLOCKED,Stand-in threshold,HEX-112
-HEX-T066,Stand-in threshold case 21,BLOCKED,Stand-in threshold,HEX-112
-HEX-T067,Stand-in threshold case 22,TODO,Stand-in threshold,HEX-112
-HEX-T068,Stand-in threshold case 23,TODO,Stand-in threshold,HEX-112
-HEX-T069,Stand-in threshold case 24,TODO,Stand-in threshold,HEX-112
-HEX-T070,Stand-in threshold case 25,TODO,Stand-in threshold,HEX-112
-HEX-T071,Score in clearing case 1,PASSED,Score in clearing,HEX-113
-HEX-T072,Score in clearing case 2,PASSED,Score in clearing,HEX-113
-HEX-T073,Score in clearing case 3,PASSED,Score in clearing,HEX-113
-HEX-T074,Score in clearing case 4,PASSED,Score in clearing,HEX-113
-HEX-T075,Score in clearing case 5,PASSED,Score in clearing,HEX-113
-HEX-T076,Score in clearing case 6,PASSED,Score in clearing,HEX-113
-HEX-T077,Score in clearing case 7,PASSED,Score in clearing,HEX-113
-HEX-T078,Score in clearing case 8,PASSED,Score in clearing,HEX-113
-HEX-T079,Score in clearing case 9,PASSED,Score in clearing,HEX-113
-HEX-T080,Score in clearing case 10,PASSED,Score in clearing,HEX-113
-HEX-T081,Score in clearing case 11,PASSED,Score in clearing,HEX-113
-HEX-T082,Score in clearing case 12,PASSED,Score in clearing,HEX-113
-HEX-T083,Score in clearing case 13,PASSED,Score in clearing,HEX-113
-HEX-T084,Score in clearing case 14,PASSED,Score in clearing,HEX-113
-HEX-T085,Score in clearing case 15,PASSED,Score in clearing,HEX-113
-HEX-T086,Score in clearing case 16,PASSED,Score in clearing,HEX-113
-HEX-T087,Score in clearing case 17,PASSED,Score in clearing,HEX-113
-HEX-T088,Score in clearing case 18,PASSED,Score in clearing,HEX-113
-HEX-T089,Score in clearing case 19,PASSED,Score in clearing,HEX-113
-HEX-T090,Score in clearing case 20,PASSED,Score in clearing,HEX-113
-HEX-T091,Score in clearing case 21,PASSED,Score in clearing,HEX-113
-HEX-T092,Score in clearing case 22,FAILED,Score in clearing,HEX-113
-HEX-T093,Score in clearing case 23,TODO,Score in clearing,HEX-113
-HEX-T094,Score in clearing case 24,TODO,Score in clearing,HEX-113
-HEX-T095,Score in clearing case 25,TODO,Score in clearing,HEX-113
-HEX-T096,No score to acquirers case 1,PASSED,No score to acquirers,HEX-114
-HEX-T097,No score to acquirers case 2,PASSED,No score to acquirers,HEX-114
-HEX-T098,No score to acquirers case 3,PASSED,No score to acquirers,HEX-114
-HEX-T099,No score to acquirers case 4,PASSED,No score to acquirers,HEX-114
-HEX-T100,No score to acquirers case 5,PASSED,No score to acquirers,HEX-114
-HEX-T101,No score to acquirers case 6,PASSED,No score to acquirers,HEX-114
-HEX-T102,No score to acquirers case 7,PASSED,No score to acquirers,HEX-114
-HEX-T103,No score to acquirers case 8,PASSED,No score to acquirers,HEX-114
-HEX-T104,No score to acquirers case 9,PASSED,No score to acquirers,HEX-114
-HEX-T105,No score to acquirers case 10,PASSED,No score to acquirers,HEX-114
-HEX-T106,No score to acquirers case 11,PASSED,No score to acquirers,HEX-114
-HEX-T107,No score to acquirers case 12,PASSED,No score to acquirers,HEX-114
-HEX-T108,No score to acquirers case 13,PASSED,No score to acquirers,HEX-114
-HEX-T109,No score to acquirers case 14,PASSED,No score to acquirers,HEX-114
-HEX-T110,No score to acquirers case 15,PASSED,No score to acquirers,HEX-114
-HEX-T111,No score to acquirers case 16,FAILED,No score to acquirers,HEX-114
-HEX-T112,No score to acquirers case 17,TODO,No score to acquirers,HEX-114
+CARD-T001,Block card in the app case 1,PASSED,Block card in the app,CARD-110
+CARD-T002,Block card in the app case 2,PASSED,Block card in the app,CARD-110
+CARD-T003,Block card in the app case 3,PASSED,Block card in the app,CARD-110
+CARD-T004,Block card in the app case 4,PASSED,Block card in the app,CARD-110
+CARD-T005,Block card in the app case 5,PASSED,Block card in the app,CARD-110
+CARD-T006,Block card in the app case 6,PASSED,Block card in the app,CARD-110
+CARD-T007,Block card in the app case 7,PASSED,Block card in the app,CARD-110
+CARD-T008,Block card in the app case 8,PASSED,Block card in the app,CARD-110
+CARD-T009,Block card in the app case 9,PASSED,Block card in the app,CARD-110
+CARD-T010,Block card in the app case 10,PASSED,Block card in the app,CARD-110
+CARD-T011,Block card in the app case 11,PASSED,Block card in the app,CARD-110
+CARD-T012,Block card in the app case 12,PASSED,Block card in the app,CARD-110
+CARD-T013,Block card in the app case 13,PASSED,Block card in the app,CARD-110
+CARD-T014,Block card in the app case 14,PASSED,Block card in the app,CARD-110
+CARD-T015,Block card in the app case 15,PASSED,Block card in the app,CARD-110
+CARD-T016,Block card in the app case 16,PASSED,Block card in the app,CARD-110
+CARD-T017,Block card in the app case 17,PASSED,Block card in the app,CARD-110
+CARD-T018,Block card in the app case 18,PASSED,Block card in the app,CARD-110
+CARD-T019,Block card in the app case 19,PASSED,Block card in the app,CARD-110
+CARD-T020,Block card in the app case 20,PASSED,Block card in the app,CARD-110
+CARD-T021,Block card in the app case 21,PASSED,Block card in the app,CARD-110
+CARD-T022,Block card in the app case 22,PASSED,Block card in the app,CARD-110
+CARD-T023,Block card in the app case 23,PASSED,Block card in the app,CARD-110
+CARD-T024,Block card in the app case 24,PASSED,Block card in the app,CARD-110
+CARD-T025,Block card in the app case 25,PASSED,Block card in the app,CARD-110
+CARD-T026,Block card in the app case 26,PASSED,Block card in the app,CARD-110
+CARD-T027,Block card in the app case 27,PASSED,Block card in the app,CARD-110
+CARD-T028,Block card in the app case 28,PASSED,Block card in the app,CARD-110
+CARD-T029,Block card in the app case 29,FAILED,Block card in the app,CARD-110
+CARD-T030,Block card in the app case 30,TODO,Block card in the app,CARD-110
+CARD-T031,Block card by phone case 1,PASSED,Block card by phone,CARD-111
+CARD-T032,Block card by phone case 2,PASSED,Block card by phone,CARD-111
+CARD-T033,Block card by phone case 3,PASSED,Block card by phone,CARD-111
+CARD-T034,Block card by phone case 4,PASSED,Block card by phone,CARD-111
+CARD-T035,Block card by phone case 5,PASSED,Block card by phone,CARD-111
+CARD-T036,Block card by phone case 6,PASSED,Block card by phone,CARD-111
+CARD-T037,Block card by phone case 7,PASSED,Block card by phone,CARD-111
+CARD-T038,Block card by phone case 8,PASSED,Block card by phone,CARD-111
+CARD-T039,Block card by phone case 9,PASSED,Block card by phone,CARD-111
+CARD-T040,Block card by phone case 10,PASSED,Block card by phone,CARD-111
+CARD-T041,Block card by phone case 11,PASSED,Block card by phone,CARD-111
+CARD-T042,Block card by phone case 12,PASSED,Block card by phone,CARD-111
+CARD-T043,Block card by phone case 13,PASSED,Block card by phone,CARD-111
+CARD-T044,Block card by phone case 14,FAILED,Block card by phone,CARD-111
+CARD-T045,Block card by phone case 15,FAILED,Block card by phone,CARD-111
+CARD-T046,Exception File listing case 1,PASSED,Exception File listing,CARD-112
+CARD-T047,Exception File listing case 2,PASSED,Exception File listing,CARD-112
+CARD-T048,Exception File listing case 3,PASSED,Exception File listing,CARD-112
+CARD-T049,Exception File listing case 4,PASSED,Exception File listing,CARD-112
+CARD-T050,Exception File listing case 5,PASSED,Exception File listing,CARD-112
+CARD-T051,Exception File listing case 6,PASSED,Exception File listing,CARD-112
+CARD-T052,Exception File listing case 7,PASSED,Exception File listing,CARD-112
+CARD-T053,Exception File listing case 8,PASSED,Exception File listing,CARD-112
+CARD-T054,Exception File listing case 9,PASSED,Exception File listing,CARD-112
+CARD-T055,Exception File listing case 10,PASSED,Exception File listing,CARD-112
+CARD-T056,Exception File listing case 11,PASSED,Exception File listing,CARD-112
+CARD-T057,Exception File listing case 12,PASSED,Exception File listing,CARD-112
+CARD-T058,Exception File listing case 13,PASSED,Exception File listing,CARD-112
+CARD-T059,Exception File listing case 14,PASSED,Exception File listing,CARD-112
+CARD-T060,Exception File listing case 15,PASSED,Exception File listing,CARD-112
+CARD-T061,Exception File listing case 16,FAILED,Exception File listing,CARD-112
+CARD-T062,Exception File listing case 17,FAILED,Exception File listing,CARD-112
+CARD-T063,Exception File listing case 18,FAILED,Exception File listing,CARD-112
+CARD-T064,Exception File listing case 19,BLOCKED,Exception File listing,CARD-112
+CARD-T065,Exception File listing case 20,BLOCKED,Exception File listing,CARD-112
+CARD-T066,Exception File listing case 21,BLOCKED,Exception File listing,CARD-112
+CARD-T067,Exception File listing case 22,TODO,Exception File listing,CARD-112
+CARD-T068,Exception File listing case 23,TODO,Exception File listing,CARD-112
+CARD-T069,Exception File listing case 24,TODO,Exception File listing,CARD-112
+CARD-T070,Exception File listing case 25,TODO,Exception File listing,CARD-112
+CARD-T071,Fraud declaration case 1,PASSED,Fraud declaration,CARD-113
+CARD-T072,Fraud declaration case 2,PASSED,Fraud declaration,CARD-113
+CARD-T073,Fraud declaration case 3,PASSED,Fraud declaration,CARD-113
+CARD-T074,Fraud declaration case 4,PASSED,Fraud declaration,CARD-113
+CARD-T075,Fraud declaration case 5,PASSED,Fraud declaration,CARD-113
+CARD-T076,Fraud declaration case 6,PASSED,Fraud declaration,CARD-113
+CARD-T077,Fraud declaration case 7,PASSED,Fraud declaration,CARD-113
+CARD-T078,Fraud declaration case 8,PASSED,Fraud declaration,CARD-113
+CARD-T079,Fraud declaration case 9,PASSED,Fraud declaration,CARD-113
+CARD-T080,Fraud declaration case 10,PASSED,Fraud declaration,CARD-113
+CARD-T081,Fraud declaration case 11,PASSED,Fraud declaration,CARD-113
+CARD-T082,Fraud declaration case 12,PASSED,Fraud declaration,CARD-113
+CARD-T083,Fraud declaration case 13,PASSED,Fraud declaration,CARD-113
+CARD-T084,Fraud declaration case 14,PASSED,Fraud declaration,CARD-113
+CARD-T085,Fraud declaration case 15,PASSED,Fraud declaration,CARD-113
+CARD-T086,Fraud declaration case 16,PASSED,Fraud declaration,CARD-113
+CARD-T087,Fraud declaration case 17,PASSED,Fraud declaration,CARD-113
+CARD-T088,Fraud declaration case 18,PASSED,Fraud declaration,CARD-113
+CARD-T089,Fraud declaration case 19,PASSED,Fraud declaration,CARD-113
+CARD-T090,Fraud declaration case 20,PASSED,Fraud declaration,CARD-113
+CARD-T091,Fraud declaration case 21,PASSED,Fraud declaration,CARD-113
+CARD-T092,Fraud declaration case 22,FAILED,Fraud declaration,CARD-113
+CARD-T093,Fraud declaration case 23,TODO,Fraud declaration,CARD-113
+CARD-T094,Fraud declaration case 24,TODO,Fraud declaration,CARD-113
+CARD-T095,Fraud declaration case 25,TODO,Fraud declaration,CARD-113
+CARD-T096,Replacement card case 1,PASSED,Replacement card,CARD-114
+CARD-T097,Replacement card case 2,PASSED,Replacement card,CARD-114
+CARD-T098,Replacement card case 3,PASSED,Replacement card,CARD-114
+CARD-T099,Replacement card case 4,PASSED,Replacement card,CARD-114
+CARD-T100,Replacement card case 5,PASSED,Replacement card,CARD-114
+CARD-T101,Replacement card case 6,PASSED,Replacement card,CARD-114
+CARD-T102,Replacement card case 7,PASSED,Replacement card,CARD-114
+CARD-T103,Replacement card case 8,PASSED,Replacement card,CARD-114
+CARD-T104,Replacement card case 9,PASSED,Replacement card,CARD-114
+CARD-T105,Replacement card case 10,PASSED,Replacement card,CARD-114
+CARD-T106,Replacement card case 11,PASSED,Replacement card,CARD-114
+CARD-T107,Replacement card case 12,PASSED,Replacement card,CARD-114
+CARD-T108,Replacement card case 13,PASSED,Replacement card,CARD-114
+CARD-T109,Replacement card case 14,PASSED,Replacement card,CARD-114
+CARD-T110,Replacement card case 15,PASSED,Replacement card,CARD-114
+CARD-T111,Replacement card case 16,FAILED,Replacement card,CARD-114
+CARD-T112,Replacement card case 17,TODO,Replacement card,CARD-114

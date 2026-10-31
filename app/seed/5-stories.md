@@ -1,94 +1,85 @@
-{"client": "Hexa card scheme (sample)", "skill": "writing-user-stories", "title": "Stories: issuer fraud-score settings in the member portal"}
+{"client": "Harbor Bank (sample)", "skill": "writing-user-stories", "lang": "en", "title": "Stories: block a card and flag unknown payments"}
 ===INPUT===
-Stories for FR-3 and FR-4 of the fraud score PRD. Jira.
-
-FR-3: issuers opt in to the fraud score per BIN range in the member portal.
-FR-4: issuers can set a score threshold for stand-in (STIP): above it, STIP declines.
-Users: issuer fraud managers (role "Fraud admin"). Changes take effect at 02:00 the next night (config batch). Any change must be approved by a second Fraud admin of the same issuer (4-eyes). BIN ranges are 8 digits. Threshold 0-999, empty = no threshold.
+Stories for RG-01 to RG-05 and RG-09 of the PAN declaration SFD (app side). Jira. Users: cardholders in the mobile app.
 ===OUTPUT===
 ### Story map
 
-| Step | Find my BIN ranges | Configure | Approve | Check it's live |
+| Step | Pick the card | Declare | After the block | Unknown payments |
 |---|---|---|---|---|
-| **Release 1** | List my issuer's BIN ranges with status (FR-3) | Opt a range in or out; set the STIP threshold (FR-3, FR-4) | Second Fraud admin approves (4-eyes) | See "active from 02:00" and the history |
-| Later | Search across many ranges | Bulk changes by file | — | Email when live |
+| **Release 1** | See my cards with image and last 4 digits | Block with a reason (RG-01, RG-02) | Confirmation, replacement ordered | Flag payments of the last 90 days (RG-05) |
+| Later | — | — | Unblock a lost card within 24 h (RG-09) | Follow the fraud case status |
 
 ---
 
-### 1 · Opt a BIN range in to the fraud score
-`Jira` · Epic: Fraud score · Labels: member-portal, fraud, lclf · Source: FR-3
+### 1 · Block a lost or stolen card
+`Jira` · Epic: PAN declaration · Labels: cards, app, fraud · Source: RG-01, RG-02, RG-04
 
-As an issuer's **Fraud admin**, I want to opt a BIN range in to the fraud score, so that our authorisation requests for those cards carry the network score.
+As a **cardholder**, I want to block my card in the app with the reason, so that nobody can pay with it.
 
 **Example map**
-- *Rule:* only ranges of my own issuer are shown → *Example:* Fraud admin of Banque Lumière sees 45671200–45671299, not Crédit Azur's ranges
-- *Rule:* a change needs a second Fraud admin's approval → *Example:* Léa requests, Marc approves; Léa can't approve her own request
-- *Rule:* takes effect at 02:00 the next night → *Example:* approved Tuesday 16:00, live Wednesday 02:00
-- *Question:* can a pending request be changed? → **answered: no, cancel and create a new one**
+- *Rule:* three reasons → *Example:* lost, stolen, used without my permission
+- *Rule:* refused at once with the code of the reason → *Example:* stolen → next authorisation declined with 43
+- *Rule:* wallet tokens suspended → *Example:* Apple Pay stops working
+- *Question:* can I block a virtual card? → **answered: yes, same flow**
 
 ```gherkin
-Scenario: Fraud admin opts a range in, a second admin approves
-  Given Léa and Marc are Fraud admins of issuer "Banque Lumière"
-  And BIN range 45671200-45671299 is "Not scored"
-  When Léa requests "Scored" for this range
-  And Marc approves the request on Tuesday at 16:00
-  Then the range shows "Scored · active from Wednesday 02:00"
-  And the history shows the request by Léa and the approval by Marc
+Scenario: Cardholder blocks a stolen card
+  Given Sam has a Visa debit card ending 4821 that is active
+  When Sam declares the card ending 4821 as "Stolen" and confirms
+  Then the app shows "Your card ending 4821 is blocked"
+  And an authorisation on the card 10 seconds later is declined with response code 43
+  And the Apple Pay token of the card is suspended
 
-Scenario: No self-approval
-  Given Léa requested "Scored" for BIN range 45671200-45671299
-  When Léa opens the request
-  Then the "Approve" button is not shown
-  And the page reads "Another Fraud admin must approve this change"
-
-Scenario: Ranges of other issuers are not visible
-  Given Léa is Fraud admin of "Banque Lumière"
-  When she opens "BIN ranges"
-  Then only ranges of "Banque Lumière" are listed
+Scenario: Cardholder with two cards picks the right one
+  Given Sam has cards ending 4821 and 1177
+  When Sam opens "Block a card"
+  Then both cards are shown with their image and last 4 digits
+  And no card is selected by default
 ```
 
-**Checklist:** audit trail of who requested and approved · works with keyboard only · pending requests expire after 7 days *(to confirm)*
-
-**INVEST:** I ✓ · N ✓ · V ✓ · E ✓ · S ✓ · T ✓ → **Ready**
+**INVEST:** all ✓ → **Ready**
 
 ---
 
-### 2 · Set the stand-in decline threshold
-`Jira` · Epic: Fraud score · Labels: member-portal, fraud, stip · Source: FR-4
+### 2 · Flag payments I don't recognise
+`Jira` · Epic: PAN declaration · Labels: cards, app, fraud · Source: RG-05
 
-As an issuer's **Fraud admin**, I want to set a fraud score above which stand-in declines, so that risky transactions aren't approved when our host is down.
-
-**Example map**
-- *Rule:* threshold 0–999, empty = no threshold → *Example:* 850 accepted; 1000 rejected; empty clears it
-- *Rule:* only for ranges that are "Scored" → *Example:* field disabled on a "Not scored" range
-- *Rule:* same 4-eyes and 02:00 rules as story 1
+As a **cardholder**, I want to flag the payments I don't recognise after blocking my card, so that the bank can investigate and get my money back.
 
 ```gherkin
-Scenario Outline: Threshold validation
-  Given BIN range 45671200-45671299 is "Scored"
-  When Léa enters "<value>" as stand-in threshold
-  Then the form shows "<result>"
+Scenario: Flag two unknown payments
+  Given Sam blocked the card ending 4821 as "Used without my permission"
+  And the card has 12 payments in the last 90 days
+  When Sam flags the payments of 89.90€ and 240.00€ on 2 November
+  Then the app shows "We've sent 2 payments to our fraud team"
+  And a fraud case with these 2 payments is created for fraud operations
+
+Scenario: Payments older than 90 days can't be flagged
+  Given the card has a payment on 1 July
+  When Sam opens "Payments I don't recognise" on 2 November
+  Then the payment of 1 July is not listed
+```
+
+**INVEST:** all ✓ → **Ready**. Rule RG-07 (fraud report before dispute) is a fraud operations story, linked here.
+
+---
+
+### 3 · Unblock a card I found
+`Jira` · Epic: PAN declaration · Source: RG-09
+
+```gherkin
+Scenario Outline: Unblock a lost card
+  Given Sam blocked the card ending 4821 as "<reason>" at 18:00 on Saturday
+  And "<attempt>" authorisation was attempted since
+  When Sam tries to unblock it at <time>
+  Then the result is "<result>"
 
   Examples:
-    | value | result                                       |
-    | 850   | Request created, waiting for approval        |
-    | 0     | Request created, waiting for approval        |
-    | 1000  | Enter a score between 0 and 999              |
-    | abc   | Enter a score between 0 and 999              |
-    |       | Request created: threshold will be removed   |
-
-Scenario: Threshold applies in stand-in
-  Given range 45671200-45671299 has a stand-in threshold of 850, active
-  And the issuer host doesn't answer
-  When a request for card 4567120012345678 arrives with score 910
-  Then stand-in declines with the response code for suspected fraud
-  And the issuer receives the stand-in advice with the score
+    | reason | attempt | time           | result                 |
+    | Lost   | no      | Sunday 10:00   | Card unblocked         |
+    | Lost   | no      | Sunday 18:01   | Unblock no longer possible |
+    | Lost   | one     | Sunday 10:00   | Unblock no longer possible |
+    | Stolen | no      | Sunday 10:00   | Unblock not possible for a stolen card |
 ```
 
-**INVEST:** all ✓ → **Ready**. The last scenario is an end-to-end test for the authorisation team; link it to their story.
-
----
-
-### Not ready
-- **Bulk changes by file:** format not defined. Spike first.
-- **Email when live:** who receives it? Ask the issuer advisory group.
+**INVEST:** N ⚠️: Legal confirmed the 24 h rule, but the wording of "Unblock no longer possible" is still to review → **Ready after wording review**.

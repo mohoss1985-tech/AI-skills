@@ -14,6 +14,9 @@ import sys
 import time
 from pathlib import Path
 
+import sources
+from questions import as_text
+
 DB_PATH = Path(__file__).resolve().parent / "data" / "kit.db"
 
 
@@ -34,9 +37,25 @@ def meta(conn, key, default):
     return json.loads(row["value"]) if row else default
 
 
+RULES = ("Uploaded documents are the privileged source of information: read every file listed in 'sources' "
+         "(Read tool for PDF and images, the text_path for Word, Excel and PowerPoint) before writing, then the skill "
+         "'knowledge' files. Base facts, figures and rules on them and name the file you took them from. When the notes "
+         "or answers disagree with a document, follow the document and flag the difference. 'answers' are the user's "
+         "short answers to the skill's guided questions: treat them as requirements.")
+
+
+def files_of(rid, type_id):
+    strip = lambda fs: [{k: v for k, v in f.items() if v is not None} for f in fs]
+    return strip(sources.listing(f"req-{rid}")), strip(sources.listing(f"skill-{type_id}"))
+
+
 def work(conn):
-    reqs = [dict(r) for r in conn.execute(
-        "SELECT id,type,client,title,notes FROM requests WHERE status='waiting' ORDER BY created_at")]
+    reqs = []
+    for r in conn.execute("SELECT id,type,client,title,notes,answers FROM requests WHERE status='waiting' ORDER BY created_at"):
+        r = dict(r)
+        r["answers"] = as_text(r["type"], json.loads(r["answers"] or "{}"))
+        r["sources"], r["knowledge"] = files_of(r["id"], r["type"])
+        reqs.append(r)
     msgs = []
     for m in conn.execute("SELECT * FROM messages WHERE role='user' AND handled=0 ORDER BY created_at"):
         item = {"thread": m["request_id"] or "chat", "message": m["body"]}
@@ -44,6 +63,7 @@ def work(conn):
             r = conn.execute("SELECT title,type,client FROM requests WHERE id=?", (m["request_id"],)).fetchone()
             if r:
                 item["deliverable"] = dict(r)
+                item["sources"], item["knowledge"] = files_of(m["request_id"], r["type"])
         msgs.append(item)
     return reqs, msgs
 
@@ -62,7 +82,7 @@ def main():
         beat(conn)
         if cmd == "pending":
             reqs, msgs = work(conn)
-            print(json.dumps({"profile": meta(conn, "profile", {}), "learned": meta(conn, "learned", []),
+            print(json.dumps({"rules": RULES, "profile": meta(conn, "profile", {}), "learned": meta(conn, "learned", []),
                               "requests": reqs, "messages": msgs}, indent=2, ensure_ascii=False))
         elif cmd == "start":
             conn.execute("UPDATE requests SET status='working', updated_at=? WHERE id=?", (time.time(), int(sys.argv[2])))

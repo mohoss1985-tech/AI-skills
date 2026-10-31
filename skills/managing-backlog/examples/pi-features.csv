@@ -1,9 +1,9 @@
 id,title,type,business_value,time_criticality,risk_reduction,job_size,points,depends_on,deadline
-F-01,Fraud score in the authorisation request (pilot issuers),Epic,20,13,13,8,34,F-06,in-pi
-F-02,New domestic interchange grid in the clearing engine,Epic,8,20,8,8,30,,in-pi
-F-03,Disputes API v2: representment with evidence upload,Epic,8,3,5,13,40,,
-F-04,Stand-in decline threshold set by the issuer,Story,8,8,8,3,13,F-01,in-pi
-F-05,Token lifecycle notifications to issuers,Epic,5,3,3,8,26,,
-F-06,Low-latency scoring service (15 ms budget),Enabler,3,13,20,5,21,,in-pi
-F-07,Score in the clearing record,Epic,8,5,8,5,21,F-01,
-F-08,Decommission the legacy clearing file for 2 acquirers,Enabler,2,2,8,5,18,,
+F-01,Block a lost or stolen card in the app,Epic,20,13,13,8,34,F-06,in-pi
+F-02,Add blocked PANs to the Visa Exception File automatically,Epic,8,13,20,5,21,F-06,in-pi
+F-03,Fraud declaration workflow for unrecognised transactions,Epic,13,8,13,8,30,,
+F-04,Open disputes from the fraud declaration,Epic,8,3,5,13,40,F-03,
+F-05,Explain declined payments in the app (response codes),Story,5,2,2,3,13,,
+F-06,Real-time block API on the authorisation host,Enabler,3,13,20,5,21,,in-pi
+F-07,Suspend wallet tokens when the card is blocked,Story,8,8,13,3,13,F-06,
+F-08,Merchant category controls set by the cardholder,Epic,5,2,3,8,26,,

@@ -119,6 +119,11 @@
 
   // ---------- glossary ----------
   const TERMS = [
+    [['exception file'], 'Visa Exception File', 'The list of PANs the issuer gives Visa with an action (e.g. pick up, decline). Stand-In Processing uses it when the issuer is unavailable, so a lost or stolen card must be listed quickly.'],
+    [['pan declaration', 'block', 'lost card', 'stolen card', 'opposition'], 'PAN declaration (block)', 'The cardholder declares a card lost, stolen or used without permission. The issuer blocks it (authorisations declined with 41 lost, 43 stolen), lists the PAN on the scheme exception list for stand-in, and suspends wallet tokens. In France this is the *mise en opposition*.'],
+    [['fraud report', 'fraud declaration', 'tc40'], 'Fraud report', 'The issuer reports each confirmed fraudulent transaction to the scheme with a fraud type (lost, stolen, counterfeit, card-not-present…). For Visa, a fraud dispute needs the fraud reported first. Codes and deadlines: current scheme rules.'],
+    [['response code', 'response codes', 'decline code'], 'Response codes', 'The issuer\'s answer to an authorisation: 00 approved, 05 do not honour, 41 lost card, 43 stolen card, 51 insufficient funds, 54 expired card, 55 wrong PIN, 59 suspected fraud, 61 exceeds limit, 91 issuer unavailable; Visa also uses 1A when strong authentication is required.'],
+    [['visa claims resolution', 'vcr', 'condition code', 'dispute condition'], 'Visa dispute conditions', 'Visa groups chargebacks in four categories: **10** fraud, **11** authorisation, **12** processing errors, **13** consumer disputes (e.g. 10.4 card-absent fraud, 13.1 merchandise not received). Each condition has its own time limit and evidence.'],
     [['interchange', 'interchange fee'], 'Interchange fee', 'Paid by the **acquirer** to the **issuer** on each transaction, set by the card scheme. In the EU, the IFR caps it for consumer cards at **0.2%** (debit) and **0.3%** (credit); commercial cards are not capped.'],
     [['issuer', 'emetteur'], 'Issuer', 'The bank that issued the cardholder\'s card. It **approves or declines** each payment, debits the cardholder and receives the interchange fee.'],
     [['acquirer', 'acquereur'], 'Acquirer', 'The **merchant\'s** bank or payment institution. It routes authorisations, sends transactions to clearing, credits the merchant and pays the interchange.'],
@@ -132,7 +137,7 @@
     [['mcc'], 'MCC', 'Merchant Category Code: 4 digits for the merchant\'s business (e.g. 5812 restaurants). Used for routing, interchange and fraud rules.'],
     [['bin'], 'BIN', 'Bank Identification Number: the first digits of the card number, identifying the issuer and the product. BIN ranges (often 8 digits) carry the card\'s attributes.'],
     [['ifr'], 'IFR', 'EU Interchange Fee Regulation (EU) 2015/751: caps for consumer cards and transparency duties towards merchants. Confirm details with Compliance.'],
-    [['template'], 'Template', 'Each deliverable has a **template**: the information its skill needs, in order. Click **Use the template** in the form, fill what you know, and Claude asks for the rest.'],
+    [['template', 'quick questions', 'questions'], 'Quick questions', 'Each deliverable asks a few **short, precise questions** (the scheme, the scope, the phase…). Required ones are marked *. With your documents, they give Claude what an excellent deliverable needs.'],
     [['rag', 'retrieval augmented'], 'RAG (retrieval-augmented generation)', 'The assistant first **retrieves** passages from approved content (help centre, tariffs…), then **writes** its answer from them. Good RAG answers only from what it retrieved, and cites it.'],
     [['faithful', 'hallucinat', 'groundedness'], 'Faithfulness', 'Is every claim in the answer **supported by the retrieved passages**? A hallucination is an unfaithful answer. In banking the release gate is usually **100% on high-risk questions**.'],
     [['context recall', 'recall'], 'Context recall', 'Did retrieval **find the passages needed** to answer? Low recall means a retrieval or content problem, not a model problem.'],
@@ -178,8 +183,10 @@
     [['how does', 'how it works', 'how do i start', 'get started', 'what is this', 'what can you do', 'help', 'start'], 'How Analyst Kit works',
       '1. **Pick a deliverable** in the sidebar or press **N**.\n2. **Paste your notes** (or drop a .txt, .md or .csv file), or click a **scenario** to try one.\n3. **Create**: Claude writes the document and you get a notification.\n4. **Ask for changes** in the conversation next to it. Every version is kept.\n5. **Hand it over**: Word, PDF or copy, then *Mark as sent*.',
       [{ label: 'New deliverable', href: '#/new' }]],
-    [['template', 'fill in', 'structure'], 'Templates',
-      'Every deliverable has a **template**: the list of what its skill needs, in order. In the form, click **Use the template**, fill what you know and delete the rest. The app becomes your template: you never start from a blank page, and Claude does the work from the filled template.'],
+    [['upload', 'document', 'pdf', 'word', 'excel', 'image', 'source', 'evidence', 'proof', 'knowledge', 'attach'], 'Documents and knowledge',
+      'Drop **PDF, Word, Excel, PowerPoint, CSV or images** in the form: Claude treats them as the **main source** and names the file it took each fact from. On a finished deliverable, add a document under *Documents for this deliverable*, then send the suggested message to update it. On each skill page, **Knowledge for this skill** holds documents reused by every deliverable of that type (scheme rules, procedures, templates).'],
+    [['template', 'questions', 'quick questions', 'fill in'], 'Quick questions',
+      'Every deliverable starts with a few **short, precise questions** (required ones marked *). Short answers are enough; Claude treats them as requirements and asks in the conversation if something is missing.'],
     [['french', 'francais', 'language of the app', 'interface language'], 'Interface language',
       'The **FR / EN** button at the bottom of the sidebar switches the interface language. The language of the documents is set in your **profile**.'],
     [['change', 'edit', 'modify', 'feedback', 'comment', 'reply', 'shorter', 'translate', 'french'], 'Asking for changes',
@@ -282,7 +289,7 @@
     if (c.page === 'new' && c.type) return [G(`What should I paste for ${n}?`, 's.paste', n), G('Fill a scenario for me', 's.fill'), G(`Tips for a great ${n}`, 's.tips', n), G('Explain a term', 's.term')];
     if (c.page === 'type' && c.type) return [G(`When do I use ${n}?`, 's.when', n), G(`Show me a finished ${n}`, 's.show', n), G(`What should I paste for ${n}?`, 's.paste', n)];
     if (c.page === 'doc') return [G('How do I ask for changes?', 's.changes'), G('Export to Word or PDF', 's.export'), G('What comes next after this?', 's.next'), G('Explain a term', 's.term')];
-    return [G('How does this work?', 's.how'), G('Which deliverable do I need?', 's.which'), G('What is the template for?', 's.template'), G('What is interchange?', 's.term2')];
+    return [G('How does this work?', 's.how'), G('Which deliverable do I need?', 's.which'), G('Can I upload documents?', 's.template'), G('What is interchange?', 's.term2')];
   }
 
   // ---------- answering ----------
@@ -326,11 +333,11 @@
     // intents about a skill
     const exl = (e) => (FRG() && e.label_fr) || e.label;
     if (/\b(fill|scenario|try one|demo|remplis|remplir)\b/.test(t) && c.page === 'new' && c.type) {
-      const ex = K().typeOf(c.type).examples || [];
+      const ex = K().exsOf(K().typeOf(c.type));
       return { a: G(`Pick a scenario. I'll fill the form, you just press **Create deliverable**.`, 'fill'), acts: ex.filter((e) => e.notes).map((e, i) => ({ label: exl(e), fill: i })) };
     }
     if (/\b(sample|examples?|finished|show me|demo|see one|try|exemples?|montre|voir un)\b/.test(t) && target) {
-      const s = sampleOf(target), ex = (K().typeOf(target).examples || []).filter((e) => e.notes);
+      const s = sampleOf(target), ex = K().exsOf(K().typeOf(target)).filter((e) => e.notes);
       const acts = [];
       if (s) acts.push({ label: G('Open the finished sample'), href: '#/d/' + s.id });
       ex.forEach((e, i) => acts.push({ label: G('Try') + (FRG() ? ' : ' : ': ') + exl(e), example: [target, i] }));
@@ -339,7 +346,7 @@
     }
     if (/\b(paste|give|input|what do i (put|write|need)|notes|provide|coller|colle|quoi mettre|que mettre|fournir)\b/.test(t) && target && SKILLS[target]) {
       const n = tName(target), p = skillData(target).paste;
-      return { a: G(`For **${n}**, paste:\n\n${p}\n\nRough notes are fine. Claude asks in the conversation if something is missing. Or click **Use the template** in the form.`, 'paste', n, p), acts: [{ label: `${G('Start')} ${n}`, href: '#/new/' + target }] };
+      return { a: G(`For **${n}**, paste:\n\n${p}\n\nRough notes are fine. Claude asks in the conversation if something is missing. And drop your documents: they come first.`, 'paste', n, p), acts: [{ label: `${G('Start')} ${n}`, href: '#/new/' + target }] };
     }
     if (/\b(tips?|better|great|good result|best|improve|conseils?|astuces?|ameliorer|mieux)\b/.test(t) && target && SKILLS[target]) {
       const n = tName(target), p = skillData(target).tips;

@@ -1,84 +1,76 @@
-{"client": "Hexa card scheme (sample)", "skill": "generating-sql", "title": "Interchange check: billed vs expected per acquirer"}
+{"client": "Harbor Bank (sample)", "skill": "generating-sql", "lang": "en", "title": "Authorisation approval rate and top decline codes"}
 ===INPUT===
-Every month we bill interchange to acquirers (paid on to issuers). Finance thinks some clearing records were billed with the wrong interchange category. Check last month: per acquirer, expected vs billed interchange, and the transactions where they differ by more than 1 cent. PostgreSQL.
+Daily approval rate of our Visa authorisations for the last 30 days, the share decided in stand-in, and the top 5 decline response codes per day. PostgreSQL.
 
-clearing_record(clearing_id, acquirer_id, issuer_id, card_product, card_type 'debit'|'credit'|'commercial', consumer boolean, merchant_country, card_country, mcc, amount_cents, currency, clearing_date, ic_category, ic_billed_cents)
-ic_rate(ic_category, valid_from, valid_to, rate_pct numeric, fixed_cents int)  -- valid_to null = current
-ic_assignment(card_type, consumer, domestic boolean, ic_category)  -- which category should apply
+authorisation(auth_id, auth_ts timestamptz, pan_token, amount_minor, currency, mcc, channel 'pos'|'ecom'|'atm', response_code char(2), stip boolean)
+response_code '00' = approved.
 ===OUTPUT===
 ### Restated question
-For **last month's clearing records**, compute the **expected interchange** (from the category the card and transaction should get, and the rate valid on the clearing date), compare it with the **billed** interchange, and show per acquirer the totals and the number of records off by more than 1 cent. Then list those records.
+For each of the **last 30 days**, the share of authorisations approved (`00`), the share decided by **Visa Stand-In Processing**, and the **5 most frequent decline codes** with their share of declines.
 
-- **Grain:** one row per acquirer (summary), one row per clearing record (detail).
-- **Period:** previous calendar month, by `clearing_date`.
-- **Domestic:** merchant country = card country.
-- **Assumption:** expected interchange = `ROUND(amount × rate% / 100) + fixed`, in cents. *(Confirm the rounding rule with Finance.)*
+- **Grain:** one row per day (summary), one row per day and decline code (top 5).
+- **Period:** the 30 full days before today, by `auth_ts` in Europe/Paris time.
+- **Assumption:** reversals and advices are not in this table *(confirm)*.
 
 ### Query
 
-interchange_check.sql
+approval_rate.sql
 ```sql
-WITH last_month AS (
-  SELECT date_trunc('month', current_date) - interval '1 month' AS start_d,
-         date_trunc('month', current_date)                      AS end_d
-),
-records AS (
-  SELECT c.*, (c.merchant_country = c.card_country) AS domestic
-  FROM clearing_record c, last_month m
-  WHERE c.clearing_date >= m.start_d AND c.clearing_date < m.end_d
-),
-expected AS (
-  SELECT r.clearing_id, r.acquirer_id, r.amount_cents, r.ic_category AS billed_category, r.ic_billed_cents,
-         a.ic_category AS expected_category,
-         ROUND(r.amount_cents * rt.rate_pct / 100) + rt.fixed_cents AS ic_expected_cents
-  FROM records r
-  LEFT JOIN ic_assignment a
-    ON a.card_type = r.card_type AND a.consumer = r.consumer AND a.domestic = r.domestic
-  LEFT JOIN ic_rate rt
-    ON rt.ic_category = a.ic_category
-   AND r.clearing_date >= rt.valid_from
-   AND (rt.valid_to IS NULL OR r.clearing_date < rt.valid_to)
+WITH auth AS (
+  SELECT (auth_ts AT TIME ZONE 'Europe/Paris')::date AS day, response_code, stip
+  FROM authorisation
+  WHERE auth_ts >= (current_date - 30) AND auth_ts < current_date
 )
-SELECT acquirer_id,
-       COUNT(*)                                                              AS records,
-       SUM(ic_billed_cents) / 100.0                                          AS billed_eur,
-       SUM(ic_expected_cents) / 100.0                                        AS expected_eur,
-       (SUM(ic_billed_cents) - SUM(ic_expected_cents)) / 100.0               AS difference_eur,
-       COUNT(*) FILTER (WHERE ABS(ic_billed_cents - ic_expected_cents) > 1)  AS records_off,
-       COUNT(*) FILTER (WHERE billed_category <> expected_category)          AS wrong_category,
-       COUNT(*) FILTER (WHERE ic_expected_cents IS NULL)                     AS no_rule_found
-FROM expected
-GROUP BY acquirer_id
-ORDER BY ABS(SUM(ic_billed_cents) - SUM(ic_expected_cents)) DESC NULLS FIRST;
+SELECT day,
+       COUNT(*)                                                         AS authorisations,
+       ROUND(100.0 * COUNT(*) FILTER (WHERE response_code = '00') / COUNT(*), 2) AS approval_rate_pct,
+       ROUND(100.0 * COUNT(*) FILTER (WHERE stip) / COUNT(*), 2)        AS stip_pct
+FROM auth
+GROUP BY day
+ORDER BY day;
 ```
 
-Detail of the records to correct (same CTEs, last `SELECT` replaced):
+Top 5 decline codes per day:
 
 ```sql
-SELECT acquirer_id, clearing_id, amount_cents, billed_category, expected_category,
-       ic_billed_cents, ic_expected_cents, ic_billed_cents - ic_expected_cents AS diff_cents
-FROM expected
-WHERE ic_expected_cents IS NULL OR ABS(ic_billed_cents - ic_expected_cents) > 1
-ORDER BY ABS(ic_billed_cents - ic_expected_cents) DESC NULLS FIRST;
+WITH declines AS (
+  SELECT (auth_ts AT TIME ZONE 'Europe/Paris')::date AS day, response_code, COUNT(*) AS n
+  FROM authorisation
+  WHERE auth_ts >= (current_date - 30) AND auth_ts < current_date
+    AND response_code <> '00'
+  GROUP BY 1, 2
+),
+ranked AS (
+  SELECT day, response_code, n,
+         ROUND(100.0 * n / SUM(n) OVER (PARTITION BY day), 1) AS share_of_declines_pct,
+         ROW_NUMBER() OVER (PARTITION BY day ORDER BY n DESC, response_code) AS rk
+  FROM declines
+)
+SELECT day, rk, response_code, n, share_of_declines_pct
+FROM ranked
+WHERE rk <= 5
+ORDER BY day, rk;
 ```
 
 ### How it works
-1. **last_month** fixes the period once, so the whole query uses the same dates.
-2. **records** adds *domestic* (merchant and card in the same country), which decides the category together with card type and consumer / commercial.
-3. **expected** finds the category the record *should* have (`ic_assignment`) and the rate **valid on the clearing date** (`ic_rate`), so a rate change in the middle of the month is handled.
-4. The final query compares totals per acquirer and counts the records off by more than 1 cent, the ones in the wrong category, and those with no rule at all.
+1. **auth / declines** convert the timestamp to Paris time first, so a payment at 00:30 counts on the right day.
+2. `COUNT(*) FILTER (WHERE …)` counts approvals and stand-in decisions in one pass.
+3. **ranked** computes each code's share of the day's declines and ranks the codes; ties are broken by code so the result is stable.
+
+### Reading the codes
+| Code | Meaning | What to look at |
+|---|---|---|
+| 51 | Insufficient funds | Normal level, follows paydays |
+| 05 | Do not honour | Too generic: check which rules return it |
+| 59 | Suspected fraud | Fraud rule changes, attacks |
+| 41 / 43 | Lost / stolen card | Rises after a PAN declaration campaign |
+| 91 | Issuer unavailable | Host problems; compare with `stip_pct` |
 
 ### Validation
-- **Totals:** `SUM(ic_billed_cents)` must equal the interchange line of last month's acquirer invoices. If not, the period or the source differs.
-- **Overlapping rates:** this must return nothing, or a record would be counted twice:
-```sql
-SELECT a.ic_category FROM ic_rate a JOIN ic_rate b
-  ON a.ic_category = b.ic_category AND a.valid_from < b.valid_from
- AND (a.valid_to IS NULL OR a.valid_to > b.valid_from);
-```
-- **No rule found:** records with `expected_category` NULL point to a gap in `ic_assignment` (e.g. cross-border or a new card product), not to a billing error. They count in `billed_eur` but not in `expected_eur`, so check `no_rule_found` before reading the difference.
-- **Spot check:** recompute 5 records by hand, one per category.
+- **Totals:** the sum of `authorisations` over 30 days equals `SELECT COUNT(*)` on the same period.
+- **Shares:** per day, `share_of_declines_pct` over all codes (without the top-5 filter) sums to 100.
+- **Spot check:** pick one day and one code, count by hand.
 
 ### Notes
-- Commercial cards are outside the EU interchange caps that apply to consumer cards: they have their own categories here.
-- Amounts are in cents; currency is assumed EUR. If not, filter `currency = 'EUR'` or convert first.
+- A high `stip_pct` with few `91` means stand-in decided **for** us (time-outs): check the host's response times.
+- For e-commerce only, add `AND channel = 'ecom'` in both queries.

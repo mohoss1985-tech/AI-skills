@@ -68,13 +68,13 @@ Ranked by how often listings name them. **Must have** = expected in most banking
 
 ## The six skills added from this analysis
 
-| Skill | Market need | Card-scheme sample |
+| Skill | Market need | Sample (English: Visa · French: CB) |
 |---|---|---|
-| [Workshops & requirements](../skills/facilitating-workshops/SKILL.md) | 68% workshops | Workshop with pilot issuers on the real-time fraud score (LCLF): decisions, requirements, open questions, actions |
-| [Functional specs (SFG / SFD)](../skills/writing-functional-specs/SKILL.md) | 52% specs | Detailed spec of the fraud score in the authorisation request: business rules, message field, stand-in, clearing |
-| [UAT campaign](../skills/running-uat/SKILL.md) | 57% acceptance testing | Day 8 of the fraud score UAT with pilot issuers: progress, defect triage, go / no-go · [`uat_report.py`](../skills/running-uat/scripts/uat_report.py) |
-| [Gap & impact analysis](../skills/analysing-gaps-and-impacts/SKILL.md) | 25% existing vs target, 25% regulation in banking | New domestic interchange grid: existing vs target, EU interchange caps, impacts on clearing, billing and members |
-| [Data mapping & quality](../skills/mapping-data/SKILL.md) | 32% interfaces, 19% data quality | Acquirer clearing file → clearing API: mapping, code tables, data quality rules, authorisation matching SQL · [`check_mapping.py`](../skills/mapping-data/scripts/check_mapping.py) |
-| [Backlog & PI planning](../skills/managing-backlog/SKILL.md) | 32% prioritisation, 30% Jira, 10% SAFe | PI planning for the Authorisation & Fraud team: WSJF, capacity, PI objectives, Jira import · [`wsjf.py`](../skills/managing-backlog/scripts/wsjf.py) |
+| [Workshops & requirements](../skills/facilitating-workshops/SKILL.md) | 68% workshops | Lost and stolen card declaration: notes → report |
+| [Functional specs (SFG / SFD)](../skills/writing-functional-specs/SKILL.md) | 52% specs | PAN declaration: block, Exception File / opposition, fraud report |
+| [UAT campaign](../skills/running-uat/SKILL.md) | 57% acceptance testing | Day 8 of the PAN declaration UAT · [`uat_report.py`](../skills/running-uat/scripts/uat_report.py) |
+| [Gap & impact analysis](../skills/analysing-gaps-and-impacts/SKILL.md) | 25% existing vs target, 25% regulation in banking | Chargebacks out of spreadsheets (French version: CMF refund and contestation timelines) |
+| [Data mapping & quality](../skills/mapping-data/SKILL.md) | 32% interfaces, 19% data quality | Fraud cases → Visa fraud reports / déclarations GIE CB · [`check_mapping.py`](../skills/mapping-data/scripts/check_mapping.py) |
+| [Backlog & PI planning](../skills/managing-backlog/SKILL.md) | 32% prioritisation, 30% Jira, 10% SAFe | Cards team PI: WSJF, capacity, Jira import · [`wsjf.py`](../skills/managing-backlog/scripts/wsjf.py) |
 
 The method to reproduce the counts (Free-Work's public listing API, keyword matching on title, tags and description) is in [`method.md`](method.md).

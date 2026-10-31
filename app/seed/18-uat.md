@@ -1,25 +1,25 @@
-{"client": "Hexa card scheme (sample)", "skill": "running-uat", "title": "UAT day 8: fraud score with pilot issuers"}
+{"client": "Harbor Bank (sample)", "skill": "running-uat", "lang": "en", "title": "UAT day 8: PAN declaration release"}
 ===INPUT===
-Day 8 of 10 of the UAT of the fraud score, with the 3 pilot issuers testing on the certification platform. 120 test cases planned. Exit criteria agreed: all tests run, ≥95% passed, 0 blocking, 0 major without accepted workaround. Go/no-go committee on day 10 with Nadia. Need today's dashboard and what to decide.
+Day 8 of 10 of the UAT of the PAN declaration release (block in app and by phone, Exception File, fraud declaration, replacement card). 120 test cases planned. Exit criteria: all run, ≥95% passed, 0 blocking, 0 major without accepted workaround. Go/no-go on day 10 with Ana.
 
-Xray execution export (112 tests created so far): executions.csv
-Defects from Squash:
+Xray execution export: executions.csv (112 tests so far)
+Defects (Jira export):
 
-Clé;Résumé;Sévérité;Statut;Créé;Fonctionnalité;Contournement
-HEX-301;Stand-in ignores the threshold when the issuer times out after 2 retries;Bloquant;Ouvert;05/11/2026;Stand-in threshold;non
-HEX-302;Reason codes sent in the wrong order (lowest contribution first);Majeur;Ouvert;06/11/2026;Score in request (RS);oui
-HEX-303;Scoring at 15-16 ms sent as scored but after 17 ms total delay;Majeur;Ouvert;06/11/2026;Not-scored fallback;non
-HEX-304;Stand-in advice missing field RS;Majeur;À retester;07/11/2026;Stand-in threshold;non
-HEX-305;Monthly report label typo 'scorring';Mineur;Ouvert;09/11/2026;Score in clearing;oui
-HEX-306;RS absent for BIN ranges opted in before 02:00 batch rerun;Majeur;Clos;04/11/2026;Score in request (RS);non
-HEX-307;Clearing record keeps score of a reversed authorisation;Mineur;À retester;10/11/2026;Score in clearing;oui
-HEX-308;Issuer asks for score in the authorisation response too;Évolution;Ouvert;10/11/2026;Score in request (RS);non
-HEX-309;Reason code GE shown as 'Geo' in the test tool;Mineur;Rejeté;08/11/2026;Score in request (RS);non
-HEX-310;Score present in acquirer clearing file for 3 records;Majeur;Ouvert;11/11/2026;No score to acquirers;non
+Key;Summary;Severity;Status;Created;Component;Workaround
+CARD-301;PAN not added to the Exception File when the host times out during the block;Blocker;Open;2026-11-05;Exception File listing;no
+CARD-302;Block confirmation screen shows the wrong card when the customer has 2 cards;Major;Open;2026-11-06;Block card in the app;yes
+CARD-303;Phone block not visible in the app for 15 minutes;Major;Open;2026-11-06;Block card by phone;no
+CARD-304;Fraud declaration accepted with a fraud date before the transaction date;Major;Ready for retest;2026-11-07;Fraud declaration;no
+CARD-305;Typo in the replacement card email;Minor;Open;2026-11-09;Replacement card;yes
+CARD-306;Block button missing for virtual cards;Major;Closed;2026-11-04;Block card in the app;no
+CARD-307;Fraud report export includes declined authorisations;Minor;Ready for retest;2026-11-10;Fraud declaration;yes
+CARD-308;Customer wants to unblock a card declared stolen;Enhancement;Open;2026-11-10;Block card in the app;no
+CARD-309;Exception File action code shown as text in the test tool;Minor;Rejected;2026-11-08;Exception File listing;no
+CARD-310;Fraud declaration sent twice for the same transaction;Major;Open;2026-11-11;Fraud declaration;no
 ===OUTPUT===
-## UAT dashboard · Real-time fraud score · Day 8 of 10
+## UAT dashboard · PAN declaration release · Day 8 of 10
 
-**Status: 🔴 RED.** Test progress is on plan, but stand-in ignores the threshold in one time-out case (HEX-301, blocking), and the score leaks into the acquirer clearing file (HEX-310), which breaks a Legal condition. Unless both are fixed by tomorrow noon, the go / no-go on day 10 will be a no-go.
+**Status: 🔴 RED.** Progress is on plan, but a blocked PAN is not listed on the Visa Exception File when the host times out (CARD-301, blocking): exactly the stand-in gap this release must close. Unless it is fixed by tomorrow noon, day 10 will be a no-go.
 
 *Figures computed with `uat_report.py executions.csv --defects defects.csv --planned 120 --days 10 --day 8`.*
 
@@ -28,27 +28,25 @@ HEX-310;Score present in acquirer clearing file for 3 records;Majeur;Ouvert;11/1
 |---|---|---|---|---|---|---|---|
 | 120 | 100 | 92 | 8 | 3 | 17 | 83.3% | 76.7% |
 
-Day 8 of 10: 80% should be run, 83.3% is: **ahead by 3.3 points**. 8 of the 17 not run aren't written in Xray yet.
+Day 8 of 10: 80% should be run, 83.3% is: **ahead by 3.3 points**. 8 of the 17 not run aren't written yet.
 
 | Feature | Passed | Failed | Blocked | Not run |
 |---|---|---|---|---|
-| Score in request (RS) | 28 | 1 | 0 | 1 |
-| Not-scored fallback | 13 | 2 | 0 | 0 |
-| **Stand-in threshold** | 15 | **3** | **3** | 4 |
-| Score in clearing | 21 | 1 | 0 | 3 |
-| No score to acquirers | 15 | 1 | 0 | 1 |
-
-**Stand-in threshold** carries most of the risk: the blocking defect, every blocked test and 3 failures.
+| Block card in the app | 28 | 1 | 0 | 1 |
+| Block card by phone | 13 | 2 | 0 | 0 |
+| **Exception File listing** | 15 | **3** | **3** | 4 |
+| Fraud declaration | 21 | 1 | 0 | 3 |
+| Replacement card | 15 | 1 | 0 | 1 |
 
 ### Defects
 10 raised: 6 open, 2 waiting re-test, 1 closed, 1 rejected.
 
 | Severity | Open or waiting re-test | Defects |
 |---|---|---|
-| Blocking | **1** | HEX-301 (7 days old) |
-| Major | **4** | HEX-302 (workaround accepted), HEX-303, HEX-304 (waiting re-test), HEX-310 |
-| Minor | 2 | HEX-305, HEX-307 (waiting re-test) |
-| Enhancement | 1 | HEX-308 → not a defect, and excluded by Legal (score never sent to acquirers) |
+| Blocking | **1** | CARD-301 (7 days old) |
+| Major | **4** | CARD-302 (workaround accepted), CARD-303, CARD-304 (waiting re-test), CARD-310 |
+| Minor | 2 | CARD-305, CARD-307 (waiting re-test) |
+| Enhancement | 1 | CARD-308 → not a defect: stolen cards are never unblocked (RG-09) |
 
 ### Exit criteria
 | Criterion | Status | Value |
@@ -56,25 +54,18 @@ Day 8 of 10: 80% should be run, 83.3% is: **ahead by 3.3 points**. 8 of the 17 n
 | All planned tests run | ❌ | 100 / 120 run, 3 blocked |
 | ≥ 95% of planned tests passed | ❌ | 76.7% |
 | Every requirement has a passed test | ✅ | 5 / 5 |
-| 0 blocking defect open | ❌ | 1 (HEX-301) |
-| 0 major defect without accepted workaround | ❌ | HEX-303, HEX-304, HEX-310 |
+| 0 blocking defect open | ❌ | 1 (CARD-301) |
+| 0 major defect without accepted workaround | ❌ | CARD-303, CARD-304, CARD-310 |
 
 ### Top defects: triage
 | Defect | Why it matters | Owner | Target |
 |---|---|---|---|
-| **HEX-301** Stand-in ignores the threshold after 2 issuer time-outs | Exactly the case stand-in exists for: risky transactions approved while the issuer is down (RG-05). Also blocks 3 tests | Thomas | Fix tomorrow 12:00 |
-| **HEX-310** Score in the acquirer clearing file | Breaks the Legal condition RG-08. **Not negotiable for go-live** | Clearing team | Tomorrow |
-| **HEX-303** Requests delayed to 17 ms when scoring answers at 15–16 ms | Breaks the latency budget (RG-02): the cut-off must include the time to write RS | Thomas | Tomorrow |
-| **HEX-304** Stand-in advice missing RS | Issuers can't see why stand-in declined (RG-06). Fix delivered, re-test today | Tester: Sophie (Crédit Azur) | Today |
-
-**Severity confirmed for all** after triage. HEX-310 stays major (not minor) even though only 3 records are affected: a legal condition is broken, and every leaked score would have to be reported.
-
-### Risks
-- **Re-test window:** if HEX-301 arrives after tomorrow noon, the 3 blocked tests and the peak load test can't run before day 10.
-- **8 test cases not written** (stand-in edge cases and clearing reversals): Inès to write them today.
-- **Pilot issuers' availability:** Paul (Banque du Port) is off on day 10: his re-tests must be done on day 9.
+| **CARD-301** PAN not listed on the Exception File after a host time-out | Stand-in can approve a stolen card (RG-03): the main risk this release addresses. Blocks 3 tests | Tom | Fix tomorrow 12:00 |
+| **CARD-310** Fraud declaration sent twice for the same transaction | Duplicate fraud reports distort Visa fraud data and can break the dispute (RG-07) | Fraud tool team | Tomorrow |
+| **CARD-303** Phone block visible in the app after 15 minutes | Cardholder may block again or call back; misleading | CMS team | Tomorrow |
+| **CARD-304** Fraud date before the transaction date accepted | Fix delivered, re-test today | Tester: Priya | Today |
 
 ### Decisions needed
-1. **Nadia:** accept the workaround for **HEX-302** (reason code order wrong, guide tells analysts to read all three) as a reservation for go-live? *Recommended: yes, fix in the next release.*
-2. **Nadia:** close **HEX-308** (score in the authorisation response) as out of scope, with a reply to the issuer citing the Legal condition. *Recommended: yes.*
-3. **Committee date:** if HEX-301 or HEX-310 isn't fixed by tomorrow noon, move the go / no-go from day 10 to day 12 rather than decide on an incomplete campaign.
+1. **Ana:** accept the workaround for **CARD-302** (confirmation shows the wrong card when there are two; the block itself is on the right card) as a reservation? *Recommended: yes, fix in the next release.*
+2. **Ana:** close **CARD-308** (unblock a stolen card) as out of scope, citing RG-09. *Recommended: yes.*
+3. If CARD-301 isn't fixed by tomorrow noon, move the go / no-go to day 12.

@@ -1,114 +1,95 @@
-{"client": "Hexa card scheme (sample)", "skill": "writing-functional-specs", "title": "SFD: fraud score in the authorisation request"}
+{"client": "Harbor Bank (sample)", "skill": "writing-functional-specs", "lang": "en", "title": "SFD: PAN declaration (block, Exception File, fraud report)"}
 ===INPUT===
-SFD for the fraud score in authorisation, from workshops 1 and 2.
+SFD for the PAN declaration, from workshops 1 and 2. Visa issuer.
 
-Decided: score 0-999 + up to 3 reason codes (2 chars each) in a reserved field of the authorisation request to the issuer (field "network data", tag RS). Budget 15 ms, if late: no score + flag "not scored" (RS status N). Opt-in per BIN range (8 digits), set in the member portal, active at 02:00 next night. Stand-in: issuer threshold, decline with response code 59 (suspected fraud) if score ≥ threshold. Stand-in advice to the issuer includes the score. Score and reason codes stored with the authorisation and copied into the clearing record when matched (pilot: yes, decided in workshop 2). Legal OK with conditions: score not sent to acquirers or merchants, model inputs listed in the member rules. Reason codes: CT card testing, ND new device across network, MA merchant under attack, VE velocity across issuers, GE geography mismatch. Pilot: 3 issuers.
+Decided: reasons lost / stolen / used without permission. Block real time in card management system (CMS) + authorisation host; response 41 lost, 43 stolen, 59 for "used without permission"? (Priya: we use 62 restricted card? no — decided: 05 do not honor for "used without permission", agents see the reason). Exception File: processor confirmed real-time update API, listing within 5 min. Wallet tokens suspended. Lost card: unblock by cardholder within 24h allowed (Legal OK if no transaction since block). Stolen/used without permission: no unblock, new PAN. Cardholder flags unknown transactions (last 90 days); fraud ops confirm within 2 working days, then fraud report to Visa (fraud type per transaction), then dispute (10.x). Replacement card ordered automatically except "used without permission" where cardholder chooses. Channels: app, call centre tool.
 ===OUTPUT===
-## SFD · Real-time fraud score in the authorisation request
+## SFD · PAN declaration: block, Exception File and fraud report
 
 ### 1 · Document control
 | Version | Status | Author | Reviewers |
 |---|---|---|---|
-| 0.9 | For review | BA, Authorisation & Fraud | Nadia (sponsor), Thomas (Authorisation platform), Inès (Data science), Legal, pilot issuers |
-
-**Change log:** 0.9: first version after workshops 1 and 2.
+| 0.9 | For review | BA, Cards | Ana (sponsor), Tom (Card IT), Priya (Fraud ops), Kim (Disputes), Legal |
 
 ### 2 · Context and objectives
-The scheme sees the authorisation traffic of all its issuers. A network-level score detects attacks that cross issuers (card testing, BIN attacks) and that no single issuer can see. This spec describes how the score is computed in the authorisation flow, sent to the issuer, used in stand-in and carried into clearing.
-
-**Objective:** every opted-in authorisation request reaches the issuer with a score, within 15 ms of added latency, and the issuer keeps the decision.
+A cardholder declares a card lost, stolen or used without permission. The card must be refused everywhere at once (our host, and Visa Stand-In Processing through the Exception File), the cardholder's unrecognised transactions must reach fraud operations, and confirmed fraud must be reported to Visa so it can be disputed.
 
 ### 3 · Scope
-**In scope:** scoring of authorisation requests on opted-in BIN ranges; the score field in the request to the issuer; stand-in decline above the issuer's threshold; the score in stand-in advices; the score in matched clearing records.
-**Out of scope:** the score in responses to acquirers and merchants (excluded by Legal); the member portal screens (separate stories); model training.
-**Assumptions:** the reserved field RS is free in every issuer's message version; the 3 pilot issuers are certified before go-live.
+**In scope:** declaration in the app and in the call-centre tool; block in the CMS and the authorisation host; Exception File listing; wallet token suspension; flagging of unrecognised transactions; fraud confirmation and fraud report to Visa; replacement card; unblock of a lost card.
+**Out of scope:** the dispute itself (separate SFD), non-fraud disputes, card controls.
 
 ### 4 · Actors and rights
-| Action | Issuer | Scheme authorisation platform | Acquirer / merchant |
+| Action | Cardholder (app) | Call-centre agent | Fraud analyst |
 |---|---|---|---|
-| Opt BIN ranges in / out, set stand-in threshold | ✅ (member portal, 4-eyes) | — | — |
-| Receive score in the request | ✅ | sends | ❌ never |
-| Decide approve / decline | ✅ | only in stand-in | — |
-| See score in clearing records | ✅ (own cards) | stores | ❌ |
+| Declare and block | ✅ | ✅ | — |
+| Flag unrecognised transactions | ✅ | ✅ on behalf | — |
+| Confirm fraud, send fraud report | — | — | ✅ |
+| Unblock a lost card (≤ 24 h) | ✅ | ✅ | — |
 
 ### 5 · Target process
-1. The authorisation request arrives from the acquirer.
-2. If the card's BIN range is opted in (RG-01), the platform calls the scoring service with a **15 ms** budget (RG-02).
-3. The score and reason codes are written in field RS (RG-03, RG-04) and the request is routed to the issuer.
-4. **Issuer available:** the issuer decides; the scheme forwards the response unchanged.
-5. **Issuer unavailable:** stand-in applies the issuer's limits and the score threshold (RG-05), then sends an advice with the score (RG-06).
-6. The score is stored with the authorisation, and copied into the clearing record when matched (RG-07).
+1. The cardholder or agent picks the card and the reason (RG-01).
+2. The block is applied in the CMS and on the authorisation host (RG-02), the PAN is listed on the Exception File (RG-03), wallet tokens are suspended (RG-04).
+3. The cardholder flags unrecognised transactions (RG-05); a fraud case is created.
+4. The fraud analyst confirms each transaction within 2 working days and sends the fraud report to Visa (RG-06, RG-07).
+5. A replacement card is ordered (RG-08).
 
-**Error path:** scoring service down or late → RS status `N` ("not scored"), routing continues with no extra delay.
+**Error path:** Exception File update fails → retry every minute for 15 minutes, then alert card operations (RG-03).
 
 ### 6 · Business rules
-| ID | Rule | Example | Source |
+| ID | Rule | Example |
+|---|---|---|
+| RG-01 | Reason is one of: **lost**, **stolen**, **used without my permission**. | Card in pocket but unknown payment → "used without my permission" |
+| RG-02 | After the block, authorisations are declined with **41** (lost), **43** (stolen) or **05** (used without permission), within 5 seconds of confirmation. | Blocked 10:02:10, authorisation at 10:02:20 → 43 |
+| RG-03 | The PAN is listed on the Visa Exception File with the action matching the reason, within **5 minutes**. If the update fails, retry every minute for 15 minutes, then alert card operations. | Processor API down → alert at 10:17 |
+| RG-04 | Wallet tokens linked to the card are suspended at the block. | Apple Pay token on the iPhone stops working |
+| RG-05 | The cardholder can flag transactions of the **last 90 days** as unrecognised. Pending authorisations can be flagged; they become fraud reports only once cleared. | 3 e-commerce payments on 2 Nov flagged |
+| RG-06 | The fraud analyst confirms or rejects each flagged transaction within **2 working days**. | — |
+| RG-07 | Each confirmed transaction is reported to Visa with a fraud type (lost, stolen, card-not-present use…) **before** a fraud dispute can be opened. | Confirmed on 4 Nov → reported 4 Nov → dispute possible |
+| RG-08 | Lost or stolen: a replacement card with a **new PAN** is ordered automatically. Used without permission: the cardholder chooses a replacement now or later. | — |
+| RG-09 | A card blocked as **lost** can be unblocked by the cardholder within **24 h**, only if no transaction was attempted since the block. Stolen and used without permission can never be unblocked. | Lost Saturday 18:00, found Sunday 10:00, no attempt → unblocked |
+
+### 7 · Screens and fields
+**E-01 · Declare a card (app)**
+| Field | Type | Values | Rule |
 |---|---|---|---|
-| RG-01 | If the card's 8-digit BIN range is opted in and active, the request is scored; otherwise RS is absent. A change of opt-in is active from 02:00 the next night. | Range 45671200–45671299 opted in Tuesday, scored from Wednesday 02:00 | D-04 |
-| RG-02 | If the scoring service hasn't answered within 15 ms, the request is sent with RS status `N` and no score. | Answer after 18 ms → `N`, answer discarded | D-02 |
-| RG-03 | RS carries: status (`S` scored / `N` not scored), score 000–999, and 0 to 3 reason codes, highest contribution first. | `S` `912` `CT` `VE` | D-01 |
-| RG-04 | Reason codes: `CT` card testing · `ND` new device across the network · `MA` merchant under attack · `VE` velocity across issuers · `GE` geography mismatch. Unknown codes are never sent. | — | Reason code guide |
-| RG-05 | In stand-in, if the issuer has a threshold for the range and score ≥ threshold, decline with response code **59** (suspected fraud). Otherwise stand-in applies the usual limits. Unscored requests (`N`) ignore the threshold. | Threshold 850, score 850 → 59; score 849 → usual limits | D-03 |
-| RG-06 | Every stand-in advice to the issuer carries RS as sent or computed. | — | Workshop 2 |
-| RG-07 | When a clearing record is matched to an authorisation, the score, status and reason codes are copied into it. Unmatched records have no score. | — | Q-01, workshop 2 |
-| RG-08 | The score is **never** sent in responses to acquirers, in merchant reports, or in acquirer clearing files. | — | Legal |
+| Card | choice | Cards of the cardholder: image + last 4 digits | — |
+| Reason | choice | Lost · Stolen · Used without my permission | RG-01 |
+| Confirmation | button | "Block this card" | RG-02 |
 
-### 7 · Message fields
-**Field RS · Network risk data** (authorisation request and stand-in advice to the issuer)
-
-| Sub-field | Type | Length | Values | Rule |
-|---|---|---|---|---|
-| RS.1 status | alpha | 1 | `S` scored, `N` not scored | RG-02, RG-03 |
-| RS.2 score | numeric | 3 | 000–999, absent if `N` | RG-03 |
-| RS.3 reason codes | alpha | 0–6 | up to 3 × 2 characters from RG-04 | RG-03, RG-04 |
-
-**Response code used by stand-in:** 59 suspected fraud (RG-05).
+**E-02 · Unrecognised transactions** – list of the last 90 days, checkbox per transaction, "Send to our fraud team" (RG-05).
 
 ### 8 · Messages
-No end-user screen in this spec. Issuer-facing texts (member portal, monthly report) are in the portal stories. The reason code guide (A-02) is the reference text for issuer analysts.
-
-### 9 · Data
-| Data | Where | Retention |
+| ID | When | Text |
 |---|---|---|
-| Score, status, reason codes | Authorisation log; clearing record (RG-07) | As authorisation and clearing data *(to confirm with the DPO)* |
-| Opt-in and thresholds per BIN range, with history | Member configuration | Life of the membership |
-| Model inputs | Listed in the member rules (Legal condition) | — |
+| MSG-01 | After the block | "Your card ending {last4} is blocked. It can't be used anymore, including in Apple Pay or Google Pay." |
+| MSG-02 | Lost card, within 24 h | "Found your card? You can unblock it until {date} {time}." |
+| MSG-03 | After flagging | "We've sent {n} payments to our fraud team. We'll get back to you within 2 working days." |
 
-### 10 · Interfaces
+### 9 · Interfaces
 | Interface | Direction | Trigger | Content | Errors |
 |---|---|---|---|---|
-| Scoring service (internal) | Platform → scoring | Each opted-in request | Request data allowed by the member rules | Timeout 15 ms → RG-02 |
-| Authorisation request to issuer | Scheme → issuer | Each request | Field RS | As today |
-| Stand-in advice | Scheme → issuer | Each stand-in decision | Field RS | As today |
-| Clearing record to issuer | Scheme → issuer | Matching | Score, status, reason codes | Unmatched: no score |
+| CMS block | App / agent tool → CMS | RG-02 | PAN token, reason | Synchronous; failure = block not confirmed to the user |
+| Authorisation host | CMS → host | RG-02 | Card status | Real time |
+| Visa Exception File update | CMS → processor → Visa | RG-03 | PAN, action, purge date | RG-03 retries |
+| Wallet token service | CMS → token service | RG-04 | Suspend all tokens of the PAN | Retry, alert |
+| Fraud report to Visa | Fraud tool → processor → Visa | RG-07 | Transaction id, fraud type, amount, date | Rejected report → back to the analyst |
 
-### 11 · Non-functional requirements
-- Added latency **≤ 15 ms at the 99th percentile**, measured at the platform.
-- Scoring available ≥ 99.95% of requests on opted-in ranges (status `S`).
-- Load test at 3× the yearly peak (Black Friday).
-- Every configuration change audited (who requested, who approved, when).
+### 10 · Non-functional requirements
+- Block effective in **5 s**; Exception File in **5 min**; 99.9% availability of the declaration in the app.
+- Every declaration, unblock and fraud confirmation audited (who, when, channel).
+- No PAN displayed in clear: last 4 digits only.
 
-### 12 · Traceability
-| Requirement | Rules | Fields |
-|---|---|---|
-| REQ-01 score and reason codes | RG-01, RG-03, RG-04 | RS.1–RS.3 |
-| REQ-02 latency, fallback | RG-02 | RS.1 = `N` |
-| REQ-03 stand-in threshold | RG-05, RG-06 | Response code 59 |
-| REQ-05 score in clearing | RG-07 | Clearing record |
-| Legal condition | RG-08 | — |
+### 11 · Acceptance test ideas
+- RG-02: each reason, authorisation right after the block → 41 / 43 / 05.
+- RG-03: processor API down 20 minutes → retries then alert; listing done when it comes back.
+- RG-05: flag a pending authorisation → no fraud report until cleared.
+- RG-07: dispute attempted before the fraud report → refused by our dispute tool.
+- RG-09: unblock at 23 h 59 with no attempt → OK; at 24 h 01 → refused; after an attempt → refused.
 
-### 13 · Acceptance test ideas
-- RG-01: request on an opted-in range → RS present; on a non-opted range → RS absent; opt-in approved at 16:00 → scored only after 02:00.
-- RG-02: scoring stub answers at 14 ms → `S`; at 16 ms → `N`, no extra delay.
-- RG-05: threshold 850 with score 849, 850, 851; status `N` in stand-in → usual limits only.
-- RG-07: matched clearing record carries the score; unmatched one doesn't.
-- RG-08: acquirer response, acquirer clearing file and merchant report contain no score.
+### 12 · Open points
+| Question | Owner |
+|---|---|
+| Fraud type codes and reporting deadline in the current Visa fraud reporting rules | Fraud ops |
+| Recurring payments after a block: stop or continue? | Card IT |
 
-### 14 · Open points
-| Question | Owner | Due |
-|---|---|---|
-| Retention period of the score in logs and clearing | DPO | Before UAT |
-| RS free in every issuer message version? | Thomas | Certification plan |
-| Monthly performance report content (FR-6) | Inès | Next sprint |
-
-> **Review box:** 8 rules · 1 field with 3 sub-fields · 4 interfaces · 3 open points. Riskiest assumptions: the 15 ms budget holds at peak; field RS is free for every issuer; Legal's conditions don't change the model inputs.
+> **Review box:** 9 rules · 2 screens · 3 messages · 5 interfaces. Riskiest assumptions: the processor's real-time Exception File API holds 5 minutes; analysts can confirm within 2 working days.

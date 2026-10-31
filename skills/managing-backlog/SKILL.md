@@ -30,7 +30,7 @@ Score relatively: for each criterion, the smallest item gets 1 and the others ar
 Use the script for WSJF and capacity (never compute by hand):
 
 ```bash
-python3 scripts/wsjf.py features.csv --capacity 120 --project HEX --jira-csv jira-import.csv
+python3 scripts/wsjf.py features.csv --capacity 120 --project CARD --jira-csv jira-import.csv
 ```
 
 Input CSV columns: `id, title, type, business_value, time_criticality, risk_reduction, job_size, points, depends_on, deadline`. The script ranks by WSJF, puts in-PI items whose dependencies are planned, flags items that miss their deadline, and writes a Jira CSV (Summary, Issue Type, Description, Labels, Story Points, a WSJF label) for Jira's CSV importer.

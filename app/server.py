@@ -13,8 +13,13 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import mimetypes
+import shutil
+from urllib.parse import parse_qs, unquote
+
+import sources
 from i18n_fr import GROUPS, LABELS_FR, TYPES_FR
-from templates import TEMPLATES
+from questions import QUESTIONS
 
 ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
@@ -131,6 +136,165 @@ TYPES += [
 ]
 
 # Ready-to-try scenarios per deliverable (the first one is each type's "example").
+HB, BL = "Harbor Bank", "Banque Lumière"
+BA_EN = {
+    "modeling-processes": [
+        ("Visa authorisation", "Visa card authorisation, with stand-in", HB, None),
+        ("Lost card declaration", "Process: lost or stolen card declaration", HB,
+         "Model the declaration of a lost or stolen Visa card. The cardholder blocks the card in the app or calls the call centre. The card is blocked in the card management system and on the authorisation host; the PAN is added to the Visa Exception File for stand-in; wallet tokens are suspended. The cardholder flags unknown transactions; fraud operations confirm them within 2 working days and report the fraud to Visa; then the disputes team opens a chargeback. A replacement card with a new PAN is sent."),
+        ("Chargeback cycle", "Process: Visa chargeback, from complaint to outcome", HB,
+         "Model a Visa chargeback for an issuer. The cardholder complains about a transaction. The disputes analyst checks the transaction and the dispute condition (fraud, authorisation, processing error, consumer dispute). For fraud, the fraud must be reported to Visa first. The analyst opens the dispute through the processor within the time limit. The acquirer accepts or responds with evidence; the analyst accepts the response or goes to pre-arbitration. The cardholder's provisional credit is kept or reversed at the end."),
+    ],
+    "writing-prds": [
+        ("Lost card in the app", "PRD: declare a lost or stolen card in the app", HB, None),
+        ("Explain declines", "PRD: explain declined payments in the app", HB,
+         "Customers call the call centre 22k times a month about declined card payments. 60% are declines with clear reasons: 51 insufficient funds, 54 expired card, 61 limit exceeded, 1A strong authentication needed for online payments. Idea: show the reason and the fix in the app within seconds of the decline (push + transaction list). Never show fraud reasons (59) to the cardholder. Visa issuer."),
+        ("Dispute tracking", "PRD: cardholders follow their disputes in the app", HB,
+         "Cardholders who contest a payment have no visibility: 35% call back at least twice. Idea: a dispute tracker in the app: steps (received, refunded provisionally, sent to the merchant's bank, decided), expected dates, documents to upload. Visa chargeback timings drive the steps. 1,100 disputes a month."),
+    ],
+    "writing-user-stories": [
+        ("Block and flag", "Stories: block a card and flag unknown payments", HB, None),
+        ("Call-centre agent", "Stories: agent declares a lost card for a cardholder", HB,
+         "Stories for the call-centre tool: the agent identifies the cardholder (strong authentication by SMS code), sees the cards, blocks one with a reason (lost, stolen, used without permission), flags unknown transactions on behalf of the cardholder, and orders the replacement card to the home address or a branch. Every action is logged with the agent id. Jira."),
+        ("Decline messages", "Stories: explain a declined payment", HB,
+         "Stories for showing declined payments in the app with the reason and what to do: insufficient funds (51), expired card (54), limit exceeded (61, link to raise the limit), online payment needs authentication (1A). Suspected fraud (59) must show a neutral message and the fraud team's number. Push within 10 seconds. Jira."),
+    ],
+    "testing-apis": [
+        ("Disputes API", "Disputes API test plan (Visa chargebacks)", HB, None),
+        ("Card block API", "Card block API test plan", HB,
+         "POST /v1/cards/{card_id}/block {reason: LOST|STOLEN|MISUSED, channel: APP|AGENT}. Rules: only the cardholder (app token) or an agent (agent token, role card-agent) can block; a blocked card can't be blocked again (409); after the call, authorisations are declined with 41 / 43 / 05 within 5 s; the PAN is queued for the Visa Exception File; wallet tokens are suspended; LOST can be unblocked within 24 h with POST /unblock if no authorisation was attempted. pytest."),
+        ("Authorisation simulator", "Test plan: issuer authorisation decisions", HB,
+         "We test our authorisation host with a simulator sending Visa authorisation requests. Need the test plan for the decisions: approved (00), insufficient funds (51), expired card (54), lost (41) and stolen (43) cards, suspected fraud (59), limits (61, 65), card-not-present without authentication on an EU merchant (1A). Inputs: card status, balance, limits, expiry, channel, amount. Expected response code and reason. pytest."),
+    ],
+    "generating-sql": [
+        ("Approval rate", "Authorisation approval rate and top decline codes", HB, None),
+        ("Chargeback ratio", "SQL: chargeback ratio per merchant category", HB,
+         "Per MCC and month, the number of disputes opened by our cardholders divided by the number of cleared purchases, and the amounts, for the last 6 months. Tables: clearing(arn, pan_token, mcc, amount_minor, processing_date, transaction_type), dispute(dispute_id, arn, condition_code, opened_at, amount_minor, status). PostgreSQL."),
+        ("Fraud decline bursts (complex)", "Suspicious card decline bursts: how fast do customers reach us?", "Banque Lumière", None),
+    ],
+    "facilitating-workshops": [
+        ("Notes → report", "Workshop report: lost and stolen card declaration", HB, None),
+        ("Prepare a workshop", "Workshop plan: chargeback process redesign", HB,
+         "Prepare a 2-hour workshop on our Visa chargeback process. Today 9% of disputes are lost on time limits, 35% of cardholders call back twice, refunds are manual. Goal: agree the target flow from complaint to outcome, the evidence per dispute condition, and who owns deadlines. Attendees: disputes team lead and 2 analysts, fraud ops, call centre, card IT, finance (provisional credits)."),
+        ("Interview guide", "Interview guide: call-centre agents on card blocking", HB,
+         "I'll interview 6 call-centre agents (30 min each) about how they handle lost and stolen card calls today: tools, steps, what the cardholder asks, what goes wrong (wrong card blocked, wallet still working, replacement address). Need the interview guide and a template to compare answers."),
+    ],
+    "writing-functional-specs": [
+        ("PAN declaration (SFD)", "SFD: PAN declaration (block, Exception File, fraud report)", HB, None),
+        ("Decline reasons (SFD)", "SFD: decline reasons shown to the cardholder", HB,
+         "Write the SFD for showing declined Visa payments in the app. Response codes to explain: 51, 54, 55 (wrong PIN), 61, 65, 1A, 05 (generic). 59 suspected fraud: neutral message. Data from the authorisation host in real time (event per decline). Push notification within 10 s, transaction list entry with reason and action (raise limit, top up, authenticate). Not shown for declines older than 30 days."),
+        ("Review a spec", "Review: stand-in limits spec", HB,
+         "Review and fix this spec extract:\n\nWhen our host is down, Visa should approve transactions if they are not too big. Limits are set per card type etc. Lost and stolen cards are handled as usual. We get the details later. It must be fast."),
+    ],
+    "running-uat": [
+        ("Day 8 dashboard", "UAT day 8: PAN declaration release", HB, None),
+        ("Plan a campaign", "UAT plan: decline reasons in the app", HB,
+         "Plan the UAT of decline reasons in the app: response codes 51, 54, 55, 61, 65, 1A, 05, 59. 2 weeks, 4 business testers, authorisation simulator in the test environment, test cards per code. Go-live in 5 weeks. Need strategy, entry/exit criteria, test data per response code, organisation and planning."),
+        ("Go / no-go", "UAT closure: Disputes API, sign-off", HB,
+         "End of UAT for the Disputes API. 64 tests planned, 64 run, 61 passed, 3 failed. Defects: 1 major open (dispute accepted on day 121 when the transaction was processed at 23:30, time zone; no workaround), 2 minor open (error wording), 9 closed. Exit criteria: 100% run, ≥95% passed, 0 blocking, 0 major without workaround. Go-live in 6 days. Business owner: disputes lead."),
+    ],
+    "analysing-gaps-and-impacts": [
+        ("Chargebacks tool", "Impact analysis: Visa chargebacks out of spreadsheets", HB, None),
+        ("Real-time Exception File", "Impact analysis: real-time Exception File updates", HB,
+         "Today blocked PANs reach the Visa Exception File in a nightly batch from our processor; when our host is down, stand-in can approve a stolen card for hours. The processor offers a real-time update API. Impacts: card management system, call-centre tool, app, processor contract, monitoring, purge dates, card operations. 4,000 blocks a month."),
+        ("3-D Secure soft declines", "Impact analysis: authentication-required declines (1A)", HB,
+         "We want to return response code 1A (additional authentication required) instead of declining online payments that look risky but not fraudulent, so the merchant can ask for 3-D Secure. Impacts: authorisation rules, fraud engine, 3-D Secure ACS, reporting, call centre scripts, merchant complaints. EU cards only."),
+    ],
+    "mapping-data": [
+        ("Fraud reports", "Data mapping: fraud cases to Visa fraud reports", HB, None),
+        ("Decline events", "Interface spec: decline events to the mobile app", HB,
+         "Map the decline events from the authorisation host (fields: auth_id, pan_token, ts, amount_minor, currency, merchant_name, mcc, response_code, channel) to the app notification API (card_id, title, body, reason_code, action, deep_link). Response code → reason and action table needed (51, 54, 55, 61, 65, 1A, 05, 59 neutral). No PAN to the app."),
+        ("Dispute migration", "Data mapping: open disputes from spreadsheet to the dispute tool", HB,
+         "Migrate 850 open disputes from the shared spreadsheet (columns: date received, cardholder name, card last 4, ARN, amount, reason in free text, status in free text, deadline typed by hand) to the dispute tool (dispute_id, arn, condition_code, amount_minor, opened_at, due_date, status enum). Free text must be mapped to condition codes and statuses; deadlines recomputed."),
+    ],
+    "managing-backlog": [
+        ("PI planning (WSJF)", "PI planning: cards team, PAN declaration and disputes", HB, None),
+        ("Backlog review", "Backlog review: cards app team", HB,
+         "Top 12 of our 140 backlog items:\n1. Improve card screen (no description)\n2. Dark mode\n3. Block card in the app — 3 sprints\n4. Fix: PIN reveal crashes on Android 15 (4% of sessions)\n5. Refactor cards module\n6. Dispute tracker (epic, 80 pts)\n7. Show CVV for virtual cards — waiting on security\n8. Decline reasons in the app\n9. Dark mode (duplicate?)\n10. Accessibility fixes (deadline June)\n11. Card controls by merchant category\n12. Upgrade the card SDK (end of support in 2 months)\nTeam: 6 devs, velocity 35. What's wrong and how to reorder?"),
+        ("Release plan (MoSCoW)", "Release plan: lost card in the app by 1 June", HB,
+         "Fixed date 1 June. 5 sprints left, velocity 30. Stories: block with reason (8), confirmation screen (3), Exception File real time (8), wallet token suspension (5), flag unknown transactions (8), replacement card (5), unblock lost within 24 h (5), push notification (3), accessibility (5), analytics (3), French and English texts (2), agent tool parity (13). Must-haves for 1 June and the plan?"),
+    ],
+}
+BA_FR = {
+    "modeling-processes": [
+        ("Autorisation CB", "Autorisation d'un paiement CB, avec traitement de secours", BL, None),
+        ("Mise en opposition", "Processus : mise en opposition d'une carte", BL,
+         "Modélise la mise en opposition d'une carte CB. Le porteur fait opposition dans l'appli, appelle le centre d'appels ou le serveur interbancaire d'opposition. La carte est mise en opposition dans le système de gestion des cartes et le serveur d'autorisation ; les jetons de paiement mobile sont suspendus. Le porteur conteste les opérations qu'il ne reconnaît pas ; elles sont remboursées au plus tard à J+1 ouvré, sauf soupçon de fraude du porteur. L'analyste fraude confirme et déclare la fraude au GIE CB ; l'équipe impayés émet l'impayé vers l'acquéreur. Une nouvelle carte (nouveau PAN) est envoyée."),
+        ("Cycle d'un impayé", "Processus : impayé CB, de la contestation au dénouement", BL,
+         "Modélise un impayé CB côté émetteur. Le porteur conteste une opération. L'analyste vérifie l'opération et le motif (fraude, opération non autorisée, doublon, montant erroné, non-livraison). Pour la fraude, l'opération doit être déclarée au GIE CB. Le porteur est remboursé dans le délai légal. L'analyste émet l'impayé vers l'acquéreur ; l'acquéreur l'accepte ou re-présente l'opération avec des justificatifs ; en dernier recours, arbitrage. Le remboursement du porteur est maintenu ou repris selon l'issue."),
+    ],
+    "writing-prds": [
+        ("Opposition dans l'appli", "PRD : mise en opposition d'une carte dans l'application", BL, None),
+        ("Expliquer les refus", "PRD : expliquer les paiements refusés dans l'appli", BL,
+         "Le centre d'appels reçoit 22 000 appels par mois sur des paiements refusés. 60 % ont une cause claire : 51 provision insuffisante, 54 carte expirée, 61 plafond dépassé, 55 code confidentiel erroné. Idée : afficher la cause et la solution dans l'appli quelques secondes après le refus. Ne jamais afficher la suspicion de fraude (59). Émetteur CB."),
+        ("Suivi des contestations", "PRD : suivi des contestations dans l'appli", BL,
+         "Les porteurs qui contestent une opération n'ont aucune visibilité : 35 % rappellent au moins deux fois. Idée : un suivi dans l'appli (reçue, remboursée, impayé émis, dénouement), avec les dates et les justificatifs à déposer. 1 100 contestations par mois."),
+    ],
+    "writing-user-stories": [
+        ("Opposition et contestation", "User stories : opposition et contestation dans l'appli", BL, None),
+        ("Conseiller", "User stories : le conseiller fait opposition pour le porteur", BL,
+         "User stories pour l'outil du centre d'appels : le conseiller identifie le porteur (code SMS), voit ses cartes, fait opposition avec un motif (perte, vol, utilisation frauduleuse), conteste des opérations pour le porteur et commande la nouvelle carte (domicile ou agence). Chaque action est tracée avec l'identifiant du conseiller. Jira."),
+        ("Messages de refus", "User stories : expliquer un paiement refusé", BL,
+         "User stories pour afficher les paiements refusés avec la cause et l'action : provision insuffisante (51), carte expirée (54), code erroné (55), plafond dépassé (61, lien pour augmenter le plafond). Suspicion de fraude (59) : message neutre et numéro du service fraude. Notification sous 10 secondes. Jira."),
+    ],
+    "testing-apis": [
+        ("API impayés", "Plan de test de l'API impayés (CB)", BL, None),
+        ("API d'opposition", "Plan de test de l'API d'opposition", BL,
+         "POST /v1/cartes/{id}/opposition {motif: PERTE|VOL|FRAUDE, canal: APPLI|CONSEILLER}. Règles : seul le porteur (jeton appli) ou un conseiller (rôle conseiller-carte) ; une carte déjà en opposition → 409 ; après l'appel, refus 41 / 43 / 59 en moins de 5 s ; jetons mobiles suspendus ; PERTE peut être levée sous 24 h par POST /levee si aucune autorisation n'a été tentée. pytest."),
+        ("Simulateur d'autorisation", "Plan de test : décisions d'autorisation de l'émetteur", BL,
+         "Nous testons notre serveur d'autorisation avec un simulateur de demandes CB. Plan de test des décisions : accord (00), provision insuffisante (51), carte expirée (54), carte perdue (41), carte volée (43), suspicion de fraude (59), plafond dépassé (61), code erroné (55). Entrées : statut de la carte, solde, plafonds, date de validité, canal, montant. pytest."),
+    ],
+    "generating-sql": [
+        ("Taux d'acceptation", "Taux d'acceptation des autorisations et principaux codes de refus", BL, None),
+        ("Taux d'impayés", "SQL : taux d'impayés par catégorie de commerçant", BL,
+         "Par MCC et par mois, le nombre d'impayés émis rapporté au nombre d'achats compensés, et les montants, sur 6 mois. Tables : compensation(arn, jeton_pan, mcc, montant_centimes, date_traitement, type_operation), impaye(id, arn, motif, emis_le, montant_centimes, statut). PostgreSQL."),
+        ("Remboursements J+1", "SQL : contestations remboursées dans le délai légal", BL,
+         "Part des contestations remboursées au plus tard à la fin du premier jour ouvrable suivant la contestation, par semaine, sur 3 mois. Tables : contestation(id, cree_le timestamptz, montant_centimes, motif), remboursement(contestation_id, effectue_le timestamptz), jour_ferie(date). PostgreSQL."),
+    ],
+    "facilitating-workshops": [
+        ("Notes → compte-rendu", "Compte-rendu : atelier mise en opposition et déclaration de fraude", BL, None),
+        ("Préparer un atelier", "Plan d'atelier : refonte du traitement des impayés", BL,
+         "Préparer un atelier de 2 heures sur le traitement des impayés CB. Aujourd'hui 9 % des impayés sont perdus pour délai dépassé, 35 % des porteurs rappellent deux fois, les remboursements sont manuels. Objectif : circuit cible de la contestation au dénouement, justificatifs par motif, responsable des délais. Participants : responsable impayés et 2 analystes, fraude, centre d'appels, IT monétique, comptabilité."),
+        ("Guide d'entretien", "Guide d'entretien : conseillers sur la mise en opposition", BL,
+         "Je vais interroger 6 conseillers du centre d'appels (30 min chacun) sur le traitement des appels d'opposition : outils, étapes, questions du porteur, ce qui coince (mauvaise carte, paiement mobile encore actif, adresse de la nouvelle carte). Il me faut le guide d'entretien et une grille de synthèse."),
+    ],
+    "writing-functional-specs": [
+        ("Opposition (SFD)", "SFD : mise en opposition et déclaration de fraude d'un PAN", BL, None),
+        ("Motifs de refus (SFD)", "SFD : motifs de refus affichés au porteur", BL,
+         "Rédiger la SFD de l'affichage des paiements CB refusés dans l'appli. Codes à expliquer : 51, 54, 55, 61, 05. 59 suspicion de fraude : message neutre. Données du serveur d'autorisation en temps réel (un événement par refus). Notification sous 10 s, ligne dans l'historique avec cause et action (augmenter le plafond, alimenter le compte). Pas d'affichage des refus de plus de 30 jours."),
+        ("Relire une spec", "Relecture : spec de la levée d'opposition", BL,
+         "Relis et corrige cet extrait :\n\nLe client peut lever l'opposition s'il retrouve sa carte, dans un délai raisonnable. Sauf si c'est un vol, etc. La carte refonctionne normalement. Le conseiller peut aussi le faire. Ça doit être rapide."),
+    ],
+    "running-uat": [
+        ("Tableau de bord J8", "Recette J8 : mise en opposition et contestation", BL, None),
+        ("Planifier une recette", "Plan de recette : motifs de refus dans l'appli", BL,
+         "Planifier la recette des motifs de refus dans l'appli : codes 51, 54, 55, 61, 05, 59. 2 semaines, 4 testeurs métier, simulateur d'autorisation en environnement de recette, cartes de test par code. Mise en production dans 5 semaines. Il faut la stratégie, les critères d'entrée et de sortie, les données de test par code, l'organisation et le planning."),
+        ("Go / no-go et PV", "Clôture de recette : API impayés, PV de recette", BL,
+         "Fin de recette de l'API impayés. 64 cas prévus, 64 exécutés, 61 OK, 3 KO. Anomalies : 1 majeure ouverte (impayé accepté à J+121 quand l'opération a été traitée à 23h30, fuseau horaire ; pas de contournement), 2 mineures ouvertes (libellés), 9 closes. Critères : 100 % exécutés, ≥ 95 % OK, 0 bloquant, 0 majeur sans contournement. Mise en production dans 6 jours. Recommandation go / no-go et PV de recette."),
+    ],
+    "analysing-gaps-and-impacts": [
+        ("Impayés hors Excel", "Analyse d'impact : contestations et impayés CB hors Excel", BL, None),
+        ("Opposition temps réel", "Analyse d'impact : opposition temps réel en autorisation", BL,
+         "Aujourd'hui les oppositions arrivent au serveur d'autorisation par batch horaire : une carte volée peut être acceptée jusqu'à une heure après l'opposition. Objectif : temps réel. Impacts : système de gestion des cartes, serveur d'autorisation, outil du centre d'appels, appli, supervision, exploitation. 4 000 oppositions par mois."),
+        ("Remboursement J+1", "Analyse d'écart : remboursement J+1 des opérations contestées", BL,
+         "Le Code monétaire et financier impose de rembourser une opération de paiement non autorisée au plus tard à la fin du premier jour ouvrable suivant le signalement, sauf soupçon de fraude du porteur. Aujourd'hui nous remboursons entre J+3 et J+5 après ressaisie. Il faut l'analyse d'écart (processus, outils, comptabilité, conformité) et un plan."),
+    ],
+    "mapping-data": [
+        ("Déclarations de fraude", "Mapping : dossiers de fraude vers déclarations GIE CB", BL, None),
+        ("Événements de refus", "Spec d'interface : événements de refus vers l'appli", BL,
+         "Mapper les événements de refus du serveur d'autorisation (id, jeton_pan, horodatage, montant_centimes, devise, nom_commercant, mcc, code_reponse, canal) vers l'API de notification de l'appli (carte_id, titre, texte, code_motif, action, lien). Table code réponse → motif et action à construire (51, 54, 55, 61, 05, 59 neutre). Aucun PAN vers l'appli."),
+        ("Reprise des impayés", "Mapping : reprise des impayés ouverts depuis Excel", BL,
+         "Reprendre 850 dossiers d'impayés ouverts du fichier Excel (date de réception, nom du porteur, 4 derniers chiffres, ARN, montant, motif en texte libre, statut en texte libre, échéance saisie à la main) vers l'outil de litiges (id, arn, motif, montant_centimes, ouvert_le, echeance, statut). Texte libre à transcoder, échéances à recalculer."),
+    ],
+    "managing-backlog": [
+        ("PI planning (WSJF)", "PI planning : équipe monétique, opposition et impayés", BL, None),
+        ("Revue du backlog", "Revue du backlog : équipe appli cartes", BL,
+         "Top 12 de nos 140 éléments :\n1. Améliorer l'écran carte (sans description)\n2. Mode sombre\n3. Opposition dans l'appli — 3 sprints\n4. Correctif : l'affichage du code plante sur Android 15 (4 % des sessions)\n5. Refonte du module cartes\n6. Suivi des contestations (epic, 80 pts)\n7. Afficher le cryptogramme des cartes virtuelles — attente sécurité\n8. Motifs de refus dans l'appli\n9. Mode sombre (doublon ?)\n10. Accessibilité RGAA (échéance juin)\n11. Blocage par catégorie de commerçant\n12. Mise à jour du SDK cartes (fin de support dans 2 mois)\nÉquipe : 6 devs, vélocité 35. Qu'est-ce qui ne va pas et comment réordonner ?"),
+        ("Plan de release (MoSCoW)", "Plan de release : opposition dans l'appli au 1er juin", BL,
+         "Date fixe 1er juin. 5 sprints restants, vélocité 30. Stories : opposition avec motif (8), écran de confirmation (3), opposition temps réel en autorisation (8), suspension des jetons (5), contestation des opérations (8), remboursement J+1 (8), nouvelle carte (5), levée sous 24 h (5), notification (3), accessibilité (5), statistiques (3), parité outil conseiller (13). Quels must-have pour le 1er juin et quel plan ?"),
+    ],
+}
+
 EXAMPLES = {
     "prioritizing-ai-use-cases": [
         ("Banking support", "Support use cases for the banking assistant", "Banque Lumière", None),
@@ -178,93 +342,22 @@ EXAMPLES = {
     "managing-xray-tests": [
         ("Stories → Xray tests", "Xray tests: card lost or stolen (Cloud + Server/DC)", "Banque Lumière", None),
         ("Eval run → Xray", "Xray: RAG evaluation run tracked in Jira", "Banque Lumière", None),
-        ("Disputes API tests", "Xray tests: disputes API (Server / Data Center)", "Hexa card scheme",
-         "Xray Server / Data Center, project HEX. Turn the disputes API test plan into Xray tests: Generic tests for the automated pytest suite (definition = test function name), Manual tests for the 4 end-to-end cases run with pilot members on the certification platform (issuer opens, acquirer represents, issuer escalates, scheme arbitrates). Stories HEX-210 to HEX-214. Test Sets: smoke, regression. Test Plan for the 1 March release."),
+        ("Disputes API tests", "Xray tests: Disputes API (Server / Data Center)", "Harbor Bank",
+         "Xray Server / Data Center, project CARD. Turn the Disputes API test plan into Xray tests: Generic tests for the automated pytest suite (definition = test function name), Manual tests for 3 end-to-end cases run by the disputes team (fraud dispute after a fraud report, consumer dispute 13.1, dispute refused after 120 days). Stories CARD-210 to CARD-214. Test Sets: smoke, regression."),
         ("Release Test Plan", "Xray Test Plan: assistant release v1.4", "Banque Lumière",
          "Xray Server / Data Center, project LUM. Release v1.4 of the assistant adds the 'card declined' journey (stories LUM-430 to LUM-433) and changes the hand-off screen. Existing tests: LUM-601 to LUM-640 (cards, access blocked, red-team). Build the Test Plan for v1.4: which existing tests to re-run, which new tests to create, Test Sets (smoke, regression, red-team), environments staging then pre-prod, and what must pass to go live."),
     ],
-    "generating-sql": [
-        ("Interchange check", "Interchange check: billed vs expected per acquirer", "Hexa card scheme", None),
-        ("Chatbot KPIs (complex)", "Assistant KPIs: containment with resolution by intent and week", "Banque Lumière", None),
-        ("Fraud decline bursts (complex)", "Suspicious card decline bursts: how fast do customers reach us?", "Banque Lumière", None),
-    ],
-    "modeling-processes": [
-        ("Card payment lifecycle", "Card payment lifecycle: authorisation, clearing, settlement", "Hexa card scheme", None),
-        ("Dispute (chargeback) cycle", "Process: dispute, representment and arbitration", "Hexa card scheme",
-         "Model the dispute cycle. The cardholder contests a payment with the issuer. The issuer checks the reason and, if valid, opens a dispute (chargeback) through the scheme within 120 days of clearing; fraud reasons need a fraud report (LCLF declaration) first. The scheme debits the acquirer and credits the issuer in the next settlement. The acquirer asks the merchant for evidence and, within 30 days, either accepts or represents with evidence. On representment the issuer can accept (dispute closed, amount goes back to the acquirer) or escalate to arbitration by the scheme, whose decision is final; the losing member pays an arbitration fee."),
-        ("Issuer onboarding", "Process: onboarding a new issuer member", "Hexa card scheme",
-         "Model how a new issuer joins the scheme: application with documents (licence, KYC of the institution), review by Risk and Compliance, membership committee decision, contract signature, BIN range allocation, technical connection (test platform, certification of authorisation and clearing messages, security review), settlement account opening, then go-live with a monitored first month. Refusal at the committee ends the process; failed certification goes back to the member for fixes."),
-    ],
-    "writing-prds": [
-        ("Fraud score (LCLF)", "PRD: real-time fraud score in authorisation", "Hexa card scheme", None),
-        ("Member API portal", "PRD: developer portal for member APIs", "Hexa card scheme",
-         "Our members (22 issuers, 9 acquirers) integrate our APIs (disputes, fraud reports, BIN ranges, settlement reports) with PDFs and emails. Onboarding a new API takes 3 to 5 months, mostly waiting for test credentials and answers. Idea: a developer portal with OpenAPI docs, a sandbox with test cards and tokens, self-service credentials for the test environment, and a status page. Constraint: production credentials stay under 4-eyes approval with mTLS certificates."),
-        ("Instant settlement report", "PRD: intraday settlement position for members", "Hexa card scheme",
-         "Members only see their net settlement position after the day closes; treasurers want to see it during the day to manage liquidity. Idea: an intraday position updated every hour from cleared transactions, by API and in the member portal, with the expected final position. Large issuers ask for it; small ones don't have treasurers watching. Must reconcile exactly with the end-of-day position."),
-    ],
-    "writing-user-stories": [
-        ("Issuer fraud settings", "Stories: issuer fraud-score settings in the member portal", "Hexa card scheme", None),
-        ("Acquirer disputes inbox", "Stories: acquirer disputes inbox", "Hexa card scheme",
-         "Stories for the acquirer side of disputes in the member portal: list of open disputes with the response due date, filter by reason and merchant, open a dispute and see the clearing record, accept a dispute, represent with evidence upload (PDF, max 10 files, 5 MB each), and see disputes close to their deadline (5 days). Users: acquirer dispute analysts. Jira. Same 4-eyes rule as other member changes? Not for disputes."),
-        ("BIN range management", "Stories: issuers manage their BIN ranges", "Hexa card scheme",
-         "Issuers request new BIN ranges (8 digits) and change attributes (card product, debit/credit, consumer/commercial, country). Changes affect authorisation routing and interchange category, so they need scheme approval and take effect on a weekly release (Sunday 03:00). Users: issuer product managers. Jira."),
-    ],
-    "testing-apis": [
-        ("Disputes API", "Disputes API test plan (chargebacks)", "Hexa card scheme", None),
-        ("Fraud report API", "Fraud report API test plan (LCLF declarations)", "Hexa card scheme",
-         "POST /v1/fraud-reports (issuer) declares a fraudulent transaction: { clearing_id or auth_id, fraud_type (lost, stolen, counterfeit, card-not-present, account takeover), detection_date, amount }. Rules: only the issuer of the card; within 90 days of the transaction; one report per transaction (updates via PATCH); detection_date not before the transaction date; fraud_type card-not-present only on ECOM transactions. Returns 201. pytest."),
-        ("Settlement report API", "Settlement report API test plan", "Hexa card scheme",
-         "GET /v1/settlement-positions?date=YYYY-MM-DD returns the member's net position for a settlement date: totals by currency and by category (purchases, refunds, interchange, disputes, fees) and the net amount. Rules: a member only sees its own positions; date must be a settlement day; positions of the current day are 'provisional' until 18:00; amounts in minor units; sum of categories = net. Paginated detail at /v1/settlement-positions/{id}/lines. OAuth2 + mTLS."),
-    ],
-    "facilitating-workshops": [
-        ("Notes → report", "Workshop report: fraud score with pilot issuers", "Hexa card scheme", None),
-        ("Prepare a workshop", "Workshop plan: dispute process redesign", "Hexa card scheme",
-         "Prepare a 3-hour workshop on the dispute (chargeback) process. Today 40% of disputes go to arbitration, arbitration takes 45 days on average, and acquirers complain about evidence sent by email. Goal: agree the target dispute flow, the evidence required per reason code, and the deadlines. Attendees: 2 issuers' dispute managers, 2 acquirers' dispute managers, scheme dispute operations, scheme rules team, IT disputes, LCLF (fraud). Hybrid: half on site, half remote on Klaxoon."),
-        ("Interview guide", "Interview guide: acquirers on the clearing API", "Hexa card scheme",
-         "I'll interview the 9 acquirers' clearing teams (45 min each) before they migrate from the legacy clearing file to our clearing API: how they build the file today, their volumes and cut-off times, how they handle rejects, what worries them about the API, and their test capacity. Need the interview guide and a template to compare the answers."),
-    ],
-    "writing-functional-specs": [
-        ("Detailed spec (SFD)", "SFD: fraud score in the authorisation request", "Hexa card scheme", None),
-        ("General spec (SFG)", "SFG: disputes in the member portal", "Hexa card scheme",
-         "Write the SFG for disputes in the member portal and API: issuers open disputes on cleared transactions with a reason code, acquirers accept or represent with evidence within 30 days, issuers accept or escalate to arbitration, the scheme decides. Financial movements go through settlement. Deadlines: 120 days from clearing to open, 30 days to represent, 10 days to escalate. Fraud reasons need a fraud report. Out of scope: cardholder-facing screens."),
-        ("Review a spec", "Review: spec of the issuer stand-in limits", "Hexa card scheme",
-         "Review this spec extract and fix it:\n\nWhen the issuer is unavailable, the scheme should approve transactions if they are not too big. Limits are set by the issuer, per card type etc. If the amount is above the limit we decline. Cash is handled as usual. The issuer gets the details later. The system must be fast and reliable."),
-    ],
-    "running-uat": [
-        ("Day 8 dashboard", "UAT day 8: fraud score with pilot issuers", "Hexa card scheme", None),
-        ("Plan a campaign", "UAT plan: new interchange grid", "Hexa card scheme",
-         "Plan the UAT of the new domestic interchange grid: consumer debit ≤ 20 € at 0.10%, public & charity MCCs at 0.05%, other categories unchanged. Tests on the clearing engine, member clearing records, monthly billing and member reports. 3 weeks in February on the certification platform, testers from Pricing, Finance and 4 volunteer members (2 issuers, 2 acquirers). Shadow run in March, go-live 1 April. Need the strategy, entry/exit criteria, test data (amount boundaries, MCCs, rate change on a date), organisation and planning."),
-        ("Go / no-go and sign-off", "UAT closure: disputes API, PV de recette", "Hexa card scheme",
-         "End of UAT for the disputes API. 86 tests planned, 86 run, 83 passed, 3 failed. Defects: 1 major open (representment accepted on day 31 when the dispute was opened at 23:30, time zone issue; workaround: none), 2 minor open (error message wording), 11 closed. Exit criteria: 100% run, ≥95% passed, 0 blocking, 0 major without workaround. Go-live with the first 4 members in 6 days. Business owner: head of dispute operations. Need the go / no-go recommendation and the PV de recette."),
-    ],
-    "analysing-gaps-and-impacts": [
-        ("New interchange grid", "Impact analysis: new domestic interchange grid", "Hexa card scheme", None),
-        ("DORA incident reporting", "Gap & impact analysis: DORA major incident reporting", "Hexa card scheme",
-         "Internal audit says our ICT incident process doesn't meet DORA. Today: incidents in ServiceNow, priority P1-P4 by technical impact; a P1 on authorisation is reported to the supervisor by Risk, by email, usually the next day. No link to the DORA classification criteria (clients and members affected, duration, data loss, critical services, geographical spread, economic and reputational impact). Members affected are estimated by phone. Third-party incidents (data centre, network provider) arrive by email. No 24/7 Risk on-call. Must comply in 6 months."),
-        ("Clearing migration to API", "Impact analysis: retiring the legacy clearing file", "Hexa card scheme",
-         "We want to stop accepting the legacy fixed-width clearing file in 12 months: all acquirers must send clearing through the new API. Impacts: 9 acquirers and their processors, our intake, validation and reject reports, the matching with authorisations, interchange computation, member billing, the operations team's monitoring and night shifts, contracts and member rules. 2 small acquirers have no IT team and use a processor. Need the gap & impact analysis and a migration approach."),
-    ],
-    "mapping-data": [
-        ("Clearing file → API", "Data mapping: acquirer clearing file to the clearing API", "Hexa card scheme", None),
-        ("Fraud reports interface", "Interface spec: issuer fraud reports to the scheme", "Hexa card scheme",
-         "Map issuers' fraud reports (today: monthly CSV in different layouts per issuer) to our fraud report API. Issuer fields vary: transaction reference or ARN, card number masked or token, fraud type in free text or codes, detection date, amount. API expects: arn or auth_id, pan_token, fraud_type (LOST, STOLEN, COUNTERFEIT, CNP, ATO, OTHER), detection_date, amount_minor, currency. Need the mapping, code translation from free text, rules for missing data, and how to match reports to transactions."),
-        ("Data quality: BIN referential", "Data quality rules: BIN referential", "Hexa card scheme",
-         "Wrong BIN attributes cause wrong routing and wrong interchange. Table bin_range (bin_start, bin_end, issuer_id, card_product, card_type debit/credit/prepaid, consumer flag, country, status, valid_from). Known issues: overlapping ranges, ranges with no issuer, commercial cards flagged consumer, country missing. Need data quality rules by dimension with thresholds, the SQL checks, and a remediation plan by priority."),
-    ],
-    "managing-backlog": [
-        ("PI planning (WSJF)", "PI planning: Authorisation & Fraud team, PI 27.1", "Hexa card scheme", None),
-        ("Backlog health check", "Backlog review: member portal team", "Hexa card scheme",
-         "Our backlog has 140 items. Top 15 by rank:\n1. Improve dispute screens (no description)\n2. As an issuer I want dark mode\n3. Bulk upload of fraud reports — 3 sprints\n4. Fix: settlement report PDF times out for large acquirers (12% of downloads)\n5. Refactor authentication module\n6. Developer portal (epic, 90 pts)\n7. As an acquirer I want to see the cardholder name — needs Legal\n8. Notification preferences\n9. Dark mode (duplicate?)\n10. Accessibility fixes (RGAA, deadline June)\n11. Intraday settlement position\n12. Spike: new charting library\n13. BIN range requests v2\n14. Upgrade the API gateway (end of support in 2 months)\n15. Improve performance\nTeam: 6 devs, 2-week sprints, velocity 35. What's wrong and how would you reorder it?"),
-        ("Release plan (MoSCoW)", "Release plan: disputes API by 1 March", "Hexa card scheme",
-         "Fixed date 1 March (committed to the 4 pilot members). 5 sprints of 2 weeks left, velocity 30. Stories: open dispute (8), get dispute (3), list disputes with filters (5), accept dispute (3), represent with evidence ids (8), evidence upload (13), escalate to arbitration (8), webhooks on status change (8), sandbox test data (5), rate limiting (3), OpenAPI docs (3), French error messages (2), dispute statistics endpoint (5). Which are must-haves for 1 March and what's the release plan?"),
-    ],
+    **BA_EN,
 }
+_ex_dict = lambda items, ex: [{"label": l, "label_fr": LABELS_FR.get(l, l), "title": ti, "client": c,
+                               "notes": n or ex} for l, ti, c, n in items]
 for _t in TYPES:
     _ex = EXAMPLES.get(_t["id"])
     if _ex:
-        _t["examples"] = [{"label": l, "label_fr": LABELS_FR.get(l, l), "title": ti, "client": c,
-                           "notes": n or _t.get("example", "")} for l, ti, c, n in _ex]
-    _t["template"] = TEMPLATES.get(_t["id"], {})
+        _t["examples"] = _ex_dict(_ex, _t.get("example", ""))
+    if _t["id"] in BA_FR:  # French scenarios follow CB rules
+        _t["examples_fr"] = [{**e, "label_fr": e["label"]} for e in _ex_dict(BA_FR[_t["id"]], "")]
+    _t["questions"] = QUESTIONS.get(_t["id"], [])
     _t["fr"] = TYPES_FR.get(_t["id"], {})
     _t["group"] = next(g["id"] for g in GROUPS if _t["id"] in g["types"])
 # Sidebar order follows the work: frame, specify, plan / test / deliver, then the AI track.
@@ -332,6 +425,10 @@ def init_db():
             conn.execute("ALTER TABLE requests ADD COLUMN sent_at REAL")
         if "unseen" not in cols:
             conn.execute("ALTER TABLE requests ADD COLUMN unseen INTEGER NOT NULL DEFAULT 0")
+        if "answers" not in cols:
+            conn.execute("ALTER TABLE requests ADD COLUMN answers TEXT NOT NULL DEFAULT '{}'")
+        if "lang" not in cols:  # samples exist per language: Visa samples in English, CB samples in French
+            conn.execute("ALTER TABLE requests ADD COLUMN lang TEXT NOT NULL DEFAULT ''")
         # Add each sample once, so new samples reach existing workspaces and deleted ones stay deleted.
         seeded = set(get_meta(conn, "seeded", [r[0] for r in conn.execute("SELECT title FROM requests WHERE is_sample=1")]))
         seeds = load_seed()
@@ -348,9 +445,9 @@ def init_db():
                 continue
             t = now - (len(seeds) - i) * 3600 * 2
             conn.execute(
-                "INSERT INTO requests (type,client,title,notes,output,status,is_sample,created_at,updated_at) "
-                "VALUES (?,?,?,?,?, 'ready', 1, ?, ?)",
-                (r["skill"], r.get("client", "Sample client"), r["title"], r["input"], r["output"], t, t))
+                "INSERT INTO requests (type,client,title,notes,output,status,is_sample,lang,created_at,updated_at) "
+                "VALUES (?,?,?,?,?, 'ready', 1, ?, ?, ?)",
+                (r["skill"], r.get("client", "Sample client"), r["title"], r["input"], r["output"], r.get("lang", ""), t, t))
             seeded.add(r["title"])
         set_meta(conn, "seeded", sorted(seeded))
 
@@ -370,9 +467,18 @@ def claude_online(conn):
     return bool(row) and time.time() - float(row["value"]) < 45
 
 
+def public(files):
+    """File listing for the browser: no local paths."""
+    return [{k: f[k] for k in ("name", "size", "kind")} | {"extracted": bool(f["text_path"])} for f in files]
+
+
+def urlparse_query(path):
+    return path.partition("?")[2]
+
+
 def summary(conn, row):
     d = dict(row)
-    d.pop("output"), d.pop("notes"), d.pop("changes")
+    d.pop("output"), d.pop("notes"), d.pop("changes"), d.pop("answers", None)
     d["unread"] = conn.execute("SELECT COUNT(*) FROM messages WHERE request_id=? AND role='claude' AND read=0",
                                (row["id"],)).fetchone()[0]
     d["awaiting_reply"] = conn.execute("SELECT COUNT(*) FROM messages WHERE request_id=? AND role='user' AND handled=0",
@@ -412,6 +518,17 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.partition("?")[0]
+        m = re.fullmatch(r"/files/(req-\d+|skill-[a-z-]+)/(.+)", path)
+        if m:
+            f = sources.folder(m.group(1)) / sources.safe_name(unquote(m.group(2)))
+            if not f.is_file():
+                return self.send_json({"error": "Not found"}, 404)
+            data = f.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            return self.wfile.write(data)
         if not path.startswith("/api/"):
             if path != "/" and not (STATIC_DIR / path.lstrip("/")).is_file():
                 self.path = "/"
@@ -430,7 +547,9 @@ class Handler(SimpleHTTPRequestHandler):
                     "types": [{**t, "example": t.get("example") or examples.get(t["id"], ""),
                                "examples": [{**e, "notes": e["notes"] or by_title.get(e["title"], "")}
                                             for e in t.get("examples", [])] or [{"label": "Sample notes", "title": "", "client": "",
-                                                                  "notes": examples.get(t["id"], "")}]} for t in TYPES],
+                                                                  "notes": examples.get(t["id"], "")}],
+                               "examples_fr": [{**e, "notes": e["notes"] or by_title.get(e["title"], "")}
+                                               for e in t.get("examples_fr", [])]} for t in TYPES],
                     "requests": [summary(conn, r) for r in rows],
                     "claude_online": claude_online(conn),
                     "chat_unread": chat_unread,
@@ -450,7 +569,16 @@ class Handler(SimpleHTTPRequestHandler):
                 conn.execute("UPDATE requests SET unseen=0 WHERE id=?", (rid,))
                 versions = [dict(v) for v in conn.execute(
                     "SELECT id, created_at FROM versions WHERE request_id=? ORDER BY created_at", (rid,))]
-                return self.send_json({**dict(row), "messages": self.thread(conn, rid), "versions": versions})
+                return self.send_json({**dict(row), "answers": json.loads(row["answers"] or "{}"),
+                                       "messages": self.thread(conn, rid), "versions": versions,
+                                       "sources": public(sources.listing(f"req-{rid}")),
+                                       "knowledge": public(sources.listing(f"skill-{row['type']}"))})
+            if path == "/api/files":
+                scope = (parse_qs(urlparse_query(self.path)).get("scope") or [""])[0]
+                try:
+                    return self.send_json({"files": public(sources.listing(scope))})
+                except ValueError:
+                    return self.send_json({"error": "Bad scope"}, 400)
             m = re.fullmatch(r"/api/versions/(\d+)", path)
             if m:
                 row = conn.execute("SELECT * FROM versions WHERE id=?", (int(m.group(1)),)).fetchone()
@@ -464,13 +592,38 @@ class Handler(SimpleHTTPRequestHandler):
         with _lock, db() as conn:
             if path == "/api/requests":
                 notes = (body.get("notes") or "").strip()
-                if body.get("type") not in TYPE_IDS or not notes:
-                    return self.send_json({"error": "Add your notes first."}, 400)
-                title = (body.get("title") or "").strip() or notes.splitlines()[0][:70]
+                answers = {k: str(v).strip()[:500] for k, v in (body.get("answers") or {}).items() if str(v).strip()}
+                files = body.get("files") or []
+                if body.get("type") not in TYPE_IDS:
+                    return self.send_json({"error": "Pick a deliverable."}, 400)
+                missing = [x["en"] for x in QUESTIONS.get(body["type"], []) if x["req"] and not answers.get(x["id"])]
+                if missing:
+                    return self.send_json({"error": "Answer: " + ", ".join(missing)}, 400)
+                if not (notes or answers or files):
+                    return self.send_json({"error": "Add your notes, answers or a document first."}, 400)
+                title = ((body.get("title") or "").strip() or next(iter(answers.values()), "")
+                         or (notes.splitlines() or [""])[0] or (files[0].get("name", "") if files else ""))[:70]
+                # Saved as a draft first, so Claude only picks it up once its documents are stored.
                 cur = conn.execute(
-                    "INSERT INTO requests (type,client,title,notes,created_at,updated_at) VALUES (?,?,?,?,?,?)",
-                    (body["type"], (body.get("client") or "").strip(), title, notes, now, now))
-                return self.send_json({"id": cur.lastrowid}, 201)
+                    "INSERT INTO requests (type,client,title,notes,answers,status,created_at,updated_at) "
+                    "VALUES (?,?,?,?,?, 'draft', ?, ?)",
+                    (body["type"], (body.get("client") or "").strip(), title, notes, json.dumps(answers), now, now))
+                rid = cur.lastrowid
+                try:
+                    for f in files:
+                        sources.save(f"req-{rid}", f.get("name"), f.get("data", ""))
+                except (ValueError, TypeError) as e:
+                    conn.execute("DELETE FROM requests WHERE id=?", (rid,))
+                    shutil.rmtree(sources.folder(f"req-{rid}"), ignore_errors=True)
+                    return self.send_json({"error": str(e)}, 400)
+                conn.execute("UPDATE requests SET status='waiting' WHERE id=?", (rid,))
+                return self.send_json({"id": rid}, 201)
+            if path == "/api/files":
+                try:
+                    names = [sources.save(body.get("scope"), f.get("name"), f.get("data", "")) for f in body.get("files") or []]
+                except (ValueError, TypeError) as e:
+                    return self.send_json({"error": str(e)}, 400)
+                return self.send_json({"saved": names, "files": public(sources.listing(body.get("scope")))}, 201)
             if path == "/api/chat":
                 text = (body.get("body") or "").strip()
                 if not text:
@@ -499,10 +652,18 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_json({"error": "Not found"}, 404)
 
     def do_DELETE(self):
+        if self.path.startswith("/api/files?"):
+            qs = parse_qs(urlparse_query(self.path))
+            try:
+                sources.remove((qs.get("scope") or [""])[0], (qs.get("name") or [""])[0])
+            except ValueError:
+                return self.send_json({"error": "Bad scope"}, 400)
+            return self.send_json({"ok": True})
         m = re.fullmatch(r"/api/requests/(\d+)", self.path)
         if not m:
             return self.send_json({"error": "Not found"}, 404)
         rid = int(m.group(1))
+        shutil.rmtree(sources.folder(f"req-{rid}"), ignore_errors=True)
         with _lock, db() as conn:
             conn.execute("DELETE FROM requests WHERE id=?", (rid,))
             conn.execute("DELETE FROM messages WHERE request_id=?", (rid,))

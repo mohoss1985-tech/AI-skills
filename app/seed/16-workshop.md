@@ -1,81 +1,73 @@
-{"client": "Hexa card scheme (sample)", "skill": "facilitating-workshops", "title": "Workshop report: fraud score with pilot issuers"}
+{"client": "Harbor Bank (sample)", "skill": "facilitating-workshops", "lang": "en", "title": "Workshop report: lost and stolen card declaration"}
 ===INPUT===
-Notes from this morning's workshop with the 3 pilot issuers, need the CR today.
+Notes from this morning, need the report today.
 
-Workshop 1 – score LCLF – 9:30-12:00. Scheme: Nadia (head of fraud/LCLF, sponsor), Thomas (authorisation platform lead), Inès (data science), me. Issuers: Marc (Banque Lumière, fraud manager, big issuer, own fraud engine), Sophie (Crédit Azur, mid-size), Paul (Banque du Port, small, no fraud engine, static rules only). Legal/DPO invited, not there.
+Workshop 1 – PAN declaration (lost/stolen + fraud) – 9:30-11:30. Ana (head of cards, sponsor), Tom (card IT / authorisation host), Priya (fraud ops), Leo (call centre manager), Kim (disputes), me. Legal invited, didn't come.
 
-- Inès: score 0-999 + up to 3 reason codes (e.g. "card testing pattern", "new device for this card across network", "merchant under attack"). Model retrained monthly on fraud reports.
-- Thomas: score in a reserved field of the authorisation request. Budget 15 ms. If scoring is late -> send without score + flag "not scored". DECIDED, nobody objected.
-- Marc: wants the score in the clearing record too, for disputes and for their fraud reporting. Nadia ok in principle, in scope for the pilot? not decided.
-- Sophie: needs the reason codes documented with examples, otherwise analysts won't trust it. Inès will write a guide.
-- Paul: can't change his host quickly. Wants the scheme to decline in stand-in above a threshold AND also... asked if the scheme could decline even when his host is up. Nadia: NO, issuer keeps the decision, only in stand-in. Decided.
-- Paul: opt-in per BIN range is fine. Marc: per BIN range + per channel (e-commerce only first). Open.
-- Fraud reports (LCLF declarations): Marc sends daily, Sophie weekly, Paul monthly by file. Inès: monthly is too slow to learn, ideally within 10 days.
-- Pilot start: Thomas says test environment ready in 6 weeks. Issuers need 4 weeks of certification after.
-- Metrics: Nadia: fraud value -25% in pilot, approval rate genuine not down by more than 0.2 pt.
-- Marc worried about competition/data sharing: scheme uses his data to score other issuers' cards. Needs Legal answer before signing pilot agreement.
-- next: technical workshop on message format + certification plan; Legal must come.
+- Ana: block must be real time in the app AND by phone. Decided.
+- Tom: blocking in the card management system is immediate, but the Exception File update to Visa is a nightly batch. Processor may offer real-time updates, he will ask. If host down + card not on Exception File = STIP may approve.
+- Leo: agents today block with reason lost/stolen only. They want "used without my permission" (card still in pocket). Ana ok.
+- Priya: when customer says "I don't recognise these payments", fraud ops must confirm, then declare fraud to Visa (fraud report) for each transaction. Today done in a spreadsheet, sometimes 2-3 weeks late. Kim: for fraud disputes the fraud must be reported to Visa first, otherwise dispute rejected. So declaration before dispute. Decided.
+- Stolen card: never unblock, new PAN. Lost: unblock possible within 24h? Leo yes, Priya worried (fraudster finds card). Not decided.
+- Wallet tokens (Apple Pay): Tom says not suspended today when card blocked!! Must be.
+- Kim: dispute deadline counts from the processing date, so late fraud declaration = lost disputes. Wants a dashboard of cases close to the deadline.
+- Next: workshop 2 with Legal on cardholder liability + the unblock rule.
 ===OUTPUT===
-## Workshop report · Real-time fraud score (LCLF) with pilot issuers · Workshop 1
+## Workshop report · Lost and stolen card declaration (PAN declaration) · Workshop 1
 
-**Date:** today, 9:30–12:00 · **Objective:** agree how the pilot issuers receive and use the network fraud score, and what the pilot measures.
-**Scheme:** Nadia (Head of fraud / LCLF, sponsor), Thomas (Authorisation platform lead), Inès (Data science), BA (author).
-**Pilot issuers:** Marc (Banque Lumière, large, own fraud engine), Sophie (Crédit Azur, mid-size), Paul (Banque du Port, small, static rules only).
-**Invited, absent:** Legal / DPO. ⚠️ Marc's data-sharing question (Q-04) blocks the pilot agreement.
+**Date:** today, 9:30–11:30 · **Objective:** agree how a lost, stolen or misused card is declared, blocked, reported to Visa and disputed.
+**Present:** Ana (Head of cards, sponsor), Tom (Card IT, authorisation host), Priya (Fraud operations), Leo (Call centre manager), Kim (Disputes), BA (author).
+**Invited, absent:** Legal. ⚠️ Cardholder liability and the unblock rule need them.
 
 ### Summary
-The score will travel in the authorisation request (0–999, up to 3 reason codes) within a 15 ms budget, and requests are never delayed if scoring is late. The **issuer keeps the decision**; the scheme declines only in stand-in, above a threshold set by the issuer. Open: score in the clearing record, opt-in by channel, the frequency of fraud reports, and the legal basis for using data across issuers.
+Blocking will be real time in the app and by phone, with a third reason "used without my permission". Fraud operations will declare confirmed fraud to Visa **before** any fraud dispute. Two gaps came out: the Exception File is only updated nightly, and wallet tokens stay active when a card is blocked.
 
 ### Decisions
 | ID | Decision | By |
 |---|---|---|
-| D-01 | The score is sent in a reserved field of the authorisation request, with up to 3 reason codes | Thomas, Inès |
-| D-02 | If scoring exceeds 15 ms, the request goes **without a score**, flagged "not scored" | Thomas, agreed by all |
-| D-03 | The scheme **never declines when the issuer host is up**. It declines only in stand-in, above the issuer's threshold | Nadia |
-| D-04 | Opt-in is **per BIN range** | Nadia, Paul, Marc |
-| D-05 | Pilot targets: CNP fraud value −25%, genuine approval rate not down by more than 0.2 pt | Nadia |
+| D-01 | Blocking is real time in the app and by phone | Ana |
+| D-02 | Three reasons: lost, stolen, used without my permission | Ana, Leo |
+| D-03 | A card declared stolen is never unblocked: a new PAN is issued | Workshop |
+| D-04 | Confirmed fraud is declared to Visa before a fraud dispute is opened | Priya, Kim |
 
 ### Requirements
 | ID | Requirement | Type | Source | Priority |
 |---|---|---|---|---|
-| REQ-01 | Each opted-in authorisation request carries a score 0–999 and up to 3 reason codes | Functional | Inès, Thomas | Must |
-| REQ-02 | Scoring adds at most 15 ms; beyond, the request goes unscored with a flag | Non-functional | Thomas | Must |
-| REQ-03 | Issuers can set a stand-in decline threshold | Functional | Paul | Must |
-| REQ-04 | Every reason code is documented with its meaning and examples | Documentation | Sophie | Must |
-| REQ-05 | The score and reason codes are carried into the clearing record | Functional | Marc | Should *(pilot scope open, Q-01)* |
-| REQ-06 | Fraud reports (LCLF declarations) reach the scheme within 10 days of detection | Process / data | Inès | Should |
-| REQ-07 | Opt-in by channel (e-commerce first) in addition to BIN range | Functional | Marc | Could *(open, Q-02)* |
+| REQ-01 | Block a card in real time from the app and from the call-centre tool | Functional | Ana | Must |
+| REQ-02 | Add a blocked PAN to the Visa Exception File as soon as it is blocked, not in the nightly batch | Functional | Tom | Must *(feasibility open, Q-01)* |
+| REQ-03 | Suspend the wallet tokens of a blocked card | Functional / security | Tom | Must |
+| REQ-04 | Reason "used without my permission" when the card is still with the cardholder | Functional | Leo | Must |
+| REQ-05 | Fraud operations confirm flagged transactions and declare each confirmed fraud to Visa | Process / regulatory | Priya | Must |
+| REQ-06 | Dashboard of fraud cases close to the dispute deadline | Reporting | Kim | Should |
 
 ### Business rules
 | ID | Rule | Example |
 |---|---|---|
-| RG-01 | If a BIN range is opted in, then every authorisation request on it is scored | 45671200–45671299 opted in → all its requests carry a score |
-| RG-02 | If scoring takes more than 15 ms, then the request is sent unscored with the flag "not scored" | Model latency spike at 20 ms → request sent at once, flagged |
-| RG-03 | If the issuer doesn't answer and the score is above the issuer's stand-in threshold, then stand-in declines | Threshold 850, score 910, issuer host down → declined |
+| RG-01 | If a card is blocked as lost, then authorisations are declined with **41**; stolen with **43** | Card ending 4821 blocked "stolen" at 10:02 → 43 at 10:03 |
+| RG-02 | If a fraud dispute is to be opened, then the fraud must already be declared to Visa | Unknown e-commerce payment of 89.90€ → fraud report, then dispute |
+| RG-03 | If the reason is stolen, then the card can't be unblocked | — |
 
 ### Open questions
 | ID | Question | Owner | Due |
 |---|---|---|---|
-| Q-01 | Is the score in the clearing record part of the pilot or of the general release? | Nadia | Workshop 2 |
-| Q-02 | Opt-in by channel as well as BIN range? Effort and value | Thomas, Marc | Workshop 2 |
-| Q-03 | Can Paul (monthly fraud reports by file) move to 10 days, and through which channel? | Paul, Inès | Workshop 2 |
-| Q-04 | Legal basis and competition rules for using one issuer's data to score other issuers' cards | Legal / DPO | **Before the pilot agreement** |
+| Q-01 | Can our processor update the Visa Exception File in real time? At what cost? | Tom | Workshop 2 |
+| Q-02 | Can a card blocked as lost be unblocked within 24 h? Leo for, Priya against (risk if a fraudster finds the card) | Ana, with Legal | Workshop 2 |
+| Q-03 | What do we tell the cardholder about liability for transactions before the declaration? | Legal | Workshop 2 |
+| Q-04 | Do blocked cards stop recurring payments? | Tom | Workshop 2 |
 
 ### Risks & dependencies
-- **Legal (Q-04)** may block or change the model inputs: needed before the agreement is signed.
-- **Slow fraud reports** weaken the model; the pilot results could look worse than the real potential.
-- **Planning:** test environment in 6 weeks + 4 weeks of issuer certification = pilot start in about 10 weeks at the earliest.
-- **Trust:** without documented reason codes, issuer analysts won't use the score.
+- **Stand-in gap:** until Q-01 is solved, stand-in can approve a blocked card for up to a day when our host is down.
+- **Late fraud declarations** (today 2–3 weeks, spreadsheet) lose disputes, since deadlines run from the processing date.
+- **Legal absent:** Q-02 and Q-03 block the cardholder wording.
 
 ### Actions
 | ID | Action | Owner | Due |
 |---|---|---|---|
-| A-01 | Get a Legal / DPO answer on Q-04 | Nadia | 2 weeks |
-| A-02 | Reason code guide with examples | Inès | Workshop 2 |
-| A-03 | Message format proposal and certification plan | Thomas | Workshop 2 |
-| A-04 | Effort for score in clearing and opt-in by channel | Thomas | Workshop 2 |
+| A-01 | Ask the processor about real-time Exception File updates | Tom | Workshop 2 |
+| A-02 | Fix token suspension on block (bug, not a project) | Tom | Next sprint |
+| A-03 | Volumes and lead times of fraud declarations today | Priya | Workshop 2 |
+| A-04 | Bring Legal to workshop 2 | Ana | This week |
 | A-05 | Draft the SFD from this report | BA | Workshop 2 |
 
 ### Next workshop
-**Topics:** message format, certification plan, decision on Q-01 and Q-02.
-**Attendees:** the same, plus Legal / DPO (mandatory) and the issuers' authorisation IT leads.
+**Topics:** liability wording, unblock rule, real-time Exception File, the dispute deadline dashboard. **Attendees:** the same plus Legal (mandatory).
