@@ -2,6 +2,10 @@
 
 **Eighteen AI skills that do the work of a Business Analyst / Product Owner in card payments, in a local app where every deliverable starts from a few precise questions and your own documents. Samples in English follow Visa rules; samples in French follow CB (Cartes Bancaires) rules.**
 
+[![Open the live demo](https://img.shields.io/badge/%E2%96%B6%20Open%20the%20live%20demo-5e6ad2?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
+
+**[Live demo](https://mohoss1985-tech.github.io/AI-skills/)**: browse every skill and finished sample in your browser, in English (Visa) or French (CB). Read-only: generating your own deliverables runs locally with Claude Code.
+
 🇫🇷 [Version française](README.fr.md)
 
 I worked at a French card payment network. The work sits between **issuers** (émetteurs), **acquirers** (acquéreurs) and the network: card **authorisation**, **PAN declaration** (blocking a lost or stolen card, declaring fraud), **chargebacks** (impayés), interchange, clearing and settlement, and the APIs between them.
