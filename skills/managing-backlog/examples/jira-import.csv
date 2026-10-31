@@ -1,0 +1,9 @@
+Summary,Issue Type,Description,Labels,Labels,Story Points
+Stand-in decline threshold set by the issuer,Story,WSJF 8.0 (BV 8 + TC 8 + RR 8) / size 3. Ref F-04. Depends on: F-01.,PI-committed,HEX-WSJF,13
+Low-latency scoring service (15 ms budget),Enabler,WSJF 7.2 (BV 3 + TC 13 + RR 20) / size 5. Ref F-06.,PI-committed,HEX-WSJF,21
+Fraud score in the authorisation request (pilot issuers),Epic,WSJF 5.75 (BV 20 + TC 13 + RR 13) / size 8. Ref F-01. Depends on: F-06.,PI-committed,HEX-WSJF,34
+New domestic interchange grid in the clearing engine,Epic,WSJF 4.5 (BV 8 + TC 20 + RR 8) / size 8. Ref F-02.,PI-committed,HEX-WSJF,30
+Score in the clearing record,Epic,WSJF 4.2 (BV 8 + TC 5 + RR 8) / size 5. Ref F-07. Depends on: F-01.,PI-committed,HEX-WSJF,21
+Decommission the legacy clearing file for 2 acquirers,Enabler,WSJF 2.4 (BV 2 + TC 2 + RR 8) / size 5. Ref F-08.,PI-candidate,HEX-WSJF,18
+Token lifecycle notifications to issuers,Epic,WSJF 1.38 (BV 5 + TC 3 + RR 3) / size 8. Ref F-05.,PI-candidate,HEX-WSJF,26
+Disputes API v2: representment with evidence upload,Epic,WSJF 1.23 (BV 8 + TC 3 + RR 5) / size 13. Ref F-03.,PI-candidate,HEX-WSJF,40

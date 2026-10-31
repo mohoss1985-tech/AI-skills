@@ -1,0 +1,76 @@
+/* French version of the interface. Keys are the English strings used in app.js and help.js. */
+window.KIT_FR = {
+  // chrome
+  'New deliverable': 'Nouveau livrable', 'Home': 'Accueil', 'Chat with Claude': 'Discuter avec Claude', 'Deliverables': 'Livrables',
+  'Set up your profile': 'Configurer votre profil', 'Claude is online': 'Claude est en ligne', 'Claude is offline': 'Claude est hors ligne',
+  'Requests and messages are picked up automatically': 'Les demandes et messages sont pris en charge automatiquement',
+  'Type "check my requests" in your Claude chat': 'Tapez « check my requests » dans votre conversation Claude',
+  'new': 'nouveau(x)', 'Light / dark': 'Clair / sombre', 'Français / English': 'Français / English',
+  // statuses
+  'Waiting for Claude': 'En attente de Claude', 'Claude is writing': 'Claude rédige', 'Ready': 'Prêt', 'Sent to client': 'Envoyé au client',
+  'just now': "à l'instant", 'min ago': 'min', 'h ago': 'h', 'Good morning': 'Bonjour', 'Good afternoon': 'Bonjour', 'Good evening': 'Bonsoir',
+  'Prepared by': 'Préparé par', 'Something went wrong': "Une erreur s'est produite",
+  // files, diagrams
+  'Copy': 'Copier', 'Download': 'Télécharger', 'Copied': 'Copié', "Couldn't copy": 'Copie impossible',
+  'Start': 'Début', 'Task': 'Tâche', 'Decision': 'Décision', 'Wait / message': 'Attente / message', 'End': 'Fin',
+  'Process diagram': 'Diagramme de processus', 'Zoom in': 'Zoom +', 'Zoom out': 'Zoom −', 'Fit': 'Ajuster', 'Close': 'Fermer',
+  'Open full screen': 'Plein écran', 'Whole process': 'Processus entier', 'Drag to move · pinch or ⌘+scroll to zoom': 'Glisser pour déplacer · pincer ou ⌘+molette pour zoomer',
+  '.bpmn file': 'Fichier .bpmn', 'Edit online at bpmn.io': 'Modifier en ligne sur bpmn.io', 'Opens in Camunda, bpmn.io, Signavio…': "S'ouvre dans Camunda, bpmn.io, Signavio…",
+  // toasts
+  'is ready. Open it': 'est prêt. Ouvrir', 'Claude replied on': 'Claude a répondu sur', 'Claude replied in your chat': 'Claude a répondu dans votre conversation',
+  'Document updated': 'Document mis à jour', 'Your document is ready': 'Votre document est prêt', 'Deleted': 'Supprimé',
+  'Marked as sent to client': 'Marqué comme envoyé au client', 'Marked as not sent': 'Marqué comme non envoyé', 'Profile saved': 'Profil enregistré',
+  'Preparing the Word file…': 'Préparation du fichier Word…', 'Word file downloaded': 'Fichier Word téléchargé',
+  'Copied. Paste it into an email, Word, Notion or Confluence': 'Copié. Collez-le dans un e-mail, Word, Notion ou Confluence', 'Copied as text': 'Copié en texte',
+  // lists
+  'Nothing here.': 'Rien ici.', 'New': 'Nouveau', 'Claude is replying': 'Claude répond', 'You': 'Vous',
+  'Claude is replying…': 'Claude répond…', 'Claude will reply when you say “check my requests” in your chat': 'Claude répondra quand vous écrirez « check my requests » dans votre conversation',
+  // home
+  'What do you need for your client?': 'De quoi avez-vous besoin pour votre client ?',
+  'Pick a deliverable, fill its template or paste your notes. Claude does the work, you hand it over.': 'Choisissez un livrable, remplissez son modèle ou collez vos notes. Claude fait le travail, vous le livrez.',
+  'Ask Claude anything: prepare a workshop, review a doc, draft a client email…': 'Demandez à Claude : préparer un atelier, relire un document, rédiger un e-mail client…',
+  'Ask': 'Demander', 'Add your name and company so every document says “Prepared by you”, and tell Claude how you like to work.': 'Ajoutez votre nom et votre société pour que chaque document indique « Préparé par vous », et dites à Claude comment vous travaillez.',
+  'Set up profile': 'Configurer le profil', 'Start a deliverable': 'Commencer un livrable', 'You give': 'Vous donnez', 'You get': 'Vous obtenez',
+  'Your deliverables': 'Vos livrables', 'Search by title or client': 'Rechercher par titre ou client', 'All': 'Tous', 'In progress': 'En cours', 'Ready to send': 'Prêts à envoyer',
+  // type page
+  'Try it': 'Essayer', 'Finished sample': 'Exemple terminé', 'Scenario': 'Scénario', 'Xray assistant': 'Assistant Xray', 'deliverables': 'livrables', 'All of type': 'Tous les livrables',
+  'Template': 'Modèle', 'Use the template': 'Utiliser le modèle',
+  'Fill in what you know, delete what doesn\'t apply. Claude asks for the rest.': 'Remplissez ce que vous savez, supprimez ce qui ne s\'applique pas. Claude demande le reste.',
+  // new
+  'Rough notes are fine. Claude asks in the chat if something is missing.': 'Des notes brutes suffisent. Claude demande dans la conversation s\'il manque quelque chose.',
+  'What do you need?': 'De quoi avez-vous besoin ?', 'You\'ll get': 'Vous obtiendrez', 'Client or project': 'Client ou projet', 'Title': 'Titre',
+  'e.g. Hexa card scheme': 'ex. Schéma de cartes Hexa', 'e.g. Fraud score in authorisation': 'ex. Score de fraude en autorisation', 'Your notes': 'Vos notes',
+  'Paste anything: meeting notes, an email thread, a spec. You can also drop a .txt, .md or .csv file into the box.': 'Collez ce que vous avez : notes de réunion, fil d\'e-mails, spécification. Vous pouvez aussi déposer un fichier .txt, .md ou .csv dans la zone.',
+  'Try a scenario:': 'Essayer un scénario :', 'Create deliverable': 'Créer le livrable', 'Template added below your notes': 'Modèle ajouté sous vos notes',
+  // deliverable
+  'Not found': 'Introuvable', 'Back home': "Retour à l'accueil", 'Your original notes': 'Vos notes de départ', 'Delete this deliverable': 'Supprimer ce livrable',
+  'Click again to delete': 'Cliquez à nouveau pour supprimer', 'Conversation': 'Conversation', '⌘↵ to send': '⌘↵ pour envoyer',
+  'Ask a question, give feedback, or request changes…': 'Posez une question, donnez un retour ou demandez des modifications…',
+  'Claude updates the document when you ask for changes.': 'Claude met à jour le document quand vous demandez des modifications.', 'Send': 'Envoyer',
+  'Download Word': 'Télécharger Word', 'Save as PDF': 'Enregistrer en PDF', '✓ Sent to client': '✓ Envoyé au client', 'Mark as sent': 'Marquer comme envoyé',
+  'Version': 'Version', 'latest': 'dernière', 'Claude is writing this now': 'Claude rédige ce document',
+  'Claude has it and will start in a moment. You can add context in the conversation while you wait.': 'Claude l\'a reçu et commence dans un instant. Vous pouvez ajouter du contexte dans la conversation en attendant.',
+  'Type <b>“check my requests”</b> in your Claude chat. This page updates by itself.': 'Tapez <b>« check my requests »</b> dans votre conversation Claude. Cette page se met à jour toute seule.',
+  'You\'re viewing an earlier version. Downloads use this version. Pick “latest” to go back.': 'Vous consultez une version antérieure. Les téléchargements utilisent cette version. Choisissez « dernière » pour revenir.',
+  'Continue from this document': 'Continuer à partir de ce document', 'Create': 'Créer', 'Based on the': 'À partir du livrable',
+  'Make it shorter': 'Plus court', 'Add more detail': 'Plus de détails', 'Make it more formal for the client': 'Plus formel pour le client',
+  'Translate to French': 'Traduire en français', 'Translate to English': 'Traduire en anglais', 'What questions should I ask the client?': 'Quelles questions poser au client ?',
+  'Here is more context:': 'Voici plus de contexte :', 'Make it a one-pager': 'En faire un one-pager',
+  'Talk to Claude about this document': 'Parlez de ce document avec Claude',
+  'Ask why something is there, give feedback, or request changes. Claude answers here and updates the document.': 'Demandez pourquoi un élément est là, donnez un retour ou demandez des modifications. Claude répond ici et met à jour le document.',
+  // chat
+  "Anything that isn't a deliverable: prep a workshop, review a document, plan your week, draft a client email.": "Tout ce qui n'est pas un livrable : préparer un atelier, relire un document, planifier votre semaine, rédiger un e-mail client.",
+  'Message Claude…': 'Écrire à Claude…', 'Start with one of these, or write your own.': 'Commencez par une de ces idées, ou écrivez la vôtre.',
+  'Prepare a client workshop': 'Préparer un atelier client', 'Agenda, questions and exercises for a 90-minute discovery workshop': 'Ordre du jour, questions et exercices pour un atelier de découverte de 90 minutes',
+  'Draft a cover email': "Rédiger un e-mail d'accompagnement", 'A short email sending the latest deliverable to my client': 'Un court e-mail pour envoyer le dernier livrable à mon client',
+  'Review my document': 'Relire mon document', "I'll paste a PRD or story. Tell me what's weak": 'Je colle un PRD ou une user story. Dites-moi ce qui est faible',
+  'Prepare me for an interview': 'Me préparer à un entretien', 'Mock product owner interview questions with strong answers': "Questions d'entretien de Product Owner avec de bonnes réponses",
+  // profile
+  'Your profile': 'Votre profil', 'Claude reads this before writing anything for you. Your name and company appear on every document.': 'Claude lit ceci avant de rédiger pour vous. Votre nom et votre société apparaissent sur chaque document.',
+  'Your name': 'Votre nom', 'Your title': 'Votre fonction', 'Company or brand': 'Société ou marque', 'Shown as “Prepared by …” on documents.': 'Affiché comme « Préparé par … » sur les documents.',
+  'Backlog tool your clients use': 'Outil de backlog de vos clients', 'Document language': 'Langue des documents', 'Writing style': 'Style de rédaction',
+  'What Claude has learned about how you work': 'Ce que Claude a appris de votre façon de travailler',
+  "Claude adds notes here from your feedback, so you don't repeat yourself. Remove anything that's wrong.": 'Claude note ici vos retours pour que vous n\'ayez pas à vous répéter. Supprimez ce qui est faux.',
+  'Remove': 'Retirer', 'Nothing yet. As you give feedback in conversations, Claude notes your preferences here.': 'Rien pour l\'instant. Au fil de vos retours, Claude note ici vos préférences.',
+  'Save profile': 'Enregistrer le profil',
+};

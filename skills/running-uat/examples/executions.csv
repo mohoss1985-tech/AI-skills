@@ -1,0 +1,113 @@
+Test Key,Summary,Status,Component,Requirement
+HEX-T001,Score in request (RS) case 1,PASSED,Score in request (RS),HEX-110
+HEX-T002,Score in request (RS) case 2,PASSED,Score in request (RS),HEX-110
+HEX-T003,Score in request (RS) case 3,PASSED,Score in request (RS),HEX-110
+HEX-T004,Score in request (RS) case 4,PASSED,Score in request (RS),HEX-110
+HEX-T005,Score in request (RS) case 5,PASSED,Score in request (RS),HEX-110
+HEX-T006,Score in request (RS) case 6,PASSED,Score in request (RS),HEX-110
+HEX-T007,Score in request (RS) case 7,PASSED,Score in request (RS),HEX-110
+HEX-T008,Score in request (RS) case 8,PASSED,Score in request (RS),HEX-110
+HEX-T009,Score in request (RS) case 9,PASSED,Score in request (RS),HEX-110
+HEX-T010,Score in request (RS) case 10,PASSED,Score in request (RS),HEX-110
+HEX-T011,Score in request (RS) case 11,PASSED,Score in request (RS),HEX-110
+HEX-T012,Score in request (RS) case 12,PASSED,Score in request (RS),HEX-110
+HEX-T013,Score in request (RS) case 13,PASSED,Score in request (RS),HEX-110
+HEX-T014,Score in request (RS) case 14,PASSED,Score in request (RS),HEX-110
+HEX-T015,Score in request (RS) case 15,PASSED,Score in request (RS),HEX-110
+HEX-T016,Score in request (RS) case 16,PASSED,Score in request (RS),HEX-110
+HEX-T017,Score in request (RS) case 17,PASSED,Score in request (RS),HEX-110
+HEX-T018,Score in request (RS) case 18,PASSED,Score in request (RS),HEX-110
+HEX-T019,Score in request (RS) case 19,PASSED,Score in request (RS),HEX-110
+HEX-T020,Score in request (RS) case 20,PASSED,Score in request (RS),HEX-110
+HEX-T021,Score in request (RS) case 21,PASSED,Score in request (RS),HEX-110
+HEX-T022,Score in request (RS) case 22,PASSED,Score in request (RS),HEX-110
+HEX-T023,Score in request (RS) case 23,PASSED,Score in request (RS),HEX-110
+HEX-T024,Score in request (RS) case 24,PASSED,Score in request (RS),HEX-110
+HEX-T025,Score in request (RS) case 25,PASSED,Score in request (RS),HEX-110
+HEX-T026,Score in request (RS) case 26,PASSED,Score in request (RS),HEX-110
+HEX-T027,Score in request (RS) case 27,PASSED,Score in request (RS),HEX-110
+HEX-T028,Score in request (RS) case 28,PASSED,Score in request (RS),HEX-110
+HEX-T029,Score in request (RS) case 29,FAILED,Score in request (RS),HEX-110
+HEX-T030,Score in request (RS) case 30,TODO,Score in request (RS),HEX-110
+HEX-T031,Not-scored fallback case 1,PASSED,Not-scored fallback,HEX-111
+HEX-T032,Not-scored fallback case 2,PASSED,Not-scored fallback,HEX-111
+HEX-T033,Not-scored fallback case 3,PASSED,Not-scored fallback,HEX-111
+HEX-T034,Not-scored fallback case 4,PASSED,Not-scored fallback,HEX-111
+HEX-T035,Not-scored fallback case 5,PASSED,Not-scored fallback,HEX-111
+HEX-T036,Not-scored fallback case 6,PASSED,Not-scored fallback,HEX-111
+HEX-T037,Not-scored fallback case 7,PASSED,Not-scored fallback,HEX-111
+HEX-T038,Not-scored fallback case 8,PASSED,Not-scored fallback,HEX-111
+HEX-T039,Not-scored fallback case 9,PASSED,Not-scored fallback,HEX-111
+HEX-T040,Not-scored fallback case 10,PASSED,Not-scored fallback,HEX-111
+HEX-T041,Not-scored fallback case 11,PASSED,Not-scored fallback,HEX-111
+HEX-T042,Not-scored fallback case 12,PASSED,Not-scored fallback,HEX-111
+HEX-T043,Not-scored fallback case 13,PASSED,Not-scored fallback,HEX-111
+HEX-T044,Not-scored fallback case 14,FAILED,Not-scored fallback,HEX-111
+HEX-T045,Not-scored fallback case 15,FAILED,Not-scored fallback,HEX-111
+HEX-T046,Stand-in threshold case 1,PASSED,Stand-in threshold,HEX-112
+HEX-T047,Stand-in threshold case 2,PASSED,Stand-in threshold,HEX-112
+HEX-T048,Stand-in threshold case 3,PASSED,Stand-in threshold,HEX-112
+HEX-T049,Stand-in threshold case 4,PASSED,Stand-in threshold,HEX-112
+HEX-T050,Stand-in threshold case 5,PASSED,Stand-in threshold,HEX-112
+HEX-T051,Stand-in threshold case 6,PASSED,Stand-in threshold,HEX-112
+HEX-T052,Stand-in threshold case 7,PASSED,Stand-in threshold,HEX-112
+HEX-T053,Stand-in threshold case 8,PASSED,Stand-in threshold,HEX-112
+HEX-T054,Stand-in threshold case 9,PASSED,Stand-in threshold,HEX-112
+HEX-T055,Stand-in threshold case 10,PASSED,Stand-in threshold,HEX-112
+HEX-T056,Stand-in threshold case 11,PASSED,Stand-in threshold,HEX-112
+HEX-T057,Stand-in threshold case 12,PASSED,Stand-in threshold,HEX-112
+HEX-T058,Stand-in threshold case 13,PASSED,Stand-in threshold,HEX-112
+HEX-T059,Stand-in threshold case 14,PASSED,Stand-in threshold,HEX-112
+HEX-T060,Stand-in threshold case 15,PASSED,Stand-in threshold,HEX-112
+HEX-T061,Stand-in threshold case 16,FAILED,Stand-in threshold,HEX-112
+HEX-T062,Stand-in threshold case 17,FAILED,Stand-in threshold,HEX-112
+HEX-T063,Stand-in threshold case 18,FAILED,Stand-in threshold,HEX-112
+HEX-T064,Stand-in threshold case 19,BLOCKED,Stand-in threshold,HEX-112
+HEX-T065,Stand-in threshold case 20,BLOCKED,Stand-in threshold,HEX-112
+HEX-T066,Stand-in threshold case 21,BLOCKED,Stand-in threshold,HEX-112
+HEX-T067,Stand-in threshold case 22,TODO,Stand-in threshold,HEX-112
+HEX-T068,Stand-in threshold case 23,TODO,Stand-in threshold,HEX-112
+HEX-T069,Stand-in threshold case 24,TODO,Stand-in threshold,HEX-112
+HEX-T070,Stand-in threshold case 25,TODO,Stand-in threshold,HEX-112
+HEX-T071,Score in clearing case 1,PASSED,Score in clearing,HEX-113
+HEX-T072,Score in clearing case 2,PASSED,Score in clearing,HEX-113
+HEX-T073,Score in clearing case 3,PASSED,Score in clearing,HEX-113
+HEX-T074,Score in clearing case 4,PASSED,Score in clearing,HEX-113
+HEX-T075,Score in clearing case 5,PASSED,Score in clearing,HEX-113
+HEX-T076,Score in clearing case 6,PASSED,Score in clearing,HEX-113
+HEX-T077,Score in clearing case 7,PASSED,Score in clearing,HEX-113
+HEX-T078,Score in clearing case 8,PASSED,Score in clearing,HEX-113
+HEX-T079,Score in clearing case 9,PASSED,Score in clearing,HEX-113
+HEX-T080,Score in clearing case 10,PASSED,Score in clearing,HEX-113
+HEX-T081,Score in clearing case 11,PASSED,Score in clearing,HEX-113
+HEX-T082,Score in clearing case 12,PASSED,Score in clearing,HEX-113
+HEX-T083,Score in clearing case 13,PASSED,Score in clearing,HEX-113
+HEX-T084,Score in clearing case 14,PASSED,Score in clearing,HEX-113
+HEX-T085,Score in clearing case 15,PASSED,Score in clearing,HEX-113
+HEX-T086,Score in clearing case 16,PASSED,Score in clearing,HEX-113
+HEX-T087,Score in clearing case 17,PASSED,Score in clearing,HEX-113
+HEX-T088,Score in clearing case 18,PASSED,Score in clearing,HEX-113
+HEX-T089,Score in clearing case 19,PASSED,Score in clearing,HEX-113
+HEX-T090,Score in clearing case 20,PASSED,Score in clearing,HEX-113
+HEX-T091,Score in clearing case 21,PASSED,Score in clearing,HEX-113
+HEX-T092,Score in clearing case 22,FAILED,Score in clearing,HEX-113
+HEX-T093,Score in clearing case 23,TODO,Score in clearing,HEX-113
+HEX-T094,Score in clearing case 24,TODO,Score in clearing,HEX-113
+HEX-T095,Score in clearing case 25,TODO,Score in clearing,HEX-113
+HEX-T096,No score to acquirers case 1,PASSED,No score to acquirers,HEX-114
+HEX-T097,No score to acquirers case 2,PASSED,No score to acquirers,HEX-114
+HEX-T098,No score to acquirers case 3,PASSED,No score to acquirers,HEX-114
+HEX-T099,No score to acquirers case 4,PASSED,No score to acquirers,HEX-114
+HEX-T100,No score to acquirers case 5,PASSED,No score to acquirers,HEX-114
+HEX-T101,No score to acquirers case 6,PASSED,No score to acquirers,HEX-114
+HEX-T102,No score to acquirers case 7,PASSED,No score to acquirers,HEX-114
+HEX-T103,No score to acquirers case 8,PASSED,No score to acquirers,HEX-114
+HEX-T104,No score to acquirers case 9,PASSED,No score to acquirers,HEX-114
+HEX-T105,No score to acquirers case 10,PASSED,No score to acquirers,HEX-114
+HEX-T106,No score to acquirers case 11,PASSED,No score to acquirers,HEX-114
+HEX-T107,No score to acquirers case 12,PASSED,No score to acquirers,HEX-114
+HEX-T108,No score to acquirers case 13,PASSED,No score to acquirers,HEX-114
+HEX-T109,No score to acquirers case 14,PASSED,No score to acquirers,HEX-114
+HEX-T110,No score to acquirers case 15,PASSED,No score to acquirers,HEX-114
+HEX-T111,No score to acquirers case 16,FAILED,No score to acquirers,HEX-114
+HEX-T112,No score to acquirers case 17,TODO,No score to acquirers,HEX-114

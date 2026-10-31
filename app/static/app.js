@@ -1,7 +1,12 @@
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
   const main = $('#main');
-  const S = { types: [], requests: [], online: false, chatUnread: 0, profile: {}, learned: [], clients: [], view: null, filter: 'all', q: '', loaded: false };
+  const S = { types: [], groups: [], requests: [], online: false, chatUnread: 0, profile: {}, learned: [], clients: [], view: null, filter: 'all', q: '', loaded: false, lang: 'en' };
+  try { S.lang = localStorage.getItem('kit-lang') || (navigator.language || '').slice(0, 2) === 'fr' && 'fr' || 'en'; } catch {}
+  // L('English text') returns the French version when the interface is in French; tx(type, 'name') does the same for type fields.
+  const L = (en) => (S.lang === 'fr' && window.KIT_FR && window.KIT_FR[en]) || en;
+  const tx = (t, k) => (S.lang === 'fr' && t.fr && t.fr[k]) || t[k];
+  const locale = () => (S.lang === 'fr' ? 'fr-FR' : undefined);
 
   // ---------- helpers ----------
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -9,29 +14,30 @@
     const r = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
     if (r.status === 204) return null;
     const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Something went wrong');
+    if (!r.ok) throw new Error(data.error || L('Something went wrong'));
     return data;
   };
   const post = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body) });
   const typeOf = (id) => S.types.find((t) => t.id === id) || { name: id, color: '#888', next: [] };
   const sq = (t) => `<span class="sq" style="background:${t.color}"></span>`;
-  const date = (t) => new Date(t * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+  const date = (t) => new Date(t * 1000).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
   const time = (t) => {
     const d = new Date(t * 1000), today = new Date().toDateString() === d.toDateString();
-    return today ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    return today ? d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
   };
   const ago = (t) => {
     const s = Date.now() / 1000 - t;
-    if (s < 60) return 'just now';
-    if (s < 3600) return Math.floor(s / 60) + ' min ago';
-    if (s < 86400) return Math.floor(s / 3600) + ' h ago';
-    return new Date(t * 1000).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    const pre = S.lang === 'fr' ? 'il y a ' : '';
+    if (s < 60) return L('just now');
+    if (s < 3600) return pre + Math.floor(s / 60) + ' ' + L('min ago');
+    if (s < 86400) return pre + Math.floor(s / 3600) + ' ' + L('h ago');
+    return new Date(t * 1000).toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
   };
   const initials = (n) => (n || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'You';
   const claudeMark = '<span class="avatar claude"><svg viewBox="0 0 12 12"><path d="M1 9 L4.5 3 L7 7 L9 4.5 L11 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
   const statusOf = (r) => (r.status !== 'ready' ? r.status : r.sent_at ? 'sent' : 'ready');
   const LABEL = { waiting: 'Waiting for Claude', working: 'Claude is writing', ready: 'Ready', sent: 'Sent to client' };
-  const pill = (st) => `<span class="pill ${st}"><i></i>${LABEL[st]}</span>`;
+  const pill = (st) => `<span class="pill ${st}"><i></i>${L(LABEL[st])}</span>`;
   const toast = (msg, href) => {
     const t = $('#toast'); t.textContent = msg; t.hidden = false; t.style.cursor = href ? 'pointer' : '';
     t.onclick = href ? () => { location.hash = href; t.hidden = true; } : null;
@@ -43,11 +49,11 @@
   };
   const lower1 = (s) => (s ? s[0].toLowerCase() + s.slice(1) : '');
   const fileName = (s) => (s || 'deliverable').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60);
-  const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; };
+  const greeting = () => { const h = new Date().getHours(); return L(h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'); };
   const prepared = () => {
     const p = S.profile;
     if (!p.name) return '';
-    return `Prepared by ${esc(p.name)}${p.title ? ', ' + esc(p.title) : ''}${p.company ? ' · ' + esc(p.company) : ''}`;
+    return `${L('Prepared by')} ${esc(p.name)}${p.title ? ', ' + esc(p.title) : ''}${p.company ? ' · ' + esc(p.company) : ''}`;
   };
 
   // ---------- diagrams + markdown ----------
@@ -107,9 +113,9 @@
   function openFullscreen(xml, title) {
     const ov = document.createElement('div');
     ov.className = 'bpmn-full';
-    ov.innerHTML = `<div class="bpmn-full-bar"><b>${esc(title || 'Process diagram')}</b><span class="spacer"></span>
-      <button class="btn" data-z="in">Zoom in</button><button class="btn" data-z="out">Zoom out</button><button class="btn" data-z="fit">Fit</button>
-      <button class="btn primary" data-close>Close <kbd>Esc</kbd></button></div><div class="bpmn-full-canvas"></div>`;
+    ov.innerHTML = `<div class="bpmn-full-bar"><b>${esc(title || L('Process diagram'))}</b><span class="spacer"></span>
+      <button class="btn" data-z="in">${L('Zoom in')}</button><button class="btn" data-z="out">${L('Zoom out')}</button><button class="btn" data-z="fit">${L('Fit')}</button>
+      <button class="btn primary" data-close>${L('Close')} <kbd>Esc</kbd></button></div><div class="bpmn-full-canvas"></div>`;
     document.body.appendChild(ov);
     let viewer;
     mountBpmn(ov.querySelector('.bpmn-full-canvas'), xml, 0.5).then((v) => (viewer = v));
@@ -131,13 +137,13 @@
     const title = (document.querySelector('.paper-head h1') || {}).textContent || 'process';
     const base = fileName(title);
     box.innerHTML = `<div class="bpmn-tools">
-        <button class="btn" data-a="full">Open full screen</button>
-        <button class="btn" data-a="in" title="Zoom in">+</button><button class="btn" data-a="out" title="Zoom out">−</button><button class="btn" data-a="fit">Whole process</button>
-        <span class="hint">Drag to move · pinch or ⌘+scroll to zoom</span><span class="spacer"></span>
-        <button class="btn" data-a="png">PNG</button><button class="btn" data-a="svg">SVG</button><button class="btn" data-a="bpmn" title="Opens in Camunda, bpmn.io, Signavio…">.bpmn file</button></div>
+        <button class="btn" data-a="full">${L('Open full screen')}</button>
+        <button class="btn" data-a="in" title="${L('Zoom in')}">+</button><button class="btn" data-a="out" title="${L('Zoom out')}">−</button><button class="btn" data-a="fit">${L('Whole process')}</button>
+        <span class="hint">${L('Drag to move · pinch or ⌘+scroll to zoom')}</span><span class="spacer"></span>
+        <button class="btn" data-a="png">PNG</button><button class="btn" data-a="svg">SVG</button><button class="btn" data-a="bpmn" title="${L('Opens in Camunda, bpmn.io, Signavio…')}">${L('.bpmn file')}</button></div>
       <div class="bpmn-canvas"></div>
-      <div class="bpmn-legend">${LEGEND.map(([f, s, l]) => `<span><i style="background:${f};border-color:${s}"></i>${l}</span>`).join('')}
-        <span class="spacer"></span><a href="https://demo.bpmn.io/new" target="_blank" rel="noopener">Edit online at bpmn.io</a></div>`;
+      <div class="bpmn-legend">${LEGEND.map(([f, s, l]) => `<span><i style="background:${f};border-color:${s}"></i>${L(l)}</span>`).join('')}
+        <span class="spacer"></span><a href="https://demo.bpmn.io/new" target="_blank" rel="noopener">${L('Edit online at bpmn.io')}</a></div>`;
     let viewer;
     try { viewer = await mountBpmn(box.querySelector('.bpmn-canvas'), xml); }
     catch (e) { box.innerHTML = `<pre><code>${esc(xml)}</code></pre>`; return; }
@@ -153,17 +159,17 @@
     }));
   }
   // Import files (CSV, .feature, JSON…) get Copy and Download, named after the file name written just above the block.
-  const FILE_EXT = { csv: 'csv', gherkin: 'feature', json: 'json', sql: 'sql', yaml: 'yaml', xml: 'xml', bash: 'sh' };
+  const FILE_EXT = { csv: 'csv', gherkin: 'feature', json: 'json', sql: 'sql', yaml: 'yaml', xml: 'xml', bash: 'sh', python: 'py' };
   function addFileBar(code) {
     const lang = (code.className.match(/language-(\w+)/) || [])[1];
     if (!FILE_EXT[lang]) return;
     const pre = code.parentElement, prev = pre.previousElementSibling;
-    const named = prev && (prev.textContent.match(/[\w.-]+\.(csv|feature|json|sql|ya?ml|xml|sh)\b/) || [])[0];
+    const named = prev && (prev.textContent.match(/[\w.-]+\.(csv|feature|json|sql|ya?ml|xml|sh|py)\b/) || [])[0];
     const name = named || (fileName((document.querySelector('.paper-head h1') || {}).textContent) + '.' + FILE_EXT[lang]);
     const bar = document.createElement('div');
     bar.className = 'file-bar no-print';
-    bar.innerHTML = `<span>${esc(name)}</span><button class="btn" data-copy>Copy</button>${lang === 'bash' ? '' : '<button class="btn" data-dl>Download</button>'}`;
-    bar.querySelector('[data-copy]').onclick = async () => { try { await navigator.clipboard.writeText(code.textContent); toast('Copied'); } catch { toast("Couldn't copy"); } };
+    bar.innerHTML = `<span>${esc(name)}</span><button class="btn" data-copy>${L('Copy')}</button>${lang === 'bash' ? '' : `<button class="btn" data-dl>${L('Download')}</button>`}`;
+    bar.querySelector('[data-copy]').onclick = async () => { try { await navigator.clipboard.writeText(code.textContent); toast(L('Copied')); } catch { toast(L("Couldn't copy")); } };
     const dl = bar.querySelector('[data-dl]');
     if (dl) dl.onclick = () => download(name, new Blob([code.textContent], { type: lang === 'json' ? 'application/json' : 'text/plain;charset=utf-8' }));
     pre.before(bar);
@@ -193,35 +199,44 @@
     const prev = S.loaded ? new Map(S.requests.map((r) => [r.id, r])) : null;
     const prevChat = S.chatUnread;
     const st = await api('/api/state');
-    Object.assign(S, { types: st.types, requests: st.requests, online: st.claude_online, chatUnread: st.chat_unread, profile: st.profile, learned: st.learned, clients: st.clients });
+    Object.assign(S, { types: st.types, groups: st.groups || [], requests: st.requests, online: st.claude_online, chatUnread: st.chat_unread, profile: st.profile, learned: st.learned, clients: st.clients });
     if (prev) {
       const here = location.hash;
       for (const r of S.requests) {
         const p = prev.get(r.id);
-        if (p && p.status !== 'ready' && r.status === 'ready' && here !== '#/d/' + r.id) toast(`“${r.title}” is ready. Open it`, '#/d/' + r.id);
-        else if (p && r.unread > p.unread && here !== '#/d/' + r.id) toast(`Claude replied on “${r.title}”`, '#/d/' + r.id);
+        if (p && p.status !== 'ready' && r.status === 'ready' && here !== '#/d/' + r.id) toast(`“${r.title}” ${L('is ready. Open it')}`, '#/d/' + r.id);
+        else if (p && r.unread > p.unread && here !== '#/d/' + r.id) toast(`${L('Claude replied on')} “${r.title}”`, '#/d/' + r.id);
       }
-      if (S.chatUnread > prevChat && here !== '#/chat') toast('Claude replied in your chat', '#/chat');
+      if (S.chatUnread > prevChat && here !== '#/chat') toast(L('Claude replied in your chat'), '#/chat');
     }
     S.loaded = true;
     renderChrome();
   }
   function renderChrome() {
-    $('#type-nav').innerHTML = S.types.map((t) => {
+    const item = (t) => {
       const n = S.requests.filter((r) => r.type === t.id).length;
-      return `<a class="nav-item" href="#/type/${t.id}" data-nav="${t.id}">${sq(t)}${esc(t.name)}<span class="count">${n || ''}</span></a>`;
+      return `<a class="nav-item" href="#/type/${t.id}" data-nav="${t.id}">${sq(t)}<span class="label">${esc(tx(t, 'name'))}</span><span class="count">${n || ''}</span></a>`;
+    };
+    const groups = S.groups.length ? S.groups : [{ id: 'all', en: 'Deliverables' }];
+    $('#type-nav').innerHTML = groups.map((g) => {
+      const ts = S.types.filter((t) => g.id === 'all' || t.group === g.id);
+      return `<div class="nav-group">${esc(S.lang === 'fr' ? g.fr : g.en)}</div>${ts.map(item).join('')}`;
     }).join('');
+    document.querySelectorAll('[data-i18n]').forEach((el) => (el.textContent = L(el.dataset.i18n)));
+    document.querySelectorAll('[data-i18n-title]').forEach((el) => (el.title = L(el.dataset.i18nTitle)));
+    document.documentElement.lang = S.lang;
+    $('#lang-btn').textContent = S.lang === 'fr' ? 'EN' : 'FR';
     const newCount = S.requests.filter((r) => r.unseen || r.unread).length;
-    $('#home-badge').textContent = newCount ? newCount + ' new' : '';
+    $('#home-badge').textContent = newCount ? newCount + ' ' + L('new') : '';
     const cb = $('#chat-badge'); cb.hidden = !S.chatUnread; cb.textContent = S.chatUnread;
     const total = newCount + S.chatUnread;
     document.title = (total ? `(${total}) ` : '') + 'Analyst Kit';
-    $('#me-name').textContent = S.profile.name || 'Set up your profile';
+    $('#me-name').textContent = S.profile.name || L('Set up your profile');
     $('#me-avatar').textContent = initials(S.profile.name);
     const p = $('#presence');
     p.className = 'presence' + (S.online ? ' on' : '');
-    $('#presence-label').textContent = S.online ? 'Claude is online' : 'Claude is offline';
-    p.title = S.online ? 'Requests and messages are picked up automatically' : 'Type "check my requests" in your Claude chat';
+    $('#presence-label').textContent = L(S.online ? 'Claude is online' : 'Claude is offline');
+    p.title = L(S.online ? 'Requests and messages are picked up automatically' : 'Type "check my requests" in your Claude chat');
     const r = location.hash.replace(/^#/, '') || '/';
     const sel = r === '/' ? 'home' : r.startsWith('/chat') ? 'chat' : r.startsWith('/profile') ? 'profile' : (r.match(/^\/type\/([a-z-]+)/) || [])[1];
     document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('on', a.dataset.nav === sel));
@@ -232,25 +247,25 @@
 
   // ---------- shared pieces ----------
   function listHtml(reqs) {
-    if (!reqs.length) return `<div class="list"><div class="empty-note">Nothing here.</div></div>`;
+    if (!reqs.length) return `<div class="list"><div class="empty-note">${L('Nothing here.')}</div></div>`;
     return `<div class="list">${reqs.map((r) => {
       const t = typeOf(r.type);
-      const flag = r.unseen || r.unread ? '<span class="newdot" title="New"></span>' : '';
-      const reply = r.awaiting_reply ? '<span class="pill waiting"><i></i>Claude is replying</span>' : '';
+      const flag = r.unseen || r.unread ? `<span class="newdot" title="${L('New')}"></span>` : '';
+      const reply = r.awaiting_reply ? `<span class="pill waiting"><i></i>${L('Claude is replying')}</span>` : '';
       return `<a class="item" href="#/d/${r.id}">${sq(t)}
-        <span style="min-width:0"><div class="name">${esc(r.title)}</div><div class="sub">${esc(t.name)}${r.client ? ' · ' + esc(r.client) : ''}</div></span>
+        <span style="min-width:0"><div class="name">${esc(r.title)}</div><div class="sub">${esc(tx(t, 'name'))}${r.client ? ' · ' + esc(r.client) : ''}</div></span>
         <span class="flags">${flag}${reply || pill(statusOf(r))}</span><span class="when">${ago(r.updated_at)}</span></a>`;
     }).join('')}</div>`;
   }
 
   function messageHtml(m) {
     if (m.role === 'claude') return `<div class="msg">${claudeMark}<div><div class="who">Claude <time>${time(m.created_at)}</time></div><div class="body md" data-md="${m.id}"></div></div></div>`;
-    return `<div class="msg user"><span class="avatar">${esc(initials(S.profile.name))}</span><div><div class="who">${esc(S.profile.name || 'You')} <time>${time(m.created_at)}</time></div><div class="body">${esc(m.body)}</div></div></div>`;
+    return `<div class="msg user"><span class="avatar">${esc(initials(S.profile.name))}</span><div><div class="who">${esc(S.profile.name || L('You'))} <time>${time(m.created_at)}</time></div><div class="body">${esc(m.body)}</div></div></div>`;
   }
   async function paintFeed(feed, msgs, emptyHtml) {
     const waiting = msgs.length && msgs[msgs.length - 1].role === 'user';
     feed.innerHTML = (msgs.length ? msgs.map(messageHtml).join('') : emptyHtml) +
-      (waiting ? `<div class="typing"><i></i><i></i><i></i>${S.online ? 'Claude is replying…' : 'Claude will reply when you say “check my requests” in your chat'}</div>` : '');
+      (waiting ? `<div class="typing"><i></i><i></i><i></i>${L(S.online ? 'Claude is replying…' : 'Claude will reply when you say “check my requests” in your chat')}</div>` : '');
     for (const m of msgs.filter((x) => x.role === 'claude')) await renderMarkdown(feed.querySelector(`[data-md="${m.id}"]`), m.body);
     feed.scrollTop = feed.scrollHeight;
   }
@@ -278,26 +293,27 @@
   function viewHome() {
     const p = S.profile;
     main.innerHTML = `<div class="page">
-      <div class="page-head hello"><div><h1>${p.name ? `${greeting()}, ${esc(p.name.split(' ')[0])}` : 'What do you need for your client?'}</h1>
-        <p>Paste your notes, Claude writes the deliverable, you hand it over.</p></div></div>
-      <form class="ask" id="ask"><input id="ask-input" placeholder="Ask Claude anything: prepare a workshop, review a doc, draft a client email…" autocomplete="off"><button class="btn primary" type="submit">Ask</button></form>
-      ${!p.name ? `<div class="notice"><p>Add your name and company so every document says “Prepared by you”, and tell Claude how you like to work.</p><a class="btn" href="#/profile">Set up profile</a></div>` : ''}
-      <div><h2 class="section-title">Start a deliverable</h2><div class="types compact">${S.types.map((t) => `
-        <div class="type" data-href="#/new/${t.id}" title="You give: ${esc(t.gives)}"><div class="t">${sq(t)}${esc(t.name)}</div><p>${esc(t.gets)}</p></div>`).join('')}</div></div>
-      <div><h2 class="section-title">Your deliverables</h2>
-        <div class="toolbar"><input class="input" id="q" placeholder="Search by title or client" value="${esc(S.q)}"><div class="chips" id="filters"></div></div>
+      <div class="page-head hello"><div><h1>${p.name ? `${greeting()}, ${esc(p.name.split(' ')[0])}` : L('What do you need for your client?')}</h1>
+        <p>${L('Pick a deliverable, fill its template or paste your notes. Claude does the work, you hand it over.')}</p></div></div>
+      <form class="ask" id="ask"><input id="ask-input" placeholder="${L('Ask Claude anything: prepare a workshop, review a doc, draft a client email…')}" autocomplete="off"><button class="btn primary" type="submit">${L('Ask')}</button></form>
+      ${!p.name ? `<div class="notice"><p>${L('Add your name and company so every document says “Prepared by you”, and tell Claude how you like to work.')}</p><a class="btn" href="#/profile">${L('Set up profile')}</a></div>` : ''}
+      <div><h2 class="section-title">${L('Start a deliverable')}</h2>${(S.groups.length ? S.groups : [{ id: 'all', en: '' }]).map((g) => `
+        <div class="type-group">${g.en ? `<h3>${esc(S.lang === 'fr' ? g.fr : g.en)}</h3>` : ''}<div class="types compact">${S.types.filter((t) => g.id === 'all' || t.group === g.id).map((t) => `
+        <div class="type" data-href="#/new/${t.id}" title="${L('You give')}: ${esc(tx(t, 'gives'))}"><div class="t">${sq(t)}${esc(tx(t, 'name'))}</div><p>${esc(tx(t, 'gets'))}</p></div>`).join('')}</div></div>`).join('')}</div>
+      <div><h2 class="section-title">${L('Your deliverables')}</h2>
+        <div class="toolbar"><input class="input" id="q" placeholder="${L('Search by title or client')}" value="${esc(S.q)}"><div class="chips" id="filters"></div></div>
         <div id="list"></div></div>
     </div>`;
     const paint = () => {
       const counts = { all: S.requests.length, progress: 0, ready: 0, sent: 0 };
       S.requests.forEach((r) => { const s = statusOf(r); if (s === 'sent') counts.sent++; else if (s === 'ready') counts.ready++; else counts.progress++; });
       const F = [['all', 'All'], ['progress', 'In progress'], ['ready', 'Ready to send'], ['sent', 'Sent to client']];
-      $('#filters').innerHTML = F.map(([k, l]) => `<button class="chip ${S.filter === k ? 'on' : ''}" data-f="${k}">${l}<span class="n">${counts[k]}</span></button>`).join('');
+      $('#filters').innerHTML = F.map(([k, l]) => `<button class="chip ${S.filter === k ? 'on' : ''}" data-f="${k}">${L(l)}<span class="n">${counts[k]}</span></button>`).join('');
       const q = S.q.toLowerCase();
       const rows = S.requests.filter((r) => {
         const s = statusOf(r);
         const okF = S.filter === 'all' || (S.filter === 'progress' ? s === 'waiting' || s === 'working' : s === S.filter);
-        return okF && (!q || (r.title + ' ' + r.client + ' ' + typeOf(r.type).name).toLowerCase().includes(q));
+        return okF && (!q || (r.title + ' ' + r.client + ' ' + tx(typeOf(r.type), 'name')).toLowerCase().includes(q));
       });
       $('#list').innerHTML = listHtml(rows);
     };
@@ -317,14 +333,16 @@
     const t = typeOf(id);
     const reqs = S.requests.filter((r) => r.type === id);
     main.innerHTML = `<div class="page">
-      <div class="page-head"><div class="crumb"><a href="#/">Home</a><span>›</span><span>${esc(t.name)}</span></div>
-        <h1>${esc(t.name)}</h1><p>You give: ${esc(lower1(t.gives))}. You get: ${esc(lower1(t.gets))}.</p></div>
-      <div><a class="btn primary big" href="#/new/${id}">New ${esc(t.name)}</a></div>
+      <div class="page-head"><div class="crumb"><a href="#/">${L('Home')}</a><span>›</span><span>${esc(tx(t, 'name'))}</span></div>
+        <h1>${esc(tx(t, 'name'))}</h1><p>${L('You give')}: ${esc(lower1(tx(t, 'gives')))}. ${L('You get')}: ${esc(lower1(tx(t, 'gets')))}.</p></div>
+      <div class="type-actions"><a class="btn primary big" href="#/new/${id}">${L('New deliverable')}</a>${templateOf(t) ? `<a class="btn big" href="#/new/${id}" data-tpl="${id}">${L('Use the template')}</a>` : ''}</div>
       ${tryHtml(t)}
-      ${id === 'managing-xray-tests' ? '<div><h2 class="section-title">Xray assistant</h2><div id="xray-chat"></div></div>' : ''}
-      <div><h2 class="section-title">All ${esc(t.name)} deliverables <span class="count">${reqs.length}</span></h2><div id="list">${listHtml(reqs)}</div></div>
+      ${templateOf(t) ? `<details class="box tpl-box"><summary>${L('Template')}</summary><div class="inner"><p class="help">${L("Fill in what you know, delete what doesn't apply. Claude asks for the rest.")}</p><pre class="tpl">${esc(templateOf(t))}</pre></div></details>` : ''}
+      ${id === 'managing-xray-tests' ? `<div><h2 class="section-title">${L('Xray assistant')}</h2><div id="xray-chat"></div></div>` : ''}
+      <div><h2 class="section-title">${L('Your deliverables')} <span class="count">${reqs.length}</span></h2><div id="list">${listHtml(reqs)}</div></div>
     </div>`;
     wireTry(main, t);
+    main.querySelectorAll('[data-tpl]').forEach((a) => (a.onclick = (e) => { e.preventDefault(); S.preset = { type: id, notes: templateOf(t) }; location.hash = '#/new/' + id; }));
     if ($('#xray-chat') && window.KitChat) window.KitChat.mountXray($('#xray-chat'));
     return { tick: () => { $('#list').innerHTML = listHtml(S.requests.filter((r) => r.type === id)); } };
   }
@@ -334,11 +352,13 @@
     const samples = S.requests.filter((r) => r.is_sample && r.type === t.id).sort((a, b) => a.id - b.id);
     const ex = (t.examples || []).filter((e) => e.notes);
     if (!samples.length && !ex.length) return '';
-    return `<div><h2 class="section-title">Try it</h2><div class="try">
-      ${samples.map((s) => `<a class="try-card sample" href="#/d/${s.id}"><span class="tag">Finished sample</span><b>${esc(s.title)}</b><span>${esc(s.client)}</span></a>`).join('')}
-      ${ex.map((e, i) => `<button type="button" class="try-card" data-ex="${i}"><span class="tag">Scenario</span><b>${esc(e.label)}</b><span>${esc(e.notes.slice(0, 110))}…</span></button>`).join('')}
+    return `<div><h2 class="section-title">${L('Try it')}</h2><div class="try">
+      ${samples.map((s) => `<a class="try-card sample" href="#/d/${s.id}"><span class="tag">${L('Finished sample')}</span><b>${esc(s.title)}</b><span>${esc(s.client)}</span></a>`).join('')}
+      ${ex.map((e, i) => `<button type="button" class="try-card" data-ex="${i}"><span class="tag">${L('Scenario')}</span><b>${esc(exLabel(e))}</b><span>${esc(e.notes.slice(0, 110))}…</span></button>`).join('')}
     </div></div>`;
   }
+  const exLabel = (e) => (S.lang === 'fr' && e.label_fr) || e.label;
+  const templateOf = (t) => (t.template && (t.template[S.lang] || t.template.en)) || '';
   function wireTry(root, t) {
     root.querySelectorAll('[data-ex]').forEach((b) => (b.onclick = () => startExample(t.id, +b.dataset.ex)));
   }
@@ -352,30 +372,34 @@
   function viewNew(typeId, preset = {}) {
     let type = typeId || S.types[0].id;
     main.innerHTML = `<div class="page">
-      <div class="page-head"><div class="crumb"><a href="#/">Home</a><span>›</span><span>New deliverable</span></div>
-        <h1>New deliverable</h1><p>Rough notes are fine. Claude asks in the chat if something is missing.</p></div>
+      <div class="page-head"><div class="crumb"><a href="#/">${L('Home')}</a><span>›</span><span>${L('New deliverable')}</span></div>
+        <h1>${L('New deliverable')}</h1><p>${L('Rough notes are fine. Claude asks in the chat if something is missing.')}</p></div>
       <form class="form" id="new-form" autocomplete="off">
-        <div class="field"><label>What do you need?</label><div class="seg" id="seg"></div></div>
+        <div class="field"><label>${L('What do you need?')}</label><div class="seg" id="seg"></div></div>
         <div class="expect" id="expect"></div>
         <div class="two">
-          <div class="field"><label for="f-client">Client or project</label><input class="input" id="f-client" list="client-list" placeholder="e.g. Northwind Retail">
+          <div class="field"><label for="f-client">${L('Client or project')}</label><input class="input" id="f-client" list="client-list" placeholder="${L('e.g. Hexa card scheme')}">
             <datalist id="client-list">${S.clients.map((c) => `<option value="${esc(c)}">`).join('')}</datalist></div>
-          <div class="field"><label for="f-title">Title</label><input class="input" id="f-title" placeholder="e.g. Invoice approval process"></div>
+          <div class="field"><label for="f-title">${L('Title')}</label><input class="input" id="f-title" placeholder="${L('e.g. Fraud score in authorisation')}"></div>
         </div>
-        <div class="field"><label for="f-notes">Your notes</label>
+        <div class="field"><div class="label-row"><label for="f-notes">${L('Your notes')}</label><button type="button" class="btn small" id="f-template">${L('Use the template')}</button></div>
           <textarea class="textarea" id="f-notes"></textarea>
-          <span class="help">Paste anything: meeting notes, an email thread, a spec. You can also drop a .txt, .md or .csv file into the box.</span></div>
+          <span class="help">${L('Paste anything: meeting notes, an email thread, a spec. You can also drop a .txt, .md or .csv file into the box.')}</span></div>
         <div class="form-foot">
-          <div class="left"><span class="ex-label">Try a scenario:</span><div class="chips" id="f-examples"></div></div>
-          <div style="display:flex;align-items:center;gap:12px"><span class="err" id="f-err"></span><button class="btn primary big" type="submit">Create deliverable <kbd>⌘↵</kbd></button></div>
+          <div class="left"><span class="ex-label">${L('Try a scenario:')}</span><div class="chips" id="f-examples"></div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span class="err" id="f-err"></span><button class="btn primary big" type="submit">${L('Create deliverable')} <kbd>⌘↵</kbd></button></div>
         </div>
       </form></div>`;
     const paint = () => {
       const t = typeOf(type);
-      $('#seg').innerHTML = S.types.map((x) => `<button type="button" data-t="${x.id}" class="${x.id === type ? 'on' : ''}">${sq(x)}${esc(x.name)}</button>`).join('');
-      $('#expect').innerHTML = `<b>You'll get:</b> ${esc(t.gets)}.`;
-      $('#f-notes').placeholder = t.placeholder;
-      $('#f-examples').innerHTML = (t.examples || []).filter((e) => e.notes).map((e, i) => `<button type="button" class="chip" data-ex="${i}">${esc(e.label)}</button>`).join('');
+      const btn = (x) => `<button type="button" data-t="${x.id}" class="${x.id === type ? 'on' : ''}">${sq(x)}${esc(tx(x, 'name'))}</button>`;
+      $('#seg').innerHTML = S.groups.length
+        ? S.groups.map((g) => `<div class="seg-group"><span>${esc(S.lang === 'fr' ? g.fr : g.en)}</span>${S.types.filter((x) => x.group === g.id).map(btn).join('')}</div>`).join('')
+        : S.types.map(btn).join('');
+      $('#expect').innerHTML = `<b>${L("You'll get")}:</b> ${esc(tx(t, 'gets'))}.`;
+      $('#f-notes').placeholder = tx(t, 'placeholder');
+      $('#f-template').hidden = !templateOf(t);
+      $('#f-examples').innerHTML = (t.examples || []).filter((e) => e.notes).map((e, i) => `<button type="button" class="chip" data-ex="${i}">${esc(exLabel(e))}</button>`).join('');
     };
     paint();
     $('#f-client').value = preset.client || S.clients[0] || '';
@@ -391,6 +415,11 @@
       if (ex.client) $('#f-client').value = ex.client + ' (sample)';
     };
     const ta = $('#f-notes');
+    $('#f-template').onclick = () => {
+      const tpl = templateOf(typeOf(type));
+      if (ta.value.trim()) { ta.value = ta.value.trimEnd() + '\n\n' + tpl; toast(L('Template added below your notes')); } else ta.value = tpl;
+      ta.focus(); ta.setSelectionRange(ta.value.indexOf(':') + 2, ta.value.indexOf(':') + 2);
+    };
     ta.addEventListener('dragover', (e) => e.preventDefault());
     ta.addEventListener('drop', (e) => {
       const f = e.dataTransfer.files[0];
@@ -414,30 +443,30 @@
 
   async function viewDeliverable(id) {
     let r;
-    try { r = await api('/api/requests/' + id); } catch { main.innerHTML = `<div class="page"><div class="page-head"><h1>Not found</h1><p><a href="#/">Back home</a></p></div></div>`; return null; }
+    try { r = await api('/api/requests/' + id); } catch { main.innerHTML = `<div class="page"><div class="page-head"><h1>${L('Not found')}</h1><p><a href="#/">${L('Back home')}</a></p></div></div>`; return null; }
     const t = typeOf(r.type);
     let shownVersion = null;
     main.innerHTML = `<div class="page wide">
-      <div class="crumb"><a href="#/">Home</a><span>›</span><a href="#/type/${t.id}">${esc(t.name)}</a>${r.client ? `<span>›</span><span>${esc(r.client)}</span>` : ''}</div>
+      <div class="crumb"><a href="#/">${L('Home')}</a><span>›</span><a href="#/type/${t.id}">${esc(tx(t, 'name'))}</a>${r.client ? `<span>›</span><span>${esc(r.client)}</span>` : ''}</div>
       <div class="split">
         <div class="left">
           <div id="actions"></div>
           <article class="paper"><header class="paper-head">
-            <span class="kind">${sq(t)}${esc(t.name)}</span><h1>${esc(r.title)}</h1>
+            <span class="kind">${sq(t)}${esc(tx(t, 'name'))}</span><h1>${esc(r.title)}</h1>
             <span class="meta">${r.client ? esc(r.client) + ' · ' : ''}<span id="doc-date">${date(r.updated_at)}</span></span>
             ${prepared() ? `<span class="prepared">${prepared()}</span>` : ''}
           </header><div id="doc"></div></article>
           <div id="next"></div>
-          <details class="box"><summary>Your original notes</summary><div class="inner"><div class="notes">${esc(r.notes)}</div></div></details>
-          <div><button class="btn ghost" id="a-del">Delete this deliverable</button></div>
+          <details class="box"><summary>${L('Your original notes')}</summary><div class="inner"><div class="notes">${esc(r.notes)}</div></div></details>
+          <div><button class="btn ghost" id="a-del">${L('Delete this deliverable')}</button></div>
         </div>
         <aside class="panel" id="panel">
-          <div class="panel-head">Conversation<span>⌘↵ to send</span></div>
+          <div class="panel-head">${L('Conversation')}<span>${L('⌘↵ to send')}</span></div>
           <div class="feed" id="feed"></div>
           <div class="composer" id="composer">
             <div class="quick" id="quick"></div>
-            <textarea placeholder="Ask a question, give feedback, or request changes…"></textarea>
-            <div class="row"><span class="hint">Claude updates the document when you ask for changes.</span><button class="btn primary" data-send>Send</button></div>
+            <textarea placeholder="${L('Ask a question, give feedback, or request changes…')}"></textarea>
+            <div class="row"><span class="hint">${L('Claude updates the document when you ask for changes.')}</span><button class="btn primary" data-send>${L('Send')}</button></div>
           </div>
         </aside>
       </div></div>`;
@@ -446,18 +475,18 @@
       const ready = r.status === 'ready';
       const vers = r.versions.length;
       $('#actions').innerHTML = ready ? `<div class="doc-actions">
-          <button class="btn primary" id="a-word">Download Word</button>
-          <button class="btn" id="a-pdf">Save as PDF</button>
-          <button class="btn" id="a-copy">Copy</button>
-          <button class="btn" id="a-sent">${r.sent_at ? '✓ Sent to client' : 'Mark as sent'}</button>
+          <button class="btn primary" id="a-word">${L('Download Word')}</button>
+          <button class="btn" id="a-pdf">${L('Save as PDF')}</button>
+          <button class="btn" id="a-copy">${L('Copy')}</button>
+          <button class="btn" id="a-sent">${L(r.sent_at ? '✓ Sent to client' : 'Mark as sent')}</button>
           <span class="spacer"></span>
-          ${vers ? `<span class="verbar">Version <select id="ver">${r.versions.map((v, i) => `<option value="${v.id}">${i + 1} · ${time(v.created_at)}</option>`).join('')}<option value="" selected>${vers + 1} · latest</option></select></span>` : ''}
+          ${vers ? `<span class="verbar">${L('Version')} <select id="ver">${r.versions.map((v, i) => `<option value="${v.id}">${i + 1} · ${time(v.created_at)}</option>`).join('')}<option value="" selected>${vers + 1} · ${L('latest')}</option></select></span>` : ''}
           ${pill(statusOf(r))}</div>` : '';
       if (!ready) return;
       $('#a-pdf').onclick = () => window.print();
       $('#a-word').onclick = () => downloadWord(r, t, shownVersion);
       $('#a-copy').onclick = () => copyRich(r, shownVersion);
-      $('#a-sent').onclick = async () => { await post(`/api/requests/${r.id}/sent`, { sent: !r.sent_at }); r.sent_at = r.sent_at ? null : Date.now() / 1000; paintActions(); toast(r.sent_at ? 'Marked as sent to client' : 'Marked as not sent'); };
+      $('#a-sent').onclick = async () => { await post(`/api/requests/${r.id}/sent`, { sent: !r.sent_at }); r.sent_at = r.sent_at ? null : Date.now() / 1000; paintActions(); toast(L(r.sent_at ? 'Marked as sent to client' : 'Marked as not sent')); };
       const ver = $('#ver');
       if (ver) ver.onchange = async () => {
         shownVersion = ver.value ? (await api('/api/versions/' + ver.value)).output : null;
@@ -468,28 +497,28 @@
       const doc = $('#doc');
       if (r.status !== 'ready') {
         doc.innerHTML = `<div class="working"><div class="spinner"></div>
-          <h2>${r.status === 'working' ? 'Claude is writing this now' : 'Waiting for Claude'}</h2>
-          <p>${S.online ? 'Claude has it and will start in a moment. You can add context in the conversation while you wait.' : 'Type <b>“check my requests”</b> in your Claude chat. This page updates by itself.'}</p></div>`;
+          <h2>${L(r.status === 'working' ? 'Claude is writing this now' : 'Waiting for Claude')}</h2>
+          <p>${L(S.online ? 'Claude has it and will start in a moment. You can add context in the conversation while you wait.' : 'Type <b>“check my requests”</b> in your Claude chat. This page updates by itself.')}</p></div>`;
         return;
       }
-      doc.innerHTML = (shownVersion ? `<div class="old-note">You're viewing an earlier version. Downloads use this version. Pick “latest” to go back.</div>` : '') + '<div class="md" id="out"></div>';
+      doc.innerHTML = (shownVersion ? `<div class="old-note">${L("You're viewing an earlier version. Downloads use this version. Pick “latest” to go back.")}</div>` : '') + '<div class="md" id="out"></div>';
       await renderMarkdown($('#out'), shownVersion || r.output);
     };
     const paintNext = () => {
       const nx = (t.next || []).map(typeOf);
-      $('#next').innerHTML = r.status === 'ready' && nx.length ? `<div class="next"><h2 class="section-title">Continue from this document</h2>
-        <div class="chips">${nx.map((n) => `<button class="chip" data-next="${n.id}">${sq(n)}Create ${esc(n.name)}</button>`).join('')}</div></div>` : '';
+      $('#next').innerHTML = r.status === 'ready' && nx.length ? `<div class="next"><h2 class="section-title">${L('Continue from this document')}</h2>
+        <div class="chips">${nx.map((n) => `<button class="chip" data-next="${n.id}">${sq(n)}${L('Create')} ${esc(tx(n, 'name'))}</button>`).join('')}</div></div>` : '';
       $('#next').querySelectorAll('[data-next]').forEach((b) => (b.onclick = () => {
         S.preset = { type: b.dataset.next, client: r.client, title: r.title, notes: `Based on the ${t.name} “${r.title}”:\n\n${r.output}` };
         location.hash = '#/new/' + b.dataset.next;
       }));
     };
     const QUICK = r.status === 'ready'
-      ? ['Make it shorter', 'Add more detail', 'Make it more formal for the client', 'Translate to French', 'What questions should I ask the client?']
+      ? ['Make it shorter', 'Add more detail', 'Make it more formal for the client', S.lang === 'fr' ? 'Translate to English' : 'Translate to French', 'What questions should I ask the client?']
       : ['Here is more context:', 'Make it a one-pager'];
-    $('#quick').innerHTML = QUICK.map((q) => `<button data-quick="${esc(q)}">${esc(q)}</button>`).join('');
+    $('#quick').innerHTML = QUICK.map((q) => `<button data-quick="${esc(L(q))}">${esc(L(q))}</button>`).join('');
     const feed = $('#feed');
-    const empty = `<div class="feed-empty"><b>Talk to Claude about this document</b><span>Ask why something is there, give feedback, or request changes. Claude answers here and updates the document.</span></div>`;
+    const empty = `<div class="feed-empty"><b>${L('Talk to Claude about this document')}</b><span>${L('Ask why something is there, give feedback, or request changes. Claude answers here and updates the document.')}</span></div>`;
     paintActions(); paintNext(); await paintDoc(); await paintFeed(feed, r.messages, empty);
     wireComposer($('#composer'), async (text) => {
       await post(`/api/requests/${r.id}/messages`, { body: text });
@@ -497,8 +526,8 @@
     });
     const del = $('#a-del');
     del.onclick = async () => {
-      if (!del.dataset.armed) { del.dataset.armed = 1; del.textContent = 'Click again to delete'; return; }
-      await api('/api/requests/' + r.id, { method: 'DELETE' }); toast('Deleted'); location.hash = '#/';
+      if (!del.dataset.armed) { del.dataset.armed = 1; del.textContent = L('Click again to delete'); return; }
+      await api('/api/requests/' + r.id, { method: 'DELETE' }); toast(L('Deleted')); location.hash = '#/';
     };
 
     return {
@@ -509,7 +538,7 @@
         r = fresh;
         if (docChanged) {
           shownVersion = null; paintActions(); paintNext(); await paintDoc(); $('#doc-date').textContent = date(r.updated_at);
-          if (r.status === 'ready') toast(r.versions.length ? 'Document updated' : 'Your document is ready');
+          if (r.status === 'ready') toast(L(r.versions.length ? 'Document updated' : 'Your document is ready'));
         }
         if (msgsChanged || docChanged) await paintFeed(feed, r.messages, empty);
       },
@@ -518,19 +547,19 @@
 
   async function viewChat() {
     main.innerHTML = `<div class="chatpage">
-      <div class="head"><h1>Chat with Claude</h1><p>Anything that isn't a deliverable: prep a workshop, review a document, plan your week, draft a client email.</p></div>
+      <div class="head"><h1>${L('Chat with Claude')}</h1><p>${L("Anything that isn't a deliverable: prep a workshop, review a document, plan your week, draft a client email.")}</p></div>
       <div class="feed" id="feed"></div>
       <div class="composer" id="composer">
-        <textarea placeholder="Message Claude…"></textarea>
-        <div class="row"><span class="hint">⌘↵ to send</span><button class="btn primary" data-send>Send</button></div>
+        <textarea placeholder="${L('Message Claude…')}"></textarea>
+        <div class="row"><span class="hint">${L('⌘↵ to send')}</span><button class="btn primary" data-send>${L('Send')}</button></div>
       </div></div>`;
     const SUG = [
       ['Prepare a client workshop', 'Agenda, questions and exercises for a 90-minute discovery workshop'],
       ['Draft a cover email', 'A short email sending the latest deliverable to my client'],
       ['Review my document', "I'll paste a PRD or story. Tell me what's weak"],
       ['Prepare me for an interview', 'Mock product owner interview questions with strong answers'],
-    ];
-    const empty = `<div class="feed-empty"><b>Start with one of these, or write your own.</b><div class="suggest">${SUG.map(([a, b]) => `<button data-s="${esc(a + ': ' + b)}"><b>${esc(a)}</b>${esc(b)}</button>`).join('')}</div></div>`;
+    ].map(([a, b]) => [L(a), L(b)]);
+    const empty = `<div class="feed-empty"><b>${L('Start with one of these, or write your own.')}</b><div class="suggest">${SUG.map(([a, b]) => `<button data-s="${esc(a + ': ' + b)}"><b>${esc(a)}</b>${esc(b)}</button>`).join('')}</div></div>`;
     const feed = $('#feed');
     let msgs = (await api('/api/chat')).messages;
     await paintFeed(feed, msgs, empty);
@@ -552,30 +581,30 @@
     let learned = [...S.learned];
     const opt = (list, v) => list.map((x) => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('');
     main.innerHTML = `<div class="page">
-      <div class="page-head"><div class="crumb"><a href="#/">Home</a><span>›</span><span>Your profile</span></div>
-        <h1>Your profile</h1><p>Claude reads this before writing anything for you. Your name and company appear on every document.</p></div>
+      <div class="page-head"><div class="crumb"><a href="#/">${L('Home')}</a><span>›</span><span>${L('Your profile')}</span></div>
+        <h1>${L('Your profile')}</h1><p>${L('Claude reads this before writing anything for you. Your name and company appear on every document.')}</p></div>
       <form class="form" id="pf">
         <div class="two">
-          <div class="field"><label for="p-name">Your name</label><input class="input" id="p-name" value="${esc(p.name)}" placeholder="e.g. Sam Rivera"></div>
-          <div class="field"><label for="p-title">Your title</label><input class="input" id="p-title" value="${esc(p.title)}" placeholder="e.g. Senior Product Owner"></div>
+          <div class="field"><label for="p-name">${L('Your name')}</label><input class="input" id="p-name" value="${esc(p.name)}" placeholder="e.g. Sam Rivera"></div>
+          <div class="field"><label for="p-title">${L('Your title')}</label><input class="input" id="p-title" value="${esc(p.title)}" placeholder="e.g. Senior Product Owner"></div>
         </div>
         <div class="two">
-          <div class="field"><label for="p-company">Company or brand</label><input class="input" id="p-company" value="${esc(p.company)}" placeholder="e.g. Rivera Product Consulting"><span class="help">Shown as “Prepared by …” on documents.</span></div>
-          <div class="field"><label for="p-tool">Backlog tool your clients use</label><select class="input" id="p-tool">${opt(['Jira', 'Linear', 'Azure DevOps', 'Trello', 'Other'], p.tool)}</select></div>
+          <div class="field"><label for="p-company">${L('Company or brand')}</label><input class="input" id="p-company" value="${esc(p.company)}" placeholder="e.g. Rivera Product Consulting"><span class="help">${L('Shown as “Prepared by …” on documents.')}</span></div>
+          <div class="field"><label for="p-tool">${L('Backlog tool your clients use')}</label><select class="input" id="p-tool">${opt(['Jira', 'Linear', 'Azure DevOps', 'Trello', 'Other'], p.tool)}</select></div>
         </div>
         <div class="two">
-          <div class="field"><label for="p-language">Document language</label><select class="input" id="p-language">${opt(['English', 'French', 'Arabic', 'Spanish', 'German', 'Dutch'], p.language)}</select></div>
-          <div class="field"><label for="p-tone">Writing style</label><select class="input" id="p-tone">${opt(['Clear and concise', 'Formal for executives', 'Detailed for developers', 'Friendly'], p.tone)}</select></div>
+          <div class="field"><label for="p-language">${L('Document language')}</label><select class="input" id="p-language">${opt(['English', 'French', 'Arabic', 'Spanish', 'German', 'Dutch'], p.language)}</select></div>
+          <div class="field"><label for="p-tone">${L('Writing style')}</label><select class="input" id="p-tone">${opt(['Clear and concise', 'Formal for executives', 'Detailed for developers', 'Friendly'], p.tone)}</select></div>
         </div>
-        <div class="field"><label>What Claude has learned about how you work</label>
-          <span class="help">Claude adds notes here from your feedback, so you don't repeat yourself. Remove anything that's wrong.</span>
+        <div class="field"><label>${L('What Claude has learned about how you work')}</label>
+          <span class="help">${L("Claude adds notes here from your feedback, so you don't repeat yourself. Remove anything that's wrong.")}</span>
           <div class="learned" id="learned"></div></div>
-        <div class="form-foot"><span></span><button class="btn primary big" type="submit">Save profile</button></div>
+        <div class="form-foot"><span></span><button class="btn primary big" type="submit">${L('Save profile')}</button></div>
       </form></div>`;
     const paintLearned = () => {
       $('#learned').innerHTML = learned.length
-        ? `<ul>${learned.map((l, i) => `<li><span>${esc(l)}</span><button type="button" class="btn ghost" data-rm="${i}">Remove</button></li>`).join('')}</ul>`
-        : '<div class="expect">Nothing yet. As you give feedback in conversations, Claude notes your preferences here.</div>';
+        ? `<ul>${learned.map((l, i) => `<li><span>${esc(l)}</span><button type="button" class="btn ghost" data-rm="${i}">${L('Remove')}</button></li>`).join('')}</ul>`
+        : `<div class="expect">${L('Nothing yet. As you give feedback in conversations, Claude notes your preferences here.')}</div>`;
       $('#learned').querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => { learned.splice(+b.dataset.rm, 1); paintLearned(); }));
     };
     paintLearned();
@@ -583,7 +612,7 @@
       e.preventDefault();
       const v = (k) => $('#p-' + k).value;
       await post('/api/profile', { name: v('name'), title: v('title'), company: v('company'), tool: v('tool'), language: v('language'), tone: v('tone'), learned });
-      await refresh(); toast('Profile saved');
+      await refresh(); toast(L('Profile saved'));
     };
     return null;
   }
@@ -626,20 +655,20 @@
     return html;
   }
   async function downloadWord(r, t, version) {
-    toast('Preparing the Word file…');
+    toast(L('Preparing the Word file…'));
     const body = await clientHtml(version || r.output);
     const by = prepared();
     const doc = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(r.title)}</title>
       <style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1b1c20;line-height:1.45}h1{font-size:20pt;margin:0 0 4pt}h2{font-size:15pt;margin:16pt 0 6pt}h3{font-size:12.5pt;margin:14pt 0 4pt}
       table{border-collapse:collapse;width:100%;margin:6pt 0 10pt}th,td{border:1px solid #d6d8de;padding:4pt 6pt;vertical-align:top;font-size:10pt}th{background:#f4f5f7;text-align:left}
       pre{background:#f4f5f7;border:1px solid #e5e6ea;padding:8pt;font-family:Consolas,monospace;font-size:9pt;white-space:pre-wrap}code{font-family:Consolas,monospace;font-size:9.5pt}.meta{color:#6b6f78;margin:0 0 2pt}</style></head>
-      <body><p style="color:#6b6f78;text-transform:uppercase;letter-spacing:1px;font-size:9pt">${esc(t.name)}</p><h1>${esc(r.title)}</h1>
+      <body><p style="color:#6b6f78;text-transform:uppercase;letter-spacing:1px;font-size:9pt">${esc(tx(t, 'name'))}</p><h1>${esc(r.title)}</h1>
       <p class="meta">${r.client ? esc(r.client) + ' · ' : ''}${date(r.updated_at)}</p>${by ? `<p class="meta">${by}</p>` : ''}<hr>${body}</body></html>`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿', doc], { type: 'application/msword' }));
     a.download = fileName((r.client ? r.client + ' ' : '') + r.title) + '.doc';
     document.body.appendChild(a); a.click(); a.remove();
-    toast('Word file downloaded');
+    toast(L('Word file downloaded'));
   }
   async function copyRich(r, version) {
     const md = version || r.output;
@@ -649,9 +678,9 @@
         'text/html': new Blob([`<h1>${esc(r.title)}</h1>${html}`], { type: 'text/html' }),
         'text/plain': new Blob([md], { type: 'text/plain' }),
       })]);
-      toast('Copied. Paste it into an email, Word, Notion or Confluence');
+      toast(L('Copied. Paste it into an email, Word, Notion or Confluence'));
     } catch {
-      try { await navigator.clipboard.writeText(md); toast('Copied as text'); } catch { toast("Couldn't copy"); }
+      try { await navigator.clipboard.writeText(md); toast(L('Copied as text')); } catch { toast(L("Couldn't copy")); }
     }
   }
 
@@ -670,7 +699,7 @@
     main.scrollTop = 0;
   }
   window.Kit = {
-    state: S, typeOf, startExample, toast, esc,
+    state: S, typeOf, startExample, toast, esc, L, tx,
     ask: async (text) => { await post('/api/chat', { body: text }); },
     fill: (i) => { const b = document.querySelector(`#f-examples [data-ex="${i}"]`); if (b) { b.click(); return true; } return false; },
   };
@@ -686,6 +715,12 @@
     document.documentElement.dataset.theme = next;
     try { localStorage.setItem('kit-theme', next); } catch {}
     initMermaid(); route();
+  };
+  $('#lang-btn').onclick = () => {
+    S.lang = S.lang === 'fr' ? 'en' : 'fr';
+    try { localStorage.setItem('kit-lang', S.lang); } catch {}
+    route();
+    if (window.KitChat && window.KitChat.relang) window.KitChat.relang();
   };
   route();
 })();

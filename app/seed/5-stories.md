@@ -1,80 +1,94 @@
-{"client": "Northwind Retail (sample)", "skill": "writing-user-stories", "title": "Stories for FR-1 to FR-3: address editing", "input_tokens": 2720, "output_tokens": 1350, "seconds": 41}
+{"client": "Hexa card scheme (sample)", "skill": "writing-user-stories", "title": "Stories: issuer fraud-score settings in the member portal"}
 ===INPUT===
-Turn these PRD requirements into stories with Gherkin acceptance criteria. We use Linear.
+Stories for FR-3 and FR-4 of the fraud score PRD. Jira.
 
-FR-1 Show an "Edit address" action on orders with status Paid or Picking
-FR-2 Validate the new address with the existing address service
-FR-3 Lock editing once status is Packed and explain why
+FR-3: issuers opt in to the fraud score per BIN range in the member portal.
+FR-4: issuers can set a score threshold for stand-in (STIP): above it, STIP declines.
+Users: issuer fraud managers (role "Fraud admin"). Changes take effect at 02:00 the next night (config batch). Any change must be approved by a second Fraud admin of the same issuer (4-eyes). BIN ranges are 8 digits. Threshold 0-999, empty = no threshold.
 ===OUTPUT===
 ### Story map
 
-| Step | View order | Edit address | Confirm |
-|---|---|---|---|
-| **Release 1** | See if editing is possible (FR-1, FR-3) | Change a domestic address (FR-2) | Confirmation on page |
-| Later | — | International addresses | Email confirmation (FR-4) |
+| Step | Find my BIN ranges | Configure | Approve | Check it's live |
+|---|---|---|---|---|
+| **Release 1** | List my issuer's BIN ranges with status (FR-3) | Opt a range in or out; set the STIP threshold (FR-3, FR-4) | Second Fraud admin approves (4-eyes) | See "active from 02:00" and the history |
+| Later | Search across many ranges | Bulk changes by file | — | Email when live |
 
 ---
 
-### 1 · Let customers edit their delivery address before packing
-`Linear` · Project: Self-service address change · Labels: checkout, customer · Source: FR-1, FR-2
+### 1 · Opt a BIN range in to the fraud score
+`Jira` · Epic: Fraud score · Labels: member-portal, fraud, lclf · Source: FR-3
 
-Customers who notice a mistake after ordering currently have to email support and often miss the cut-off. Let them correct a domestic address themselves while the order is still *Paid* or *Picking*.
+As an issuer's **Fraud admin**, I want to opt a BIN range in to the fraud score, so that our authorisation requests for those cards carry the network score.
 
 **Example map**
-- *Rule:* editing allowed only before *Packed* → *Example:* Paid order is editable; Packed order is not
-- *Rule:* address must pass validation → *Example:* "12 Rue Fictive, 69000" is rejected with a suggestion
-- *Question:* can a customer edit twice? → **answered: yes, until Packed**
+- *Rule:* only ranges of my own issuer are shown → *Example:* Fraud admin of Banque Lumière sees 45671200–45671299, not Crédit Azur's ranges
+- *Rule:* a change needs a second Fraud admin's approval → *Example:* Léa requests, Marc approves; Léa can't approve her own request
+- *Rule:* takes effect at 02:00 the next night → *Example:* approved Tuesday 16:00, live Wednesday 02:00
+- *Question:* can a pending request be changed? → **answered: no, cancel and create a new one**
 
 ```gherkin
-Scenario: Customer changes the address of a paid order
-  Given order #10482 has status "Paid"
-  And the delivery address is "4 Rue Victor Hugo, 69002 Lyon"
-  When the customer saves "18 Quai Saint-Antoine, 69002 Lyon"
-  Then the order page shows "18 Quai Saint-Antoine, 69002 Lyon"
-  And the warehouse receives the new address within 60 seconds
+Scenario: Fraud admin opts a range in, a second admin approves
+  Given Léa and Marc are Fraud admins of issuer "Banque Lumière"
+  And BIN range 45671200-45671299 is "Not scored"
+  When Léa requests "Scored" for this range
+  And Marc approves the request on Tuesday at 16:00
+  Then the range shows "Scored · active from Wednesday 02:00"
+  And the history shows the request by Léa and the approval by Marc
 
-Scenario: Address that fails validation
-  Given order #10482 has status "Picking"
-  When the customer saves "12 Rue Fictive, 69000 Lyon"
-  Then the address is not saved
-  And the form shows "We couldn't find this address" with up to 3 suggestions
+Scenario: No self-approval
+  Given Léa requested "Scored" for BIN range 45671200-45671299
+  When Léa opens the request
+  Then the "Approve" button is not shown
+  And the page reads "Another Fraud admin must approve this change"
 
-Scenario: Postcode outside the original country
-  Given order #10482 ships to France
-  When the customer enters a Belgian postcode
-  Then the form reads "International changes aren't available yet. Contact support."
+Scenario: Ranges of other issuers are not visible
+  Given Léa is Fraud admin of "Banque Lumière"
+  When she opens "BIN ranges"
+  Then only ranges of "Banque Lumière" are listed
 ```
 
-**Checklist**
-- [ ] Form is keyboard accessible and labels meet WCAG 2.2 AA
-- [ ] Event `address_changed` tracked with order id and old/new zone
-- [ ] Change is written to the order audit log
+**Checklist:** audit trail of who requested and approved · works with keyboard only · pending requests expire after 7 days *(to confirm)*
 
-**INVEST:** I ✓ · N ✓ · V ✓ · E ✓ · S ✓ (international split out) · T ✓ → **Ready**
+**INVEST:** I ✓ · N ✓ · V ✓ · E ✓ · S ✓ · T ✓ → **Ready**
 
 ---
 
-### 2 · Explain why the address can't be edited after packing
-`Linear` · Labels: checkout · Source: FR-3
+### 2 · Set the stand-in decline threshold
+`Jira` · Epic: Fraud score · Labels: member-portal, fraud, stip · Source: FR-4
+
+As an issuer's **Fraud admin**, I want to set a fraud score above which stand-in declines, so that risky transactions aren't approved when our host is down.
+
+**Example map**
+- *Rule:* threshold 0–999, empty = no threshold → *Example:* 850 accepted; 1000 rejected; empty clears it
+- *Rule:* only for ranges that are "Scored" → *Example:* field disabled on a "Not scored" range
+- *Rule:* same 4-eyes and 02:00 rules as story 1
 
 ```gherkin
-Scenario: Order already packed
-  Given order #10482 has status "Packed"
-  When the customer opens the order page
-  Then there is no "Edit address" button
-  And the page reads "Your parcel is packed. Contact support to redirect it."
+Scenario Outline: Threshold validation
+  Given BIN range 45671200-45671299 is "Scored"
+  When Léa enters "<value>" as stand-in threshold
+  Then the form shows "<result>"
 
-Scenario: Status changes while the form is open
-  Given the customer opened the address form while the order was "Picking"
-  And the order becomes "Packed"
-  When the customer saves a new address
-  Then the change is rejected
-  And the page reads "Your parcel was packed a moment ago, so we couldn't change the address."
+  Examples:
+    | value | result                                       |
+    | 850   | Request created, waiting for approval        |
+    | 0     | Request created, waiting for approval        |
+    | 1000  | Enter a score between 0 and 999              |
+    | abc   | Enter a score between 0 and 999              |
+    |       | Request created: threshold will be removed   |
+
+Scenario: Threshold applies in stand-in
+  Given range 45671200-45671299 has a stand-in threshold of 850, active
+  And the issuer host doesn't answer
+  When a request for card 4567120012345678 arrives with score 910
+  Then stand-in declines with the response code for suspected fraud
+  And the issuer receives the stand-in advice with the score
 ```
 
-**INVEST:** all ✓ → **Ready**
+**INVEST:** all ✓ → **Ready**. The last scenario is an end-to-end test for the authorisation team; link it to their story.
 
 ---
 
 ### Not ready
-- **International address change** — needs answers on customs and shipping re-pricing (FR-5). Split by **Data** (SPIDR).
+- **Bulk changes by file:** format not defined. Spike first.
+- **Email when live:** who receives it? Ask the issuer advisory group.

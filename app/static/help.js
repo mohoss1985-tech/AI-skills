@@ -79,10 +79,60 @@
       tips: '- Say the period and the grain ("per month, per client") to avoid ambiguity.',
       when: 'getting a **SQL query** explained in plain language',
     },
+    'facilitating-workshops': {
+      keys: ['workshop', 'atelier', 'meeting notes', 'minutes', 'compte rendu', 'cr ', 'interview', 'kick off', 'kickoff', 'recueil', 'discovery session', 'transcript', 'agenda'],
+      paste: '- **To prepare:** the topic, the objective, the attendees and their roles, the duration\n- **To follow up:** your **raw notes** as they are: who was there, what was said, what was decided',
+      tips: '- Don\'t clean your notes: the skill separates decisions, requirements and open questions, and never turns a "we\'ll see" into a decision.\n- Name who was **missing**: the report flags the decisions that need them.\n- Ask for the report in French if your client works in French (*compte-rendu, décisions, exigences, actions*).',
+      when: 'preparing a **workshop** or turning **meeting notes** into a report with decisions, requirements and actions',
+    },
+    'writing-functional-specs': {
+      keys: ['sfd', 'sfg', 'functional spec', 'specification', 'specs', 'cahier des charges', 'business rule', 'regle de gestion', 'rg ', 'frs', 'brs'],
+      paste: '- The **feature** and the **decisions** already taken (a workshop report is ideal)\n- The **actors** and what each can do\n- The **systems and APIs** involved\n- Constraints: regulation, volumes, deadlines',
+      tips: '- Say **SFG** (general, for framing) or **SFD** (detailed, ready to build). The default is SFD.\n- Paste an existing spec and ask for a **review**: you get the defects and the corrected text.\n- Every business rule comes with an example and a test idea, ready for the UAT.',
+      when: 'writing a **functional spec (SFG / SFD)** that developers build from and testers test from',
+    },
+    'running-uat': {
+      keys: ['uat', 'recette', 'acceptance test', 'defect', 'anomal', 'bug', 'sign off', 'signoff', 'pv de recette', 'test campaign', 'exit criteria', 'go no go', 'squash', 'hp alm', 'triage'],
+      paste: '- **To plan:** scope, dates, testers, environment\n- **During the campaign:** the **test execution export** and the **defect export** (Jira, Xray, Squash or HP ALM, English or French columns) and your exit criteria\n- **To close:** final figures and open defects',
+      tips: '- Agree the **exit criteria before** the campaign starts. The script checks them for you.\n- Give the planned number of tests: tests not yet written count as not run.\n- Severity is never lowered to meet the criteria: decisions to accept a defect are recorded with who took them.',
+      when: 'running **UAT (recette)**: plan, daily dashboard, defect triage, go / no-go and PV de recette',
+    },
+    'analysing-gaps-and-impacts': {
+      keys: ['gap', 'impact', 'existing vs target', 'as is', 'to be', 'existant', 'cible', 'regulation', 'regulatory', 'reglementaire', 'dora', 'psd', 'instant payment', 'kyc', 'aml', 'compliance plan', 'audit finding'],
+      paste: '- The **change**: a regulation, a migration, a new product\n- **How it works today**: process, tools, teams\n- The **deadline** and where it comes from\n- Who owns what',
+      tips: '- Volumes and past incidents make the sizing credible.\n- Regulatory points come back paraphrased, with what to confirm with Compliance, never as legal advice.\n- Ask for **options** (tactical vs strategic) when the deadline is tight.',
+      when: 'framing a change: **existing vs target**, regulatory traceability, impacts with sizes and owners, and a plan',
+    },
+    'mapping-data': {
+      keys: ['mapping', 'data dictionary', 'migration', 'reprise', 'reconcil', 'data quality', 'interface', 'flux', 'lineage', 'source to target', 'source target', 'etl', 'transformation'],
+      paste: '- **Source** tables and fields, **target** object and what it needs\n- **Volumes** and the type of flow (one-off migration, batch, API)\n- The **key** that identifies a record on both sides\n- Code values you know (e.g. segment codes)',
+      tips: '- The mapping comes as a **CSV**: the script checks it and writes the reconciliation and data quality SQL.\n- List every source code value, even the odd ones: each needs a translation.\n- Say which fields are personal data, to keep only what is needed.',
+      when: 'building a **data mapping**, data quality rules and reconciliation checks for an interface or a migration',
+    },
+    'managing-backlog': {
+      keys: ['backlog', 'wsjf', 'pi planning', 'pi objective', 'safe ', 'agile release train', 'capacity', 'velocity', 'sprint planning', 'release plan', 'refinement', 'grooming', 'jira import', 'cost of delay', 'rice '],
+      paste: '- The **candidate features** with value, urgency, risk reduction, size and points, plus dependencies\n- The **team velocity**, the number of sprints, run support\n- **Deadlines** (regulatory or committed)',
+      tips: '- Scores are relative: the smallest item gets 1 on each criterion.\n- A regulatory deadline raises time criticality, it doesn\'t skip the ranking.\n- You get a **Jira CSV** at the end: test the import with 3 rows first.',
+      when: 'ranking a **backlog with WSJF** and planning a **PI or a release** that fits the capacity',
+    },
   };
 
   // ---------- glossary ----------
   const TERMS = [
+    [['interchange', 'interchange fee'], 'Interchange fee', 'Paid by the **acquirer** to the **issuer** on each transaction, set by the card scheme. In the EU, the IFR caps it for consumer cards at **0.2%** (debit) and **0.3%** (credit); commercial cards are not capped.'],
+    [['issuer', 'emetteur'], 'Issuer', 'The bank that issued the cardholder\'s card. It **approves or declines** each payment, debits the cardholder and receives the interchange fee.'],
+    [['acquirer', 'acquereur'], 'Acquirer', 'The **merchant\'s** bank or payment institution. It routes authorisations, sends transactions to clearing, credits the merchant and pays the interchange.'],
+    [['authorisation', 'authorization', 'autorisation'], 'Authorisation', 'The real-time request at checkout: merchant → acquirer → scheme → issuer, who approves or declines. If the issuer doesn\'t answer, the scheme decides in **stand-in (STIP)** within the issuer\'s limits.'],
+    [['clearing', 'compensation'], 'Clearing (compensation)', 'The batch exchange of transaction records between acquirers and issuers through the scheme: matching to authorisations, interchange computation, records sent to issuers.'],
+    [['settlement', 'reglement'], 'Settlement (règlement)', 'The actual movement of funds between members, from the **net positions** computed after clearing.'],
+    [['lclf', 'fraud prevention'], 'LCLF (lutte contre la fraude)', 'French for fraud prevention and detection: authorisation scores, decline rules, 3-D Secure, issuers\' fraud reports, fraud-rate monitoring.'],
+    [['stand in', 'stip'], 'Stand-in (STIP)', 'An authorisation decision taken by the scheme **on behalf of the issuer** when the issuer doesn\'t answer, within limits the issuer set. The issuer then receives an advice of each decision.'],
+    [['chargeback', 'dispute', 'impaye', 'representment'], 'Chargeback (dispute)', 'The issuer contests a transaction (fraud, not received, duplicate…) within the scheme\'s deadline. The acquirer accepts or **represents** with evidence; arbitration decides as a last resort.'],
+    [['arn'], 'ARN', 'Acquirer Reference Number: the unique id of a transaction, given by the acquirer, used in clearing and disputes.'],
+    [['mcc'], 'MCC', 'Merchant Category Code: 4 digits for the merchant\'s business (e.g. 5812 restaurants). Used for routing, interchange and fraud rules.'],
+    [['bin'], 'BIN', 'Bank Identification Number: the first digits of the card number, identifying the issuer and the product. BIN ranges (often 8 digits) carry the card\'s attributes.'],
+    [['ifr'], 'IFR', 'EU Interchange Fee Regulation (EU) 2015/751: caps for consumer cards and transparency duties towards merchants. Confirm details with Compliance.'],
+    [['template'], 'Template', 'Each deliverable has a **template**: the information its skill needs, in order. Click **Use the template** in the form, fill what you know, and Claude asks for the rest.'],
     [['rag', 'retrieval augmented'], 'RAG (retrieval-augmented generation)', 'The assistant first **retrieves** passages from approved content (help centre, tariffs…), then **writes** its answer from them. Good RAG answers only from what it retrieved, and cites it.'],
     [['faithful', 'hallucinat', 'groundedness'], 'Faithfulness', 'Is every claim in the answer **supported by the retrieved passages**? A hallucination is an unfaithful answer. In banking the release gate is usually **100% on high-risk questions**.'],
     [['context recall', 'recall'], 'Context recall', 'Did retrieval **find the passages needed** to answer? Low recall means a retrieval or content problem, not a model problem.'],
@@ -107,7 +157,18 @@
     [['raci'], 'RACI', '**R**esponsible (does it), **A**ccountable (decides, one per row), **C**onsulted, **I**nformed.'],
     [['bpmn'], 'BPMN 2.0', 'The standard notation for process diagrams. Lanes show who does what; the `.bpmn` file opens in Camunda, bpmn.io or Signavio.'],
     [['invest'], 'INVEST', 'A good story is Independent, Negotiable, Valuable, Estimable, Small, Testable.'],
-    [['moscow'], 'MoSCoW', 'Must, Should, Could, Won\'t (this time). A simple way to prioritise requirements.'],
+    [['wsjf', 'cost of delay'], 'WSJF (Weighted Shortest Job First)', 'SAFe prioritisation: **(business value + time criticality + risk reduction) ÷ job size**, each scored relatively on 1, 2, 3, 5, 8, 13, 20. Small, urgent, valuable items go first.'],
+    [['pi planning', 'program increment', 'pi objective'], 'PI planning (SAFe)', 'A 2-day event where every team of the train plans the next **Program Increment** (usually 4 sprints + 1 innovation & planning sprint): features by sprint, dependencies, **PI objectives** with business value, and risks.'],
+    [['roam'], 'ROAM', 'How SAFe handles risks at PI planning: **R**esolved, **O**wned, **A**ccepted, **M**itigated.'],
+    [['sfd', 'sfg'], 'SFG / SFD', 'French functional specs. **SFG** (*spécifications fonctionnelles générales*): the overall solution for a scope. **SFD** (*détaillées*): one function in full detail, meaning business rules, screens, fields, messages and interfaces.'],
+    [['regle de gestion', 'business rule'], 'Business rule (RG)', 'One testable rule, numbered (RG-01…), written as *if… then…* with an example. The heart of a spec: each rule gives at least one test case.'],
+    [['recette', 'uat', 'user acceptance'], 'Recette / UAT', 'Acceptance testing by the business before go-live: test cases from the rules, defects triaged daily, then a go / no-go against agreed **exit criteria**.'],
+    [['pv de recette', 'sign off', 'signoff'], 'PV de recette (sign-off)', 'The signed report that closes acceptance testing: scope, figures, exit criteria, open defects accepted with workarounds, and the signatures of the business owner, IT and the PO.'],
+    [['severity', 'blocking', 'bloquant'], 'Defect severity', '**Blocking**: no workaround, critical process, regulatory or data error. **Major**: important, costly workaround. **Minor**: cosmetic or rare. **Enhancement**: a change of need, goes to the backlog.'],
+    [['gap analysis', 'impact analysis', 'existant', 'as is'], 'Gap & impact analysis', '**Gap analysis** compares today with the target, area by area. **Impact analysis** says what that changes, for whom, how big, and who owns it.'],
+    [['data mapping', 'source to target'], 'Data mapping', 'For each target field: where the value comes from, how it is transformed, the default when it\'s missing, and the data quality rule. Code values get translation tables.'],
+    [['reconciliation', 'reconcil'], 'Reconciliation', 'Proving a migration or interface lost nothing: row counts, keys missing or extra on each side, and totals (amounts, balances) compared between source and target.'],
+    [['moscow'], 'MoSCoW','Must, Should, Could, Won\'t (this time). A simple way to prioritise requirements.'],
     [['csat'], 'CSAT', 'Customer satisfaction score from a short survey after the conversation, usually on a 1 to 5 scale.'],
     [['chunk', 'embedding', 'vector'], 'Chunks & embeddings', 'Content is split into **chunks** that are retrieved alone, so each section must make sense on its own. Embeddings are how the system finds chunks similar to the question.'],
   ];
@@ -117,6 +178,10 @@
     [['how does', 'how it works', 'how do i start', 'get started', 'what is this', 'what can you do', 'help', 'start'], 'How Analyst Kit works',
       '1. **Pick a deliverable** in the sidebar or press **N**.\n2. **Paste your notes** (or drop a .txt, .md or .csv file), or click a **scenario** to try one.\n3. **Create**: Claude writes the document and you get a notification.\n4. **Ask for changes** in the conversation next to it. Every version is kept.\n5. **Hand it over**: Word, PDF or copy, then *Mark as sent*.',
       [{ label: 'New deliverable', href: '#/new' }]],
+    [['template', 'fill in', 'structure'], 'Templates',
+      'Every deliverable has a **template**: the list of what its skill needs, in order. In the form, click **Use the template**, fill what you know and delete the rest. The app becomes your template: you never start from a blank page, and Claude does the work from the filled template.'],
+    [['french', 'francais', 'language of the app', 'interface language'], 'Interface language',
+      'The **FR / EN** button at the bottom of the sidebar switches the interface language. The language of the documents is set in your **profile**.'],
     [['change', 'edit', 'modify', 'feedback', 'comment', 'reply', 'shorter', 'translate', 'french'], 'Asking for changes',
       'Open the deliverable and write in the **Conversation** panel on the right, e.g. *"make it shorter for the steerco"* or *"translate to French"*. Claude updates the document and keeps the old version (see *Versions* at the top).'],
     [['word', 'pdf', 'export', 'download', 'copy', 'docx', 'email', 'confluence', 'send to client'], 'Exporting',
@@ -182,9 +247,19 @@
   const XRAY_SUGG = ['Cloud or Server: what changes?', 'Which test type should I use?', 'Test Set vs Test Plan vs Execution?', 'How do I import the CSV?', "Import says 'not a valid Xray format'", 'Send my eval results to Xray'];
   function xrayAnswer(t) {
     let best = null, score = 0;
-    for (const e of XRAY) { const s = hits(t, e[0]); if (s > score) { score = s; best = e; } }
+    for (const e of xrayEntries()) { const s = hits(t, e[0]); if (s > score) { score = s; best = e; } }
     return score >= 3 ? { a: `**${best[1]}**\n\n${best[2]}`, acts: best[3] } : null;
   }
+
+  // ---------- language ----------
+  const FRG = () => K() && K().state.lang === 'fr' && window.KIT_GUIDE_FR;
+  // G('English', key, ...args): the French text when the interface is French (functions take args).
+  const G = (en, key, ...a) => { const f = FRG() && FRG().ui[key || en]; return f ? (typeof f === 'function' ? f(...a) : f) : en; };
+  const skillData = (id) => ({ ...(SKILLS[id] || {}), ...((FRG() && FRG().skills[id]) || {}) });
+  const skillKeys = (id) => [...((SKILLS[id] || {}).keys || []), ...((window.KIT_GUIDE_FR && window.KIT_GUIDE_FR.keys[id]) || [])];
+  const terms = () => (FRG() ? FRG().terms.concat(TERMS) : TERMS);
+  const appEntries = () => (FRG() ? FRG().app.concat(APP) : APP);
+  const xrayEntries = () => (FRG() ? FRG().xray.concat(XRAY) : XRAY);
 
   // ---------- state ----------
 
@@ -198,15 +273,16 @@
     else if (r.startsWith('/profile')) page = 'profile';
     return { page, type, req };
   }
-  const tName = (id) => K().typeOf(id).name;
+  const tName = (id) => K().tx(K().typeOf(id), 'name');
   const sampleOf = (id) => K().state.requests.find((r) => r.is_sample && r.type === id);
 
   function suggestions() {
     const c = context();
-    if (c.page === 'new' && c.type) return [`What should I paste for ${tName(c.type)}?`, 'Fill a scenario for me', `Tips for a great ${tName(c.type)}`, 'Explain a term'];
-    if (c.page === 'type' && c.type) return [`When do I use ${tName(c.type)}?`, `Show me a finished ${tName(c.type)}`, `What should I paste for ${tName(c.type)}?`];
-    if (c.page === 'doc') return ['How do I ask for changes?', 'Export to Word or PDF', 'What comes next after this?', 'Explain a term'];
-    return ['How does this work?', 'Which deliverable do I need?', 'Is my bot good enough to go live?', 'What is faithfulness?'];
+    const n = c.type && tName(c.type);
+    if (c.page === 'new' && c.type) return [G(`What should I paste for ${n}?`, 's.paste', n), G('Fill a scenario for me', 's.fill'), G(`Tips for a great ${n}`, 's.tips', n), G('Explain a term', 's.term')];
+    if (c.page === 'type' && c.type) return [G(`When do I use ${n}?`, 's.when', n), G(`Show me a finished ${n}`, 's.show', n), G(`What should I paste for ${n}?`, 's.paste', n)];
+    if (c.page === 'doc') return [G('How do I ask for changes?', 's.changes'), G('Export to Word or PDF', 's.export'), G('What comes next after this?', 's.next'), G('Explain a term', 's.term')];
+    return [G('How does this work?', 's.how'), G('Which deliverable do I need?', 's.which'), G('What is the template for?', 's.template'), G('What is interchange?', 's.term2')];
   }
 
   // ---------- answering ----------
@@ -215,21 +291,22 @@
   function skillIn(t) {
     let best = null, score = 0;
     for (const ty of K().state.types) {
-      const name = norm(ty.name);
-      const s = (t.includes(name) ? 50 : 0) + hits(t, SKILLS[ty.id] ? SKILLS[ty.id].keys : []);
+      const names = [norm(ty.name), norm((ty.fr || {}).name || ty.name)];
+      const s = (names.some((nm) => t.includes(nm)) ? 50 : 0) + hits(t, skillKeys(ty.id));
       if (s > score) { best = ty.id; score = s; }
     }
     return score ? { id: best, score } : null;
   }
 
   function skillCard(id, lead) {
-    const t = K().typeOf(id), h = SKILLS[id] || {};
-    const acts = [{ label: `Start ${t.name}`, href: '#/new/' + id }];
+    const t = K().typeOf(id), h = skillData(id), nm = tName(id);
+    const acts = [{ label: `${G('Start')} ${nm}`, href: '#/new/' + id }];
     const s = sampleOf(id);
-    if (s) acts.push({ label: 'Open the finished sample', href: '#/d/' + s.id });
+    if (s) acts.push({ label: G('Open the finished sample'), href: '#/d/' + s.id });
     const low = (x) => x[0].toLowerCase() + x.slice(1);
-    const what = h.when || low(t.gets);
-    return { a: `${lead ? `${lead}**${t.name}**. It's for ${what}.` : `**${t.name}** is for ${what}.`}\n\n**You give:** ${low(t.gives)}.\n**You get:** ${low(t.gets)}.`, acts };
+    const what = h.when || low(K().tx(t, 'gets'));
+    const head = lead ? `${lead}**${nm}**.${G(` It's for ${what}.`, 'its for', what)}` : G(`**${nm}** is for ${what}.`, 'is for', nm, what);
+    return { a: `${head}\n\n**${G('You give')} :** ${low(K().tx(t, 'gives'))}.\n**${G('You get')} :** ${low(K().tx(t, 'gets'))}.`.replace(/ :\*\*/g, FRG() ? ' :**' : ':**'), acts };
   }
 
   function answer(raw) {
@@ -243,52 +320,59 @@
       if (x && !/\b(paste|fill|scenario|sample|tips?)\b/.test(t)) return x;
     }
 
-    const pick = { a: 'Tell me what you need in a few words, for example *"decide which use cases first"*, *"check if the bot is good enough"* or *"prepare the steerco"*. Or pick one:', acts: K().state.types.slice(5).concat(K().state.types.slice(0, 5)).map((ty) => ({ label: ty.name, href: '#/type/' + ty.id })) };
-    if (/\b(which (deliverable|skill|one)|what should i use|recommend)\b/.test(t) && !(sk && sk.score >= 3)) return pick;
+    const pick = { a: G('Tell me what you need in a few words, for example *"workshop report"*, *"spec of the authorisation change"* or *"prepare the UAT"*. Or pick one:', 'pick'), acts: K().state.types.map((ty) => ({ label: K().tx(ty, 'name'), href: '#/type/' + ty.id })) };
+    if (/\b(which (deliverable|skill|one)|what should i use|recommend|quel livrable|quelle competence|que choisir|recommande)\b/.test(t) && !(sk && sk.score >= 3)) return pick;
 
     // intents about a skill
-    if (/\b(fill|scenario|try one|demo)\b/.test(t) && c.page === 'new' && c.type) {
+    const exl = (e) => (FRG() && e.label_fr) || e.label;
+    if (/\b(fill|scenario|try one|demo|remplis|remplir)\b/.test(t) && c.page === 'new' && c.type) {
       const ex = K().typeOf(c.type).examples || [];
-      return { a: `Pick a scenario. I'll fill the form, you just press **Create deliverable**.`, acts: ex.filter((e) => e.notes).map((e, i) => ({ label: e.label, fill: i })) };
+      return { a: G(`Pick a scenario. I'll fill the form, you just press **Create deliverable**.`, 'fill'), acts: ex.filter((e) => e.notes).map((e, i) => ({ label: exl(e), fill: i })) };
     }
-    if (/\b(sample|examples?|finished|show me|demo|see one|try)\b/.test(t) && target) {
+    if (/\b(sample|examples?|finished|show me|demo|see one|try|exemples?|montre|voir un)\b/.test(t) && target) {
       const s = sampleOf(target), ex = (K().typeOf(target).examples || []).filter((e) => e.notes);
       const acts = [];
-      if (s) acts.push({ label: 'Open the finished sample', href: '#/d/' + s.id });
-      ex.forEach((e, i) => acts.push({ label: 'Try: ' + e.label, example: [target, i] }));
-      return { a: s ? `Here is a finished **${tName(target)}**: *${K().esc(s.title)}*. Or start one from a realistic scenario:` : `Start a **${tName(target)}** from a realistic scenario:`, acts };
+      if (s) acts.push({ label: G('Open the finished sample'), href: '#/d/' + s.id });
+      ex.forEach((e, i) => acts.push({ label: G('Try') + (FRG() ? ' : ' : ': ') + exl(e), example: [target, i] }));
+      const n = tName(target);
+      return { a: s ? G(`Here is a finished **${n}**: *${K().esc(s.title)}*. Or start one from a realistic scenario:`, 'sample', n, K().esc(s.title)) : G(`Start a **${n}** from a realistic scenario:`, 'sample none', n), acts };
     }
-    if (/\b(paste|give|input|what do i (put|write|need)|notes|provide)\b/.test(t) && target && SKILLS[target]) {
-      return { a: `For **${tName(target)}**, paste:\n\n${SKILLS[target].paste}\n\nRough notes are fine. Claude asks in the conversation if something is missing.`, acts: [{ label: `Start ${tName(target)}`, href: '#/new/' + target }] };
+    if (/\b(paste|give|input|what do i (put|write|need)|notes|provide|coller|colle|quoi mettre|que mettre|fournir)\b/.test(t) && target && SKILLS[target]) {
+      const n = tName(target), p = skillData(target).paste;
+      return { a: G(`For **${n}**, paste:\n\n${p}\n\nRough notes are fine. Claude asks in the conversation if something is missing. Or click **Use the template** in the form.`, 'paste', n, p), acts: [{ label: `${G('Start')} ${n}`, href: '#/new/' + target }] };
     }
-    if (/\b(tips?|better|great|good result|best|improve)\b/.test(t) && target && SKILLS[target]) {
-      return { a: `**Tips for ${tName(target)}:**\n\n${SKILLS[target].tips}` };
+    if (/\b(tips?|better|great|good result|best|improve|conseils?|astuces?|ameliorer|mieux)\b/.test(t) && target && SKILLS[target]) {
+      const n = tName(target), p = skillData(target).tips;
+      return { a: G(`**Tips for ${n}:**\n\n${p}`, 'tips', n, p) };
     }
-    if (/\b(what will i get|output|what do i get|deliverable|results?|when do i use|what is it for)\b/.test(t) && target) {
+    if (/\b(what will i get|output|what do i get|deliverable|results?|when do i use|what is it for|quand utiliser|a quoi sert|j obtiens|livrable)\b/.test(t) && target) {
       return skillCard(target);
     }
-    if (/\b(next|after this|continue|then what)\b/.test(t) && c.page === 'doc' && c.type) {
+    if (/\b(next|after this|continue|then what|suite|ensuite|apres)\b/.test(t) && c.page === 'doc' && c.type) {
       const nx = (K().typeOf(c.type).next || []).map(K().typeOf);
-      if (nx.length) return { a: `After **${tName(c.type)}**, the usual next step is ${nx.map((n) => `**${n.name}**`).join(' or ')}. Use *Continue from this document* below the document: it starts the next one with this document as notes.` };
+      const list = nx.map((n) => `**${K().tx(n, 'name')}**`).join(G(' or ', 'or'));
+      if (nx.length) return { a: G(`After **${tName(c.type)}**, the usual next step is ${list}. Use *Continue from this document* below the document: it starts the next one with this document as notes.`, 'next', tName(c.type), list) };
     }
 
     // glossary
     let term = null, ts = 0;
-    for (const [keys, name, def] of TERMS) { const s = hits(t, keys); if (s > ts) { ts = s; term = [name, def]; } }
-    const asksDef = /what is|what s|whats|what are|define|meaning|mean|explain|c est quoi|difference/.test(t);
+    for (const [keys, name, def] of terms()) { const s = hits(t, keys); if (s > ts) { ts = s; term = [name, def]; } }
+    const asksDef = /what is|what s|whats|what are|define|meaning|mean|explain|c est quoi|qu est ce|definition|signifie|veut dire|difference/.test(t);
     if (term && (asksDef || t.trim().split(' ').length <= 3)) return { a: `**${term[0]}**\n\n${term[1]}` };
-    if (/explain a term|glossary|jargon/.test(t)) return { a: 'Ask me any term, for example:', acts: ['faithfulness', 'context recall', 'golden set', 'prompt injection', 'containment', 'AI Act Art. 50', 'RACI'].map((x) => ({ label: x, say: 'What is ' + x + '?' })) };
+    if (/explain a term|glossary|jargon|expliquer un terme|lexique|vocabulaire/.test(t)) return { a: G('Ask me any term, for example:'), acts: (FRG() ? ['interchange', 'émetteur', 'compensation', 'stand-in', 'LCLF', 'WSJF', 'PV de recette', 'SFD'] : ['interchange', 'issuer', 'clearing', 'stand-in', 'LCLF', 'WSJF', 'golden set', 'prompt injection']).map((x) => ({ label: x, say: G('What is') + ' ' + x + ' ?' })) };
 
     // app how-to
     let app = null, as = 0;
-    for (const e of APP) { const s = hits(t, e[0]); if (s > as) { as = s; app = e; } }
-    if (app && app[1] && as >= 4 && !(sk && sk.score > as)) return { a: `**${app[1]}**\n\n${app[2]}`, acts: app[3] };
+    for (const e of appEntries()) { const s = hits(t, e[0]); if (s > as) { as = s; app = e; } }
+    // "help" and "start" alone don't beat a named skill ("help me write an SFD")
+    const asSpecific = app ? hits(t, app[0].filter((k) => !['help', 'start', 'aide', 'commencer'].includes(k))) : 0;
+    if (app && app[1] && as >= 4 && !(sk && sk.score > asSpecific)) return { a: `**${app[1]}**\n\n${app[2]}`, acts: app[3] };
 
     // recommend a skill from a described need
-    if (sk) return skillCard(sk.id, 'Sounds like a job for ');
+    if (sk) return skillCard(sk.id, G('Sounds like a job for ', 'job'));
     if (term) return { a: `**${term[0]}**\n\n${term[1]}` };
     if (app && app[1]) return { a: `**${app[1]}**\n\n${app[2]}`, acts: app[3] };
-    if (/\b(which|i need|should i)\b/.test(t)) return pick;
+    if (/\b(which|i need|should i|j ai besoin|je dois|il me faut|quel|quelle)\b/.test(t)) return pick;
     return null;
   }
 
@@ -297,9 +381,10 @@
   function makeChat(root, { intro, suggestions, answer: ans, placeholder }) {
     const C = { msgs: [] };
     root.insertAdjacentHTML('beforeend', `<div class="g-feed"></div><div class="g-sugg chips"></div>
-      <form class="g-form" autocomplete="off"><input placeholder="${placeholder}"><button class="btn primary" type="submit">Ask</button></form>`);
+      <form class="g-form" autocomplete="off"><input><button class="btn primary" type="submit"></button></form>`);
     const feed = $('.g-feed', root), sugg = $('.g-sugg', root), form = $('.g-form', root), input = $('input', form);
     C.paint = () => {
+      input.placeholder = G(placeholder); $('button', form).textContent = G('Ask');
       feed.innerHTML = [{ role: 'bot', a: intro() }, ...C.msgs].map((m, i) => m.role === 'user'
         ? `<div class="g-msg user">${K().esc(m.text)}</div>`
         : `<div class="g-msg bot"><div class="md">${md(m.a)}</div>${(m.acts || []).length ? `<div class="g-acts">${m.acts.map((x, j) => `<button type="button" class="chip" data-act="${i}:${j}">${K().esc(x.label)}</button>`).join('')}</div>` : ''}</div>`).join('');
@@ -312,18 +397,18 @@
       C.msgs.push({ role: 'user', text });
       const r = ans(text);
       C.msgs.push(r ? { role: 'bot', ...r } : {
-        role: 'bot', a: "I don't have a quick answer for that one. Claude can answer it properly in your chat.",
-        acts: [{ label: 'Ask Claude', ask: text }],
+        role: 'bot', a: G("I don't have a quick answer for that one. Claude can answer it properly in your chat.", 'no answer'),
+        acts: [{ label: G('Ask Claude'), ask: text }],
       });
       C.msgs = C.msgs.slice(-30);
       C.paint();
     };
     const act = async (x) => {
       if (x.href) location.hash = x.href;
-      else if (x.fill !== undefined) { if (!K().fill(x.fill)) K().startExample(context().type, x.fill); K().toast('Scenario filled in. Press Create deliverable'); }
+      else if (x.fill !== undefined) { if (!K().fill(x.fill)) K().startExample(context().type, x.fill); K().toast(G('Scenario filled in. Press Create deliverable')); }
       else if (x.example) K().startExample(x.example[0], x.example[1]);
       else if (x.say) return C.say(x.say);
-      else if (x.ask) { await K().ask(x.ask); location.hash = '#/chat'; C.msgs.push({ role: 'bot', a: 'Sent to Claude. The answer will appear in **Chat with Claude**.' }); }
+      else if (x.ask) { await K().ask(x.ask); location.hash = '#/chat'; C.msgs.push({ role: 'bot', a: G('Sent to Claude. The answer will appear in **Chat with Claude**.') }); }
       C.paint();
     };
     form.onsubmit = (e) => { e.preventDefault(); C.say(input.value); input.value = ''; };
@@ -340,6 +425,7 @@
   let guide = null, open = false;
   try { open = sessionStorage.getItem('guide-open') === '1'; } catch {}
   function paint() {
+    $('#guide header b').textContent = G('Guide'); $('#guide header span').textContent = G('Instant answers · no API key');
     $('#guide').hidden = !open;
     $('#guide-btn').classList.toggle('on', open);
     if (open && guide) guide.paint();
@@ -368,7 +454,7 @@
       if (!(K() && K().state.loaded)) return;
       clearInterval(wait);
       guide = makeChat($('#guide'), {
-        intro: () => `Hi${K().state.profile.name ? ' ' + K().esc(K().state.profile.name.split(' ')[0]) : ''}! I'm the guide. I answer instantly about the deliverables, the jargon and the app. For real work, Claude takes over in the chat.`,
+        intro: () => `${G('Hi', 'hi')}${K().state.profile.name ? ' ' + K().esc(K().state.profile.name.split(' ')[0]) : ''} ! ${G("I'm the guide. I answer instantly about the deliverables, the jargon and the app. For real work, Claude takes over in the chat.", 'intro')}`.replace(/^Hi(.*?) ! /, 'Hi$1! '),
         suggestions, answer, placeholder: 'Ask about a deliverable, a term, the app…',
       });
       paint();
@@ -381,11 +467,12 @@
     mountXray(el) {
       el.className = 'skill-chat';
       makeChat(el, {
-        intro: () => "I'm the **Xray assistant**. Ask me about Xray Cloud vs Server / Data Center, test types, Test Plans, importing tests or results, and import errors. When you're ready, a scenario above turns your stories or results into import files.",
-        suggestions: () => XRAY_SUGG,
+        intro: () => G("I'm the **Xray assistant**. Ask me about Xray Cloud vs Server / Data Center, test types, Test Plans, importing tests or results, and import errors. When you're ready, a scenario above turns your stories or results into import files.", 'xray intro'),
+        suggestions: () => (FRG() ? FRG().xraySugg : XRAY_SUGG),
         answer: (raw) => xrayAnswer(' ' + norm(raw) + ' ') || answer(raw),
         placeholder: 'Ask anything about Xray…',
       }).paint();
     },
+    relang() { if (guide) guide.paint(); paint(); },
   };
 })();

@@ -1,0 +1,11 @@
+Clé;Résumé;Sévérité;Statut;Créé;Fonctionnalité;Contournement
+HEX-301;Stand-in ignores the threshold when the issuer times out after 2 retries;Bloquant;Ouvert;05/11/2026;Stand-in threshold;non
+HEX-302;Reason codes sent in the wrong order (lowest contribution first);Majeur;Ouvert;06/11/2026;Score in request (RS);oui
+HEX-303;Scoring at 15-16 ms sent as scored but after 17 ms total delay;Majeur;Ouvert;06/11/2026;Not-scored fallback;non
+HEX-304;Stand-in advice missing field RS;Majeur;À retester;07/11/2026;Stand-in threshold;non
+HEX-305;Monthly report label typo 'scorring';Mineur;Ouvert;09/11/2026;Score in clearing;oui
+HEX-306;RS absent for BIN ranges opted in before 02:00 batch rerun;Majeur;Clos;04/11/2026;Score in request (RS);non
+HEX-307;Clearing record keeps score of a reversed authorisation;Mineur;À retester;10/11/2026;Score in clearing;oui
+HEX-308;Issuer asks for score in the authorisation response too;Évolution;Ouvert;10/11/2026;Score in request (RS);non
+HEX-309;Reason code GE shown as 'Geo' in the test tool;Mineur;Rejeté;08/11/2026;Score in request (RS);non
+HEX-310;Score present in acquirer clearing file for 3 records;Majeur;Ouvert;11/11/2026;No score to acquirers;non

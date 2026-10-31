@@ -13,6 +13,9 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from i18n_fr import GROUPS, LABELS_FR, TYPES_FR
+from templates import TEMPLATES
+
 ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
 DB_PATH = ROOT / "data" / "kit.db"
@@ -93,7 +96,41 @@ for _t in TYPES:  # natural hand-offs into Xray
     if _t["id"] in ("writing-user-stories", "designing-conversational-journeys", "evaluating-rag-quality"):
         _t["next"] = _t["next"] + ["managing-xray-tests"]
 
-# Extra ready-to-try scenarios for the AI product skills (the first one is each type's "example").
+# Business analysis delivery skills most asked for in freelance BA / PO contracts (see market/README.md).
+TYPES += [
+    {"id": "facilitating-workshops", "name": "Workshop & report", "color": "#dc6803",
+     "gives": "A workshop topic and attendees, or your raw meeting notes",
+     "gets": "A workshop plan with questions per topic, or a report with decisions, numbered requirements, rules, open questions and actions",
+     "placeholder": "Paste your meeting notes as they are (who was there, what was said, what was decided), or describe the workshop you need to prepare…",
+     "next": ["writing-functional-specs", "writing-user-stories", "modeling-processes"]},
+    {"id": "writing-functional-specs", "name": "Functional spec (SFD)", "color": "#7a5af8",
+     "gives": "Workshop decisions, stories or a feature description",
+     "gets": "A general or detailed functional spec: business rules, screens and fields, messages, interfaces, traceability and test ideas",
+     "placeholder": "Describe the feature, the decisions taken, the actors and their rights, the systems and APIs involved, and the constraints…",
+     "next": ["writing-user-stories", "running-uat", "mapping-data"]},
+    {"id": "running-uat", "name": "UAT campaign", "color": "#e31b54",
+     "gives": "The scope and dates, or your test and defect exports",
+     "gets": "A UAT plan with entry and exit criteria, or a daily dashboard with defect triage and a go / no-go recommendation",
+     "placeholder": "Paste the scope and planning, or the test execution and defect exports (Jira, Xray, Squash, ALM) with the exit criteria…",
+     "next": ["aligning-stakeholders", "managing-xray-tests"]},
+    {"id": "analysing-gaps-and-impacts", "name": "Gap & impact analysis", "color": "#c11574",
+     "gives": "The change or regulation, and how things work today",
+     "gets": "Existing vs target, regulatory traceability, an impact matrix with sizes and owners, options and a transition plan",
+     "placeholder": "Describe the change (regulation, migration, new product), how it works today, the deadline and who is involved…",
+     "next": ["aligning-stakeholders", "managing-backlog", "modeling-processes"]},
+    {"id": "mapping-data", "name": "Data mapping", "color": "#0086c9",
+     "gives": "Source and target systems, fields and volumes",
+     "gets": "Data dictionary, source-to-target mapping, value translations, data quality rules and reconciliation SQL",
+     "placeholder": "List the source tables and fields, the target object and what it needs, volumes, the type of flow and the record key…",
+     "next": ["generating-sql", "running-uat"]},
+    {"id": "managing-backlog", "name": "Backlog & PI planning", "color": "#3e4784",
+     "gives": "Candidate features with scores or sizes, and your capacity",
+     "gets": "A WSJF ranking, a plan that fits the capacity, PI objectives, ROAM risks and a Jira CSV import",
+     "placeholder": "List the features (value, urgency, risk reduction, size, points, dependencies), the team velocity and sprints, and any deadlines…",
+     "next": ["writing-user-stories", "aligning-stakeholders"]},
+]
+
+# Ready-to-try scenarios per deliverable (the first one is each type's "example").
 EXAMPLES = {
     "prioritizing-ai-use-cases": [
         ("Banking support", "Support use cases for the banking assistant", "Banque Lumière", None),
@@ -141,19 +178,98 @@ EXAMPLES = {
     "managing-xray-tests": [
         ("Stories → Xray tests", "Xray tests: card lost or stolen (Cloud + Server/DC)", "Banque Lumière", None),
         ("Eval run → Xray", "Xray: RAG evaluation run tracked in Jira", "Banque Lumière", None),
+        ("Disputes API tests", "Xray tests: disputes API (Server / Data Center)", "Hexa card scheme",
+         "Xray Server / Data Center, project HEX. Turn the disputes API test plan into Xray tests: Generic tests for the automated pytest suite (definition = test function name), Manual tests for the 4 end-to-end cases run with pilot members on the certification platform (issuer opens, acquirer represents, issuer escalates, scheme arbitrates). Stories HEX-210 to HEX-214. Test Sets: smoke, regression. Test Plan for the 1 March release."),
         ("Release Test Plan", "Xray Test Plan: assistant release v1.4", "Banque Lumière",
          "Xray Server / Data Center, project LUM. Release v1.4 of the assistant adds the 'card declined' journey (stories LUM-430 to LUM-433) and changes the hand-off screen. Existing tests: LUM-601 to LUM-640 (cards, access blocked, red-team). Build the Test Plan for v1.4: which existing tests to re-run, which new tests to create, Test Sets (smoke, regression, red-team), environments staging then pre-prod, and what must pass to go live."),
     ],
     "generating-sql": [
-        ("Repeat purchase cohort", "30-day repeat purchase rate by cohort", "Northwind Retail", None),
+        ("Interchange check", "Interchange check: billed vs expected per acquirer", "Hexa card scheme", None),
         ("Chatbot KPIs (complex)", "Assistant KPIs: containment with resolution by intent and week", "Banque Lumière", None),
         ("Fraud decline bursts (complex)", "Suspicious card decline bursts: how fast do customers reach us?", "Banque Lumière", None),
+    ],
+    "modeling-processes": [
+        ("Card payment lifecycle", "Card payment lifecycle: authorisation, clearing, settlement", "Hexa card scheme", None),
+        ("Dispute (chargeback) cycle", "Process: dispute, representment and arbitration", "Hexa card scheme",
+         "Model the dispute cycle. The cardholder contests a payment with the issuer. The issuer checks the reason and, if valid, opens a dispute (chargeback) through the scheme within 120 days of clearing; fraud reasons need a fraud report (LCLF declaration) first. The scheme debits the acquirer and credits the issuer in the next settlement. The acquirer asks the merchant for evidence and, within 30 days, either accepts or represents with evidence. On representment the issuer can accept (dispute closed, amount goes back to the acquirer) or escalate to arbitration by the scheme, whose decision is final; the losing member pays an arbitration fee."),
+        ("Issuer onboarding", "Process: onboarding a new issuer member", "Hexa card scheme",
+         "Model how a new issuer joins the scheme: application with documents (licence, KYC of the institution), review by Risk and Compliance, membership committee decision, contract signature, BIN range allocation, technical connection (test platform, certification of authorisation and clearing messages, security review), settlement account opening, then go-live with a monitored first month. Refusal at the committee ends the process; failed certification goes back to the member for fixes."),
+    ],
+    "writing-prds": [
+        ("Fraud score (LCLF)", "PRD: real-time fraud score in authorisation", "Hexa card scheme", None),
+        ("Member API portal", "PRD: developer portal for member APIs", "Hexa card scheme",
+         "Our members (22 issuers, 9 acquirers) integrate our APIs (disputes, fraud reports, BIN ranges, settlement reports) with PDFs and emails. Onboarding a new API takes 3 to 5 months, mostly waiting for test credentials and answers. Idea: a developer portal with OpenAPI docs, a sandbox with test cards and tokens, self-service credentials for the test environment, and a status page. Constraint: production credentials stay under 4-eyes approval with mTLS certificates."),
+        ("Instant settlement report", "PRD: intraday settlement position for members", "Hexa card scheme",
+         "Members only see their net settlement position after the day closes; treasurers want to see it during the day to manage liquidity. Idea: an intraday position updated every hour from cleared transactions, by API and in the member portal, with the expected final position. Large issuers ask for it; small ones don't have treasurers watching. Must reconcile exactly with the end-of-day position."),
+    ],
+    "writing-user-stories": [
+        ("Issuer fraud settings", "Stories: issuer fraud-score settings in the member portal", "Hexa card scheme", None),
+        ("Acquirer disputes inbox", "Stories: acquirer disputes inbox", "Hexa card scheme",
+         "Stories for the acquirer side of disputes in the member portal: list of open disputes with the response due date, filter by reason and merchant, open a dispute and see the clearing record, accept a dispute, represent with evidence upload (PDF, max 10 files, 5 MB each), and see disputes close to their deadline (5 days). Users: acquirer dispute analysts. Jira. Same 4-eyes rule as other member changes? Not for disputes."),
+        ("BIN range management", "Stories: issuers manage their BIN ranges", "Hexa card scheme",
+         "Issuers request new BIN ranges (8 digits) and change attributes (card product, debit/credit, consumer/commercial, country). Changes affect authorisation routing and interchange category, so they need scheme approval and take effect on a weekly release (Sunday 03:00). Users: issuer product managers. Jira."),
+    ],
+    "testing-apis": [
+        ("Disputes API", "Disputes API test plan (chargebacks)", "Hexa card scheme", None),
+        ("Fraud report API", "Fraud report API test plan (LCLF declarations)", "Hexa card scheme",
+         "POST /v1/fraud-reports (issuer) declares a fraudulent transaction: { clearing_id or auth_id, fraud_type (lost, stolen, counterfeit, card-not-present, account takeover), detection_date, amount }. Rules: only the issuer of the card; within 90 days of the transaction; one report per transaction (updates via PATCH); detection_date not before the transaction date; fraud_type card-not-present only on ECOM transactions. Returns 201. pytest."),
+        ("Settlement report API", "Settlement report API test plan", "Hexa card scheme",
+         "GET /v1/settlement-positions?date=YYYY-MM-DD returns the member's net position for a settlement date: totals by currency and by category (purchases, refunds, interchange, disputes, fees) and the net amount. Rules: a member only sees its own positions; date must be a settlement day; positions of the current day are 'provisional' until 18:00; amounts in minor units; sum of categories = net. Paginated detail at /v1/settlement-positions/{id}/lines. OAuth2 + mTLS."),
+    ],
+    "facilitating-workshops": [
+        ("Notes → report", "Workshop report: fraud score with pilot issuers", "Hexa card scheme", None),
+        ("Prepare a workshop", "Workshop plan: dispute process redesign", "Hexa card scheme",
+         "Prepare a 3-hour workshop on the dispute (chargeback) process. Today 40% of disputes go to arbitration, arbitration takes 45 days on average, and acquirers complain about evidence sent by email. Goal: agree the target dispute flow, the evidence required per reason code, and the deadlines. Attendees: 2 issuers' dispute managers, 2 acquirers' dispute managers, scheme dispute operations, scheme rules team, IT disputes, LCLF (fraud). Hybrid: half on site, half remote on Klaxoon."),
+        ("Interview guide", "Interview guide: acquirers on the clearing API", "Hexa card scheme",
+         "I'll interview the 9 acquirers' clearing teams (45 min each) before they migrate from the legacy clearing file to our clearing API: how they build the file today, their volumes and cut-off times, how they handle rejects, what worries them about the API, and their test capacity. Need the interview guide and a template to compare the answers."),
+    ],
+    "writing-functional-specs": [
+        ("Detailed spec (SFD)", "SFD: fraud score in the authorisation request", "Hexa card scheme", None),
+        ("General spec (SFG)", "SFG: disputes in the member portal", "Hexa card scheme",
+         "Write the SFG for disputes in the member portal and API: issuers open disputes on cleared transactions with a reason code, acquirers accept or represent with evidence within 30 days, issuers accept or escalate to arbitration, the scheme decides. Financial movements go through settlement. Deadlines: 120 days from clearing to open, 30 days to represent, 10 days to escalate. Fraud reasons need a fraud report. Out of scope: cardholder-facing screens."),
+        ("Review a spec", "Review: spec of the issuer stand-in limits", "Hexa card scheme",
+         "Review this spec extract and fix it:\n\nWhen the issuer is unavailable, the scheme should approve transactions if they are not too big. Limits are set by the issuer, per card type etc. If the amount is above the limit we decline. Cash is handled as usual. The issuer gets the details later. The system must be fast and reliable."),
+    ],
+    "running-uat": [
+        ("Day 8 dashboard", "UAT day 8: fraud score with pilot issuers", "Hexa card scheme", None),
+        ("Plan a campaign", "UAT plan: new interchange grid", "Hexa card scheme",
+         "Plan the UAT of the new domestic interchange grid: consumer debit ≤ 20 € at 0.10%, public & charity MCCs at 0.05%, other categories unchanged. Tests on the clearing engine, member clearing records, monthly billing and member reports. 3 weeks in February on the certification platform, testers from Pricing, Finance and 4 volunteer members (2 issuers, 2 acquirers). Shadow run in March, go-live 1 April. Need the strategy, entry/exit criteria, test data (amount boundaries, MCCs, rate change on a date), organisation and planning."),
+        ("Go / no-go and sign-off", "UAT closure: disputes API, PV de recette", "Hexa card scheme",
+         "End of UAT for the disputes API. 86 tests planned, 86 run, 83 passed, 3 failed. Defects: 1 major open (representment accepted on day 31 when the dispute was opened at 23:30, time zone issue; workaround: none), 2 minor open (error message wording), 11 closed. Exit criteria: 100% run, ≥95% passed, 0 blocking, 0 major without workaround. Go-live with the first 4 members in 6 days. Business owner: head of dispute operations. Need the go / no-go recommendation and the PV de recette."),
+    ],
+    "analysing-gaps-and-impacts": [
+        ("New interchange grid", "Impact analysis: new domestic interchange grid", "Hexa card scheme", None),
+        ("DORA incident reporting", "Gap & impact analysis: DORA major incident reporting", "Hexa card scheme",
+         "Internal audit says our ICT incident process doesn't meet DORA. Today: incidents in ServiceNow, priority P1-P4 by technical impact; a P1 on authorisation is reported to the supervisor by Risk, by email, usually the next day. No link to the DORA classification criteria (clients and members affected, duration, data loss, critical services, geographical spread, economic and reputational impact). Members affected are estimated by phone. Third-party incidents (data centre, network provider) arrive by email. No 24/7 Risk on-call. Must comply in 6 months."),
+        ("Clearing migration to API", "Impact analysis: retiring the legacy clearing file", "Hexa card scheme",
+         "We want to stop accepting the legacy fixed-width clearing file in 12 months: all acquirers must send clearing through the new API. Impacts: 9 acquirers and their processors, our intake, validation and reject reports, the matching with authorisations, interchange computation, member billing, the operations team's monitoring and night shifts, contracts and member rules. 2 small acquirers have no IT team and use a processor. Need the gap & impact analysis and a migration approach."),
+    ],
+    "mapping-data": [
+        ("Clearing file → API", "Data mapping: acquirer clearing file to the clearing API", "Hexa card scheme", None),
+        ("Fraud reports interface", "Interface spec: issuer fraud reports to the scheme", "Hexa card scheme",
+         "Map issuers' fraud reports (today: monthly CSV in different layouts per issuer) to our fraud report API. Issuer fields vary: transaction reference or ARN, card number masked or token, fraud type in free text or codes, detection date, amount. API expects: arn or auth_id, pan_token, fraud_type (LOST, STOLEN, COUNTERFEIT, CNP, ATO, OTHER), detection_date, amount_minor, currency. Need the mapping, code translation from free text, rules for missing data, and how to match reports to transactions."),
+        ("Data quality: BIN referential", "Data quality rules: BIN referential", "Hexa card scheme",
+         "Wrong BIN attributes cause wrong routing and wrong interchange. Table bin_range (bin_start, bin_end, issuer_id, card_product, card_type debit/credit/prepaid, consumer flag, country, status, valid_from). Known issues: overlapping ranges, ranges with no issuer, commercial cards flagged consumer, country missing. Need data quality rules by dimension with thresholds, the SQL checks, and a remediation plan by priority."),
+    ],
+    "managing-backlog": [
+        ("PI planning (WSJF)", "PI planning: Authorisation & Fraud team, PI 27.1", "Hexa card scheme", None),
+        ("Backlog health check", "Backlog review: member portal team", "Hexa card scheme",
+         "Our backlog has 140 items. Top 15 by rank:\n1. Improve dispute screens (no description)\n2. As an issuer I want dark mode\n3. Bulk upload of fraud reports — 3 sprints\n4. Fix: settlement report PDF times out for large acquirers (12% of downloads)\n5. Refactor authentication module\n6. Developer portal (epic, 90 pts)\n7. As an acquirer I want to see the cardholder name — needs Legal\n8. Notification preferences\n9. Dark mode (duplicate?)\n10. Accessibility fixes (RGAA, deadline June)\n11. Intraday settlement position\n12. Spike: new charting library\n13. BIN range requests v2\n14. Upgrade the API gateway (end of support in 2 months)\n15. Improve performance\nTeam: 6 devs, 2-week sprints, velocity 35. What's wrong and how would you reorder it?"),
+        ("Release plan (MoSCoW)", "Release plan: disputes API by 1 March", "Hexa card scheme",
+         "Fixed date 1 March (committed to the 4 pilot members). 5 sprints of 2 weeks left, velocity 30. Stories: open dispute (8), get dispute (3), list disputes with filters (5), accept dispute (3), represent with evidence ids (8), evidence upload (13), escalate to arbitration (8), webhooks on status change (8), sandbox test data (5), rate limiting (3), OpenAPI docs (3), French error messages (2), dispute statistics endpoint (5). Which are must-haves for 1 March and what's the release plan?"),
     ],
 }
 for _t in TYPES:
     _ex = EXAMPLES.get(_t["id"])
     if _ex:
-        _t["examples"] = [{"label": l, "title": ti, "client": c, "notes": n or _t.get("example", "")} for l, ti, c, n in _ex]
+        _t["examples"] = [{"label": l, "label_fr": LABELS_FR.get(l, l), "title": ti, "client": c,
+                           "notes": n or _t.get("example", "")} for l, ti, c, n in _ex]
+    _t["template"] = TEMPLATES.get(_t["id"], {})
+    _t["fr"] = TYPES_FR.get(_t["id"], {})
+    _t["group"] = next(g["id"] for g in GROUPS if _t["id"] in g["types"])
+# Sidebar order follows the work: frame, specify, plan / test / deliver, then the AI track.
+_ORDER = [i for g in GROUPS for i in g["types"]]
+TYPES.sort(key=lambda t: _ORDER.index(t["id"]))
 TYPE_IDS = {t["id"] for t in TYPES}
 DEFAULT_PROFILE = {"name": "", "title": "Product Owner", "company": "", "tool": "Jira",
                    "language": "English", "tone": "Clear and concise"}
@@ -219,6 +335,13 @@ def init_db():
         # Add each sample once, so new samples reach existing workspaces and deleted ones stay deleted.
         seeded = set(get_meta(conn, "seeded", [r[0] for r in conn.execute("SELECT title FROM requests WHERE is_sample=1")]))
         seeds = load_seed()
+        # Samples replaced by newer ones (e.g. re-themed) leave the workspace with their history.
+        current = {r["title"] for r in seeds}
+        for rid, title in conn.execute("SELECT id, title FROM requests WHERE is_sample=1").fetchall():
+            if title not in current:
+                for tbl in ("messages", "versions"):
+                    conn.execute(f"DELETE FROM {tbl} WHERE request_id=?", (rid,))
+                conn.execute("DELETE FROM requests WHERE id=?", (rid,))
         now = time.time()
         for i, r in enumerate(seeds):
             if r["title"] in seeded:
@@ -314,6 +437,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "profile": {**DEFAULT_PROFILE, **get_meta(conn, "profile", {})},
                     "learned": get_meta(conn, "learned", []),
                     "clients": clients,
+                    "groups": [{k: g[k] for k in ("id", "en", "fr")} for g in GROUPS],
                 })
             if path == "/api/chat":
                 return self.send_json({"messages": self.thread(conn, None)})

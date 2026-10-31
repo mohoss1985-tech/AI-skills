@@ -20,16 +20,16 @@
       <span class="ws-mark" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M1 9 L4.5 3 L7 7 L9 4.5 L11 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       <span class="ws-name">Analyst Kit</span>
     </a>
-    <a class="btn primary wide" href="#/new">New deliverable <kbd>N</kbd></a>
+    <a class="btn primary wide" href="#/new"><span data-i18n="New deliverable">New deliverable</span> <kbd>N</kbd></a>
     <nav class="nav">
-      <a href="#/" data-nav="home" class="nav-item"><svg viewBox="0 0 16 16"><path d="M2.5 7 8 2.5 13.5 7v6.5h-11z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Home<span class="count" id="home-badge"></span></a>
-      <a href="#/chat" data-nav="chat" class="nav-item"><svg viewBox="0 0 16 16"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Chat with Claude<span class="badge" id="chat-badge" hidden></span></a>
-      <div class="nav-group">Deliverables</div>
+      <a href="#/" data-nav="home" class="nav-item"><svg viewBox="0 0 16 16"><path d="M2.5 7 8 2.5 13.5 7v6.5h-11z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span data-i18n="Home">Home</span><span class="count" id="home-badge"></span></a>
+      <a href="#/chat" data-nav="chat" class="nav-item"><svg viewBox="0 0 16 16"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span data-i18n="Chat with Claude">Chat with Claude</span><span class="badge" id="chat-badge" hidden></span></a>
       <div id="type-nav"></div>
     </nav>
     <div class="side-foot">
       <a class="me" href="#/profile" data-nav="profile" id="me"><span class="avatar" id="me-avatar">?</span><span class="me-text"><b id="me-name">Your profile</b><span class="presence" id="presence"><span class="dot"></span><span id="presence-label">…</span></span></span></a>
-      <button class="icon-btn" id="theme-btn" title="Light / dark" aria-label="Toggle light and dark"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 3a5 5 0 0 1 0 10z" fill="currentColor"/></svg></button>
+      <button class="icon-btn lang-btn" id="lang-btn" data-i18n-title="Français / English" title="Français / English" aria-label="Français / English">FR</button>
+      <button class="icon-btn" id="theme-btn" data-i18n-title="Light / dark" title="Light / dark" aria-label="Toggle light and dark"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 3a5 5 0 0 1 0 10z" fill="currentColor"/></svg></button>
     </div>
   </aside>
   <main class="main" id="main"></main>
@@ -40,7 +40,9 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bpmn-js@17.11.1/dist/bpmn-navigated-viewer.production.min.js"></script>
+<script src="/i18n.js"></script>
 <script src="/app.js"></script>
+<script src="/help_fr.js"></script>
 <script src="/help.js"></script>
 </body>
 </html>

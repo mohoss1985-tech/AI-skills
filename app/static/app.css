@@ -366,3 +366,20 @@ select.input { height: 38px; }
 .skill-chat { border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; height: 460px; overflow: hidden; }
 .skill-chat .g-feed { padding: 14px 16px; }
 .skill-chat .g-msg { max-width: 80%; }
+
+/* Grouped deliverables, templates, language switch */
+.nav-item .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#type-nav .nav-group:first-child { padding-top: 12px; }
+.lang-btn { font: 600 11px var(--sans); letter-spacing: .3px; width: auto; padding: 0 7px; border: 1px solid var(--line); }
+.type-group + .type-group { margin-top: 14px; }
+.type-group h3 { margin: 0 0 8px; font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.type-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn.small { height: 26px; padding: 0 10px; font-size: 12.5px; }
+.label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.label-row label { margin: 0; }
+.tpl-box .help { margin: 0 0 8px; }
+pre.tpl { margin: 0; white-space: pre-wrap; font: 12.5px/1.55 var(--mono, 'JetBrains Mono', monospace); color: var(--fg-2); background: var(--hover); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.seg-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.seg-group + .seg-group { margin-top: 8px; }
+.seg-group > span { width: 100%; font-size: 11.5px; color: var(--faint); font-weight: 500; }
+.seg:has(.seg-group) { display: block; }
