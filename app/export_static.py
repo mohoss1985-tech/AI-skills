@@ -1,7 +1,6 @@
 """Export Analyst Kit as a read-only static demo (for GitHub Pages or any static host).
 
     python3 app/export_static.py dist
-    sh app/publish_demo.sh          # build and publish to the gh-pages branch (GitHub Pages)
 
 Copies the front end, writes the skills, questions, scenarios and finished samples as JSON files,
 and switches the page to demo mode: everything can be browsed, nothing is sent anywhere.
