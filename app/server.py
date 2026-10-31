@@ -467,6 +467,22 @@ def claude_online(conn):
     return bool(row) and time.time() - float(row["value"]) < 45
 
 
+def types_payload():
+    """Deliverable types for the browser, with scenario notes taken from the samples of the same title."""
+    seeds = load_seed()
+    examples = {r["skill"]: r["input"] for r in reversed(seeds)}
+    by_title = {r["title"]: r["input"] for r in seeds}
+    fill = lambda items: [{**e, "notes": e["notes"] or by_title.get(e["title"], "")} for e in items]
+    return [{**t, "example": t.get("example") or examples.get(t["id"], ""),
+             "examples": fill(t.get("examples", [])) or [{"label": "Sample notes", "title": "", "client": "",
+                                                          "notes": examples.get(t["id"], "")}],
+             "examples_fr": fill(t.get("examples_fr", []))} for t in TYPES]
+
+
+def groups_payload():
+    return [{k: g[k] for k in ("id", "en", "fr")} for g in GROUPS]
+
+
 def public(files):
     """File listing for the browser: no local paths."""
     return [{k: f[k] for k in ("name", "size", "kind")} | {"extracted": bool(f["text_path"])} for f in files]
@@ -536,27 +552,19 @@ class Handler(SimpleHTTPRequestHandler):
         with _lock, db() as conn:
             if path == "/api/state":
                 rows = conn.execute("SELECT * FROM requests ORDER BY updated_at DESC").fetchall()
-                seeds = load_seed()
-                examples = {r["skill"]: r["input"] for r in reversed(seeds)}
-                by_title = {r["title"]: r["input"] for r in seeds}
                 chat_unread = conn.execute("SELECT COUNT(*) FROM messages WHERE request_id IS NULL AND role='claude' "
                                            "AND read=0").fetchone()[0]
                 clients = [r[0] for r in conn.execute(
                     "SELECT client FROM requests WHERE client!='' AND is_sample=0 GROUP BY client ORDER BY MAX(updated_at) DESC")]
                 return self.send_json({
-                    "types": [{**t, "example": t.get("example") or examples.get(t["id"], ""),
-                               "examples": [{**e, "notes": e["notes"] or by_title.get(e["title"], "")}
-                                            for e in t.get("examples", [])] or [{"label": "Sample notes", "title": "", "client": "",
-                                                                  "notes": examples.get(t["id"], "")}],
-                               "examples_fr": [{**e, "notes": e["notes"] or by_title.get(e["title"], "")}
-                                               for e in t.get("examples_fr", [])]} for t in TYPES],
+                    "types": types_payload(),
                     "requests": [summary(conn, r) for r in rows],
                     "claude_online": claude_online(conn),
                     "chat_unread": chat_unread,
                     "profile": {**DEFAULT_PROFILE, **get_meta(conn, "profile", {})},
                     "learned": get_meta(conn, "learned", []),
                     "clients": clients,
-                    "groups": [{k: g[k] for k in ("id", "en", "fr")} for g in GROUPS],
+                    "groups": groups_payload(),
                 })
             if path == "/api/chat":
                 return self.send_json({"messages": self.thread(conn, None)})

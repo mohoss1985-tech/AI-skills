@@ -11,7 +11,25 @@
 
   // ---------- helpers ----------
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Read-only demo (static hosting): the same pages, served from exported JSON; nothing is sent.
+  const DEMO = window.KIT_DEMO;
+  const DEMO_MSG = 'This demo is read-only. To create your own deliverables, run Analyst Kit on your computer with Claude Code (see the README on GitHub).';
+  const demoGet = (path) => {
+    if (path === '/api/state') return 'data/state.json';
+    const m = path.match(/^\/api\/requests\/(\d+)$/);
+    return m ? `data/requests/${m[1]}.json` : null;
+  };
   const api = async (path, opts = {}) => {
+    if (DEMO) {
+      if (opts.method && opts.method !== 'GET') throw new Error(L(DEMO_MSG));
+      if (path.startsWith('/api/chat')) return { messages: [] };
+      if (path.startsWith('/api/files')) return { files: [] };
+      const file = demoGet(path);
+      if (!file) throw new Error('Not found');
+      const r = await fetch(file);
+      if (!r.ok) throw new Error('Not found');
+      return r.json();
+    }
     const r = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
     if (r.status === 204) return null;
     const data = await r.json();
@@ -234,17 +252,17 @@
     const cb = $('#chat-badge'); cb.hidden = !S.chatUnread; cb.textContent = S.chatUnread;
     const total = newCount + S.chatUnread;
     document.title = (total ? `(${total}) ` : '') + 'Analyst Kit';
-    $('#me-name').textContent = S.profile.name || L('Set up your profile');
+    $('#me-name').textContent = DEMO ? L('Guest') : S.profile.name || L('Set up your profile');
     $('#me-avatar').textContent = initials(S.profile.name);
     const p = $('#presence');
     p.className = 'presence' + (S.online ? ' on' : '');
-    $('#presence-label').textContent = L(S.online ? 'Claude is online' : 'Claude is offline');
+    $('#presence-label').textContent = DEMO ? L('Read-only demo') : L(S.online ? 'Claude is online' : 'Claude is offline');
     p.title = L(S.online ? 'Requests and messages are picked up automatically' : 'Type "check my requests" in your Claude chat');
     const r = location.hash.replace(/^#/, '') || '/';
     const sel = r === '/' ? 'home' : r.startsWith('/chat') ? 'chat' : r.startsWith('/profile') ? 'profile' : (r.match(/^\/type\/([a-z-]+)/) || [])[1];
     document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('on', a.dataset.nav === sel));
   }
-  setInterval(async () => {
+  if (!DEMO) setInterval(async () => {
     try { await refresh(); if (S.view && S.view.tick) await S.view.tick(); } catch {}
   }, 3000);
 
@@ -293,13 +311,19 @@
   }
 
   // ---------- views ----------
+  function demoNotice() {
+    return `<div class="notice demo"><p><b>${L('Read-only demo.')}</b> ${L('Browse the finished samples (Visa rules in English, CB rules in French), the guided questions, the scenarios and the Guide, and download the import files. Creating a deliverable runs on your computer with Claude Code.')}</p>
+      <a class="btn" href="${esc(DEMO.repo)}#analyst-kit-the-app" target="_blank" rel="noopener">${L('How to run it')}</a></div>`;
+  }
+
   function viewHome() {
     const p = S.profile;
     main.innerHTML = `<div class="page">
       <div class="page-head hello"><div><h1>${p.name ? `${greeting()}, ${esc(p.name.split(' ')[0])}` : L('What do you need for your client?')}</h1>
-        <p>${L('Pick a deliverable, fill its template or paste your notes. Claude does the work, you hand it over.')}</p></div></div>
-      <form class="ask" id="ask"><input id="ask-input" placeholder="${L('Ask Claude anything: prepare a workshop, review a doc, draft a client email…')}" autocomplete="off"><button class="btn primary" type="submit">${L('Ask')}</button></form>
-      ${!p.name ? `<div class="notice"><p>${L('Add your name and company so every document says “Prepared by you”, and tell Claude how you like to work.')}</p><a class="btn" href="#/profile">${L('Set up profile')}</a></div>` : ''}
+        <p>${L('Pick a deliverable, answer a few questions and add your documents. Claude does the work, you hand it over.')}</p></div></div>
+      <form class="ask" id="ask" ${DEMO ? 'hidden' : ''}><input id="ask-input" placeholder="${L('Ask Claude anything: prepare a workshop, review a doc, draft a client email…')}" autocomplete="off"><button class="btn primary" type="submit">${L('Ask')}</button></form>
+      ${DEMO ? demoNotice() : ''}
+      ${!p.name && !DEMO ? `<div class="notice"><p>${L('Add your name and company so every document says “Prepared by you”, and tell Claude how you like to work.')}</p><a class="btn" href="#/profile">${L('Set up profile')}</a></div>` : ''}
       <div><h2 class="section-title">${L('Start a deliverable')}</h2>${(S.groups.length ? S.groups : [{ id: 'all', en: '' }]).map((g) => `
         <div class="type-group">${g.en ? `<h3>${esc(S.lang === 'fr' ? g.fr : g.en)}</h3>` : ''}<div class="types compact">${S.types.filter((t) => g.id === 'all' || t.group === g.id).map((t) => `
         <div class="type" data-href="#/new/${t.id}" title="${L('You give')}${colon()}${esc(tx(t, 'gives'))}"><div class="t">${sq(t)}${esc(tx(t, 'name'))}</div><p>${esc(tx(t, 'gets'))}</p></div>`).join('')}</div></div>`).join('')}</div>
@@ -327,7 +351,7 @@
       e.preventDefault();
       const text = $('#ask-input').value.trim();
       if (!text) return;
-      await post('/api/chat', { body: text }); location.hash = '#/chat';
+      try { await post('/api/chat', { body: text }); location.hash = '#/chat'; } catch (err) { toast(err.message); }
     };
     return { tick: paint };
   }
@@ -444,6 +468,7 @@
     main.innerHTML = `<div class="page">
       <div class="page-head"><div class="crumb"><a href="#/">${L('Home')}</a><span>›</span><span>${L('New deliverable')}</span></div>
         <h1>${L('New deliverable')}</h1><p>${L('Answer a few short questions and add your documents. Claude treats the documents as the main source and asks if something is missing.')}</p></div>
+      ${DEMO ? demoNotice() : ''}
       <form class="form" id="new-form" autocomplete="off">
         <div class="field"><label>${L('What do you need?')}</label><div class="seg" id="seg"></div></div>
         <div class="expect" id="expect"></div>
@@ -547,7 +572,7 @@
             ${dropHtml(L('Add evidence or a newer version: Claude uses it when you ask for changes.'))}
             <div id="kn-mini"></div></div></div>
           <details class="box"><summary>${L('Your original notes')}</summary><div class="inner">${answersHtml(t, r.answers)}<div class="notes">${esc(r.notes)}</div></div></details>
-          <div><button class="btn ghost" id="a-del">${L('Delete this deliverable')}</button></div>
+          ${DEMO ? '' : `<div><button class="btn ghost" id="a-del">${L('Delete this deliverable')}</button></div>`}
         </div>
         <aside class="panel" id="panel">
           <div class="panel-head">${L('Conversation')}<span>${L('⌘↵ to send')}</span></div>
@@ -581,7 +606,7 @@
           <button class="btn primary" id="a-word">${L('Download Word')}</button>
           <button class="btn" id="a-pdf">${L('Save as PDF')}</button>
           <button class="btn" id="a-copy">${L('Copy')}</button>
-          <button class="btn" id="a-sent">${L(r.sent_at ? '✓ Sent to client' : 'Mark as sent')}</button>
+          ${DEMO ? '' : `<button class="btn" id="a-sent">${L(r.sent_at ? '✓ Sent to client' : 'Mark as sent')}</button>`}
           <span class="spacer"></span>
           ${vers ? `<span class="verbar">${L('Version')} <select id="ver">${r.versions.map((v, i) => `<option value="${v.id}">${i + 1} · ${time(v.created_at)}</option>`).join('')}<option value="" selected>${vers + 1} · ${L('latest')}</option></select></span>` : ''}
           ${pill(statusOf(r))}</div>` : '';
@@ -589,7 +614,7 @@
       $('#a-pdf').onclick = () => window.print();
       $('#a-word').onclick = () => downloadWord(r, t, shownVersion);
       $('#a-copy').onclick = () => copyRich(r, shownVersion);
-      $('#a-sent').onclick = async () => { await post(`/api/requests/${r.id}/sent`, { sent: !r.sent_at }); r.sent_at = r.sent_at ? null : Date.now() / 1000; paintActions(); toast(L(r.sent_at ? 'Marked as sent to client' : 'Marked as not sent')); };
+      if (!DEMO) $('#a-sent').onclick = async () => { await post(`/api/requests/${r.id}/sent`, { sent: !r.sent_at }); r.sent_at = r.sent_at ? null : Date.now() / 1000; paintActions(); toast(L(r.sent_at ? 'Marked as sent to client' : 'Marked as not sent')); };
       const ver = $('#ver');
       if (ver) ver.onchange = async () => {
         shownVersion = ver.value ? (await api('/api/versions/' + ver.value)).output : null;
@@ -628,7 +653,7 @@
       r = await api('/api/requests/' + id); await paintFeed(feed, r.messages, empty);
     });
     const del = $('#a-del');
-    del.onclick = async () => {
+    if (del) del.onclick = async () => {
       if (!del.dataset.armed) { del.dataset.armed = 1; del.textContent = L('Click again to delete'); return; }
       await api('/api/requests/' + r.id, { method: 'DELETE' }); toast(L('Deleted')); location.hash = '#/';
     };
@@ -714,8 +739,10 @@
     $('#pf').onsubmit = async (e) => {
       e.preventDefault();
       const v = (k) => $('#p-' + k).value;
-      await post('/api/profile', { name: v('name'), title: v('title'), company: v('company'), tool: v('tool'), language: v('language'), tone: v('tone'), learned });
-      await refresh(); toast(L('Profile saved'));
+      try {
+        await post('/api/profile', { name: v('name'), title: v('title'), company: v('company'), tool: v('tool'), language: v('language'), tone: v('tone'), learned });
+        await refresh(); toast(L('Profile saved'));
+      } catch (err) { toast(err.message); }
     };
     return null;
   }
@@ -804,6 +831,7 @@
   window.Kit = {
     state: S, typeOf, startExample, toast, esc, L, tx, exsOf,
     ask: async (text) => { await post('/api/chat', { body: text }); },
+    demo: !!DEMO,
     fill: (i) => { const b = document.querySelector(`#f-examples [data-ex="${i}"]`); if (b) { b.click(); return true; } return false; },
   };
   addEventListener('hashchange', route);

@@ -27,7 +27,7 @@ window.KIT_FR = {
   'Claude is replying…': 'Claude répond…', 'Claude will reply when you say “check my requests” in your chat': 'Claude répondra quand vous écrirez « check my requests » dans votre conversation',
   // home
   'What do you need for your client?': 'De quoi avez-vous besoin pour votre client ?',
-  'Pick a deliverable, fill its template or paste your notes. Claude does the work, you hand it over.': 'Choisissez un livrable, remplissez son modèle ou collez vos notes. Claude fait le travail, vous le livrez.',
+  'Pick a deliverable, answer a few questions and add your documents. Claude does the work, you hand it over.': 'Choisissez un livrable, répondez à quelques questions et ajoutez vos documents. Claude fait le travail, vous le livrez.', 'Guest': 'Invité',
   'Ask Claude anything: prepare a workshop, review a doc, draft a client email…': 'Demandez à Claude : préparer un atelier, relire un document, rédiger un e-mail client…',
   'Ask': 'Demander', 'Add your name and company so every document says “Prepared by you”, and tell Claude how you like to work.': 'Ajoutez votre nom et votre société pour que chaque document indique « Préparé par vous », et dites à Claude comment vous travaillez.',
   'Set up profile': 'Configurer le profil', 'Start a deliverable': 'Commencer un livrable', 'You give': 'Vous donnez', 'You get': 'Vous obtenez',
@@ -86,4 +86,8 @@ window.KIT_FR = {
   'Not supported': 'Non pris en charge', 'Answer the questions marked *': 'Répondez aux questions marquées *', 'Uploading documents…': 'Envoi des documents…',
   'Documents for this deliverable': 'Documents de ce livrable', 'Add evidence or a newer version: Claude uses it when you ask for changes.': 'Ajoutez une preuve ou une nouvelle version : Claude l\'utilise quand vous demandez une modification.',
   'Also read from the skill knowledge': 'Également lus dans la base documentaire', 'Document added. Send the message to update the deliverable': 'Document ajouté. Envoyez le message pour mettre à jour le livrable',
+  // read-only demo
+  'This demo is read-only. To create your own deliverables, run Analyst Kit on your computer with Claude Code (see the README on GitHub).': 'Cette démo est en lecture seule. Pour créer vos propres livrables, lancez Analyst Kit sur votre ordinateur avec Claude Code (voir le README sur GitHub).',
+  'Read-only demo': 'Démo en lecture seule', 'Read-only demo.': 'Démo en lecture seule.', 'How to run it': 'Comment l\'installer',
+  'Browse the finished samples (Visa rules in English, CB rules in French), the guided questions, the scenarios and the Guide, and download the import files. Creating a deliverable runs on your computer with Claude Code.': 'Parcourez les exemples terminés (règles CB en français, Visa en anglais), les questions guidées, les scénarios et le Guide, et téléchargez les fichiers d\'import. La création d\'un livrable se fait sur votre ordinateur avec Claude Code.',
 };

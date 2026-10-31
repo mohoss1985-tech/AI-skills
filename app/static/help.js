@@ -415,7 +415,10 @@
       else if (x.fill !== undefined) { if (!K().fill(x.fill)) K().startExample(context().type, x.fill); K().toast(G('Scenario filled in. Press Create deliverable')); }
       else if (x.example) K().startExample(x.example[0], x.example[1]);
       else if (x.say) return C.say(x.say);
-      else if (x.ask) { await K().ask(x.ask); location.hash = '#/chat'; C.msgs.push({ role: 'bot', a: G('Sent to Claude. The answer will appear in **Chat with Claude**.') }); }
+      else if (x.ask) {
+        try { await K().ask(x.ask); location.hash = '#/chat'; C.msgs.push({ role: 'bot', a: G('Sent to Claude. The answer will appear in **Chat with Claude**.') }); }
+        catch (e) { C.msgs.push({ role: 'bot', a: e.message }); }
+      }
       C.paint();
     };
     form.onsubmit = (e) => { e.preventDefault(); C.say(input.value); input.value = ''; };

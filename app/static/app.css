@@ -406,3 +406,4 @@ ul.files li a, ul.files li > span:nth-child(2) { flex: 1; min-width: 0; overflow
 .sources .drop { margin-top: 10px; padding: 12px; }
 dl.answers { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0 0 12px; font-size: 13px; }
 dl.answers dt { color: var(--muted); } dl.answers dd { margin: 0; }
+.notice.demo { border-color: var(--accent); }
