@@ -64,4 +64,10 @@ python3 app/server.py      # puis ouvrir http://localhost:4317
 
 Les six compétences de delivery viennent d'une [analyse de 740 missions freelance BA / PO en Île-de-France](market/README.md).
 
+## Autres projets de mon portfolio IA
+
+| Projet | Description |
+|---|---|
+| [**Fitbit Air on Steroids (MRH1)**](https://github.com/mohoss1985-tech/fitbit-air-on-steroids) · [démo en ligne](https://mohoss1985-tech.github.io/fitbit-air-on-steroids/demo/) | Une app iOS sur mesure (SwiftUI + HealthKit) pour le bracelet Google Fitbit Air : scores façon Whoop, panneaux de santé façon bilan sanguin et chaque mesure expliquée. Réalisée avec Claude. |
+
 Les organisations et les chiffres sont fictifs. Les règles des schémas sont paraphrasées pour les exemples : confirmez codes et délais dans les règles CB ou Visa en vigueur, et les points juridiques avec vos équipes juridique et conformité.

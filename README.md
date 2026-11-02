@@ -126,4 +126,10 @@ examples/   conversational AI case study
 market/     freelance market analysis and method
 ```
 
+## More from my AI portfolio
+
+| Project | What it is |
+|---|---|
+| [**Fitbit Air on Steroids (MRH1)**](https://github.com/mohoss1985-tech/fitbit-air-on-steroids) · [live demo](https://mohoss1985-tech.github.io/fitbit-air-on-steroids/demo/) | A custom iOS app (SwiftUI + HealthKit) for the Google Fitbit Air: Whoop-style scores, lab-style body panels and every health metric explained. Built with Claude. |
+
 All organisations and figures are fictional. Scheme rules are paraphrased for the samples; confirm codes and deadlines against the current Visa Core Rules or CB rules, and legal points with your legal and compliance teams.
