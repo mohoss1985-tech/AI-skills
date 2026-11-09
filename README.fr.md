@@ -1,5 +1,7 @@
 # Analyst Kit · Compétences IA pour la monétique et les API
 
+> **V2 · des outils qui travaillent.** Vingt outils pour BA / PO en monétique : testeur d'API (4 champs, contrôles sans code, export curl / Postman / pytest), SQL sur une base carte, BPMN modifiable, WSJF, recette avec go / no-go, **simulateur de tokenisation** (carte → jeton Apple Pay) et **cycle de vie du paiement et impayés**. [Démo en ligne](https://mohoss1985-tech.github.io/AI-skills/) · [V1 figée](https://mohoss1985-tech.github.io/AI-skills/v1/) · [Journal des versions](CHANGELOG.md)
+
 **Dix-huit compétences IA qui font le travail d'un Business Analyst / Product Owner en monétique, dans une application locale où chaque livrable part de quelques questions précises et de vos propres documents. Les exemples en français suivent les règles CB (Cartes Bancaires) ; les exemples en anglais suivent les règles Visa.**
 
 [![Ouvrir la démo en ligne](https://img.shields.io/badge/%E2%96%B6%20Ouvrir%20la%20d%C3%A9mo%20en%20ligne-5e6ad2?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
@@ -30,17 +32,17 @@ L'interface affiche les exemples de sa langue. Les éléments que seules les rè
 
 | Étape | Compétence | Français (CB) | Anglais (Visa) |
 |---|---|---|---|
-| Cadrer | PRD | [Mise en opposition dans l'appli](app/seed/103-prd.md) | [Lost or stolen card in the app](app/seed/3-prd.md) |
-| Atelier | Atelier & compte-rendu | [Notes → compte-rendu](app/seed/116-workshop.md) | [Notes → report](app/seed/16-workshop.md) |
-| Spécifier | Spécification SFD | [Opposition, remboursement, déclaration](app/seed/117-sfd.md) | [Block, Exception File, fraud report](app/seed/17-sfd.md) |
-| User stories | User stories | [Opposition et contestation](app/seed/105-stories.md) | [Block and flag](app/seed/5-stories.md) |
-| Planifier | Backlog & PI planning | [WSJF, objectifs de PI](app/seed/121-backlog.md) | [WSJF, PI objectives](app/seed/21-backlog.md) |
-| Recette | Campagne de recette | [Recette J8](app/seed/118-uat.md) | [UAT day 8](app/seed/18-uat.md) |
-| Déclarer la fraude | Mapping de données | [Dossiers → déclarations GIE CB](app/seed/120-mapping.md) | [Fraud cases → Visa fraud reports](app/seed/20-mapping.md) |
-| Autorisation | Processus (BPMN) | [Autorisation CB avec secours](app/seed/101-process.md) | [Visa authorisation with stand-in](app/seed/1-process.md) |
-| Analyse des refus | Requête SQL | [Taux d'acceptation et codes de refus](app/seed/104-sql.md) | [Approval rate and decline codes](app/seed/4-sql.md) |
-| Impayés (API) | Plan de test API | [API impayés](app/seed/102-api.md) | [Disputes API](app/seed/2-api.md) |
-| Impayés (processus) | Analyse d'impact | [Contestations et impayés hors Excel](app/seed/119-impact.md) | [Chargebacks out of spreadsheets](app/seed/19-impact.md) |
+| Cadrer | PRD | [Mise en opposition dans l'appli](app/server/seed/103-prd.md) | [Lost or stolen card in the app](app/server/seed/3-prd.md) |
+| Atelier | Atelier & compte-rendu | [Notes → compte-rendu](app/server/seed/116-workshop.md) | [Notes → report](app/server/seed/16-workshop.md) |
+| Spécifier | Spécification SFD | [Opposition, remboursement, déclaration](app/server/seed/117-sfd.md) | [Block, Exception File, fraud report](app/server/seed/17-sfd.md) |
+| User stories | User stories | [Opposition et contestation](app/server/seed/105-stories.md) | [Block and flag](app/server/seed/5-stories.md) |
+| Planifier | Backlog & PI planning | [WSJF, objectifs de PI](app/server/seed/121-backlog.md) | [WSJF, PI objectives](app/server/seed/21-backlog.md) |
+| Recette | Campagne de recette | [Recette J8](app/server/seed/118-uat.md) | [UAT day 8](app/server/seed/18-uat.md) |
+| Déclarer la fraude | Mapping de données | [Dossiers → déclarations GIE CB](app/server/seed/120-mapping.md) | [Fraud cases → Visa fraud reports](app/server/seed/20-mapping.md) |
+| Autorisation | Processus (BPMN) | [Autorisation CB avec secours](app/server/seed/101-process.md) | [Visa authorisation with stand-in](app/server/seed/1-process.md) |
+| Analyse des refus | Requête SQL | [Taux d'acceptation et codes de refus](app/server/seed/104-sql.md) | [Approval rate and decline codes](app/server/seed/4-sql.md) |
+| Impayés (API) | Plan de test API | [API impayés](app/server/seed/102-api.md) | [Disputes API](app/server/seed/2-api.md) |
+| Impayés (processus) | Analyse d'impact | [Contestations et impayés hors Excel](app/server/seed/119-impact.md) | [Chargebacks out of spreadsheets](app/server/seed/19-impact.md) |
 
 ## Comment un livrable est produit
 
@@ -53,7 +55,7 @@ L'interface affiche les exemples de sa langue. Les éléments que seules les rè
 ## L'application
 
 ```bash
-python3 app/server.py      # puis ouvrir http://localhost:4317
+python3 app/server/server.py      # puis ouvrir http://localhost:4317
 ```
 
 - **Questions rapides et documents** sur chaque livrable, et une **base documentaire** par compétence.

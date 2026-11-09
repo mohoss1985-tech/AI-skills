@@ -1,0 +1,40 @@
+/* Mapping grid: styles scoped under .tool-mapping-grid (owner I). Tokens only. */
+.tool-mapping-grid .tf-command-inputs textarea { min-height: 76px; font-size: var(--fs-12); }
+.tool-mapping-grid .advanced { margin-bottom: var(--s-4); }
+.tool-mapping-grid .mg-adv { display: grid; gap: var(--s-3); max-width: 880px; }
+.tool-mapping-grid .mg-adv-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); align-items: end; }
+.tool-mapping-grid h2 { font-size: var(--fs-16); line-height: 24px; font-weight: var(--fw-semibold); margin: 0; }
+.tool-mapping-grid h3 { font-size: var(--fs-14); font-weight: var(--fw-semibold); margin: 0; }
+.tool-mapping-grid h4 { font-size: var(--fs-13); font-weight: var(--fw-semibold); margin: 0 0 var(--s-2); color: var(--fg-2); }
+.tool-mapping-grid .mg-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.tool-mapping-grid .mg-head[hidden], .tool-mapping-grid [hidden] { display: none; }
+.tool-mapping-grid .mg-hint { color: var(--fg-2); font-size: var(--fs-12); margin: var(--s-1) 0 var(--s-2); }
+.tool-mapping-grid .mg-grid td:nth-child(4) .cell-input { min-width: 240px; }
+.tool-mapping-grid .mg-grid select.cell-input { text-align: left; text-align-last: left; font-family: var(--mono); font-size: var(--fs-12); }
+.tool-mapping-grid .mg-grid .grid-ro svg { color: var(--fg-3); }
+
+.tool-mapping-grid .mg-lower { display: grid; gap: var(--s-6); margin-top: var(--s-6); }
+.tool-mapping-grid .mg-col { display: grid; gap: var(--s-6); min-width: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 1100px) { .tool-mapping-grid .mg-col { grid-template-columns: 1fr; } .tool-mapping-grid .mg-adv-row { grid-template-columns: 1fr; } }
+.tool-mapping-grid .mg-panel { min-width: 0; }
+.tool-mapping-grid .mg-issues, .tool-mapping-grid .mg-cov { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.tool-mapping-grid .mg-issues li { display: flex; gap: var(--s-2); align-items: baseline; padding: var(--s-2) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-13); }
+.tool-mapping-grid .mg-issues li > span:last-child { overflow-wrap: anywhere; }
+.tool-mapping-grid .mg-issues li.lvl-info { color: var(--fg-2); }
+.tool-mapping-grid .mg-none { color: var(--fg-2); }
+.tool-mapping-grid .mg-cov li { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(0, 1.2fr) auto; gap: var(--s-2); align-items: center; padding: var(--s-1) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-13); }
+.tool-mapping-grid .mg-cov code { font-family: var(--mono); font-size: var(--fs-12); }
+.tool-mapping-grid .mg-cov-src { color: var(--fg-2); font-size: var(--fs-12); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.tool-mapping-grid .mg-pv-cols { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: var(--s-4); align-items: start; }
+@media (max-width: 1280px) { .tool-mapping-grid .mg-pv-cols { grid-template-columns: 1fr; } }
+.tool-mapping-grid .mg-pv-head { display: flex; justify-content: space-between; align-items: center; gap: var(--s-2); }
+.tool-mapping-grid .mg-rec { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s-1) var(--s-2); align-items: center; }
+.tool-mapping-grid .mg-rec-k { font-size: var(--fs-11); color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.tool-mapping-grid .mg-out td { overflow-wrap: anywhere; }
+.tool-mapping-grid .mg-out td:last-child { color: var(--fg-2); font-size: var(--fs-12); }
+.tool-mapping-grid .mg-out td:first-child { white-space: nowrap; }
+.tool-mapping-grid .mg-group summary { cursor: pointer; }
+.tool-mapping-grid .mg-group ul { margin: var(--s-1) 0 0; padding-left: var(--s-4); color: var(--fg-2); font-size: var(--fs-12); }
+.tool-mapping-grid .mg-group ul li { border: 0; padding: 0; display: list-item; }
+.tool-mapping-grid .mg-cov-b { display: inline-flex; gap: var(--s-1); justify-content: flex-end; }

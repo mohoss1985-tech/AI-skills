@@ -1,0 +1,420 @@
+{
+  "en": [
+    {
+      "id": "chargeback-triage",
+      "label": "AI-assisted chargeback triage",
+      "hint": "Harbor Bank · Visa disputes",
+      "state": {
+        "system": "Chargeback triage assistant (LLM, internal)",
+        "use": "Reads a cardholder dispute claim and the transaction, suggests the Visa dispute condition and the evidence to request, drafts the letter. A disputes analyst validates every case.",
+        "data": "Dispute claim text, transaction data with masked PAN (•••• 1018), merchant name, previous disputes of the card",
+        "does": "Suggests and drafts only; no submission to Visa without the analyst",
+        "users": "Disputes analysts (staff)",
+        "hosting": "EU region of the model provider (to confirm with Compliance)",
+        "answers": {
+          "p1": "no",
+          "p2": "no",
+          "p3": "no",
+          "p4": "no",
+          "p5": "no",
+          "h1": "no",
+          "h3": "no",
+          "h4": "no",
+          "h5": "no",
+          "t3": "no",
+          "t4": "no",
+          "h2": "no",
+          "t1": "unsure",
+          "t2": "unsure"
+        },
+        "risks": [
+          {
+            "id": "R-01",
+            "risk": "Suggests the wrong dispute condition, the dispute is lost",
+            "category": "Misinformation",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Kim (Disputes)",
+            "control": "Analyst validates the condition; suggestion shows its source rule",
+            "test": "Golden set of 40 past disputes",
+            "nist": "Measure",
+            "status": "mitigating"
+          },
+          {
+            "id": "R-02",
+            "risk": "Prompt injection through merchant documents attached as evidence",
+            "category": "Prompt injection",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "CISO team",
+            "control": "Attachments passed as data, never as instructions",
+            "test": "Red-team set RT-01..05",
+            "nist": "Manage",
+            "status": "open"
+          },
+          {
+            "id": "R-03",
+            "risk": "Full PAN or cardholder data reaches the prompt or the logs",
+            "category": "Sensitive information",
+            "likelihood": 3,
+            "impact": 5,
+            "owner": "DPO",
+            "control": "Mask PAN before the model (last 4 only); log retention agreed with the DPO",
+            "test": "Unit test on masking with test PAN •••• 1018",
+            "nist": "Manage",
+            "status": "mitigating"
+          },
+          {
+            "id": "R-04",
+            "risk": "Dispute submitted to Visa without analyst confirmation",
+            "category": "Excessive agency",
+            "likelihood": 1,
+            "impact": 5,
+            "owner": "Kim (Disputes)",
+            "control": "No write access to the dispute system",
+            "test": "Permission review",
+            "nist": "Govern",
+            "status": "closed"
+          },
+          {
+            "id": "R-05",
+            "risk": "Answers from a superseded version of the dispute rules (to confirm with the scheme liaison)",
+            "category": "Out-of-date knowledge",
+            "likelihood": 4,
+            "impact": 3,
+            "owner": "Marc (Scheme liaison)",
+            "control": "Rule source with version and review date",
+            "test": "",
+            "nist": "Govern",
+            "status": "open"
+          },
+          {
+            "id": "R-06",
+            "risk": "Fraud dispute drafted before the fraud is reported to Visa",
+            "category": "Process",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Priya (Fraud)",
+            "control": "Block drafting until the fraud report reference is present",
+            "test": "Test case: no fraud report → refuse",
+            "nist": "Map",
+            "status": "open"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fraud-scoring",
+      "label": "Fraud-scoring assistant",
+      "hint": "Annex III 5(b) fraud carve-out",
+      "state": {
+        "system": "Fraud-scoring assistant for card authorisations",
+        "use": "Scores each card authorisation for fraud in real time and explains the top signals to fraud analysts; analysts decide on blocks.",
+        "data": "Authorisation messages (masked PAN), device and merchant data, cardholder spending history",
+        "does": "Returns a score and reasons; can put a card in \"review\" but cannot block it",
+        "users": "Fraud analysts; indirectly all cardholders",
+        "hosting": "On premises",
+        "answers": {
+          "p1": "no",
+          "p2": "no",
+          "p3": "no",
+          "p4": "no",
+          "p5": "no",
+          "h3": "no",
+          "h4": "no",
+          "h5": "no",
+          "t1": "no",
+          "t2": "no",
+          "t3": "no",
+          "t4": "no",
+          "h1": "unsure",
+          "h2": "yes",
+          "h7": "yes"
+        },
+        "risks": [
+          {
+            "id": "R-01",
+            "risk": "Stand-in approves a stolen card while its Exception File listing is pending (160 min last incident); the score is not used in stand-in",
+            "category": "Process",
+            "likelihood": 4,
+            "impact": 5,
+            "owner": "Priya (Fraud)",
+            "control": "Real-time listing (REQ-02) + stand-in rule for cards blocked < 24 h",
+            "test": "",
+            "nist": "Manage",
+            "status": "open"
+          },
+          {
+            "id": "R-02",
+            "risk": "Fraud rings probe the score thresholds with small test payments",
+            "category": "Adversarial",
+            "likelihood": 4,
+            "impact": 4,
+            "owner": "Priya (Fraud)",
+            "control": "",
+            "test": "",
+            "nist": "Manage",
+            "status": "open"
+          },
+          {
+            "id": "R-03",
+            "risk": "False positives concentrated on some customer groups",
+            "category": "Bias",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Model risk",
+            "control": "Monthly false-positive review by segment",
+            "test": "Bias test on holdout",
+            "nist": "Measure",
+            "status": "mitigating"
+          },
+          {
+            "id": "R-04",
+            "risk": "Model drift after a merchant or fraud pattern change",
+            "category": "Drift",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Data science",
+            "control": "Drift monitoring with alert threshold",
+            "test": "Weekly backtest",
+            "nist": "Measure",
+            "status": "mitigating"
+          },
+          {
+            "id": "R-05",
+            "risk": "Declines not explainable to the cardholder (GDPR Art. 22, to confirm with the DPO)",
+            "category": "Transparency",
+            "likelihood": 3,
+            "impact": 3,
+            "owner": "DPO",
+            "control": "Reason codes kept per decision",
+            "test": "",
+            "nist": "Govern",
+            "status": "open"
+          },
+          {
+            "id": "R-06",
+            "risk": "Score reused for credit decisions, which would leave the fraud carve-out",
+            "category": "Scope",
+            "likelihood": 2,
+            "impact": 5,
+            "owner": "AI governance",
+            "control": "Purpose limitation in the model card; access review",
+            "test": "",
+            "nist": "Map",
+            "status": "open"
+          }
+        ]
+      }
+    }
+  ],
+  "fr": [
+    {
+      "id": "tri-impayes",
+      "label": "Tri des impayés assisté par IA",
+      "hint": "Banque Lumière · CB",
+      "state": {
+        "system": "Assistant de tri des contestations (LLM, interne)",
+        "use": "Lit la contestation du porteur et l'opération, propose le motif d'impayé CB et les justificatifs à demander, rédige le courrier. Un analyste valide chaque dossier.",
+        "data": "Texte de la contestation, données de l'opération avec PAN masqué (•••• 2016), commerçant, contestations précédentes",
+        "does": "Propose et rédige uniquement ; aucun envoi sans l'analyste",
+        "users": "Analystes impayés (salariés)",
+        "hosting": "Région UE du fournisseur (à confirmer avec la Conformité)",
+        "answers": {
+          "p1": "no",
+          "p2": "no",
+          "p3": "no",
+          "p4": "no",
+          "p5": "no",
+          "h1": "no",
+          "h3": "no",
+          "h4": "no",
+          "h5": "no",
+          "t3": "no",
+          "t4": "no",
+          "h2": "no",
+          "t1": "unsure",
+          "t2": "unsure"
+        },
+        "risks": [
+          {
+            "id": "R-01",
+            "risk": "Propose un mauvais motif d'impayé, le dossier est perdu",
+            "category": "Désinformation",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Karim (Impayés)",
+            "control": "L'analyste valide le motif ; la proposition cite sa règle",
+            "test": "Jeu de référence de 40 dossiers",
+            "nist": "Measure",
+            "status": "mitigating"
+          },
+          {
+            "id": "R-02",
+            "risk": "Injection de prompt via les justificatifs du commerçant",
+            "category": "Injection de prompt",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Équipe RSSI",
+            "control": "Pièces jointes traitées comme données",
+            "test": "Jeu red team RT-01..05",
+            "nist": "Manage",
+            "status": "open"
+          },
+          {
+            "id": "R-03",
+            "risk": "PAN complet ou données porteur dans le prompt ou les journaux",
+            "category": "Informations sensibles",
+            "likelihood": 3,
+            "impact": 5,
+            "owner": "DPO",
+            "control": "PAN masqué avant le modèle ; durée de conservation validée par le DPO",
+            "test": "Test de masquage avec le PAN de test •••• 2016",
+            "nist": "Manage",
+            "status": "mitigating"
+          },
+          {
+            "id": "R-04",
+            "risk": "Impayé émis sans confirmation de l'analyste",
+            "category": "Autonomie excessive",
+            "likelihood": 1,
+            "impact": 5,
+            "owner": "Karim (Impayés)",
+            "control": "Pas d'accès en écriture",
+            "test": "Revue des habilitations",
+            "nist": "Govern",
+            "status": "closed"
+          },
+          {
+            "id": "R-05",
+            "risk": "Règles CB obsolètes (à confirmer avec les relations GIE CB)",
+            "category": "Connaissances obsolètes",
+            "likelihood": 4,
+            "impact": 3,
+            "owner": "Marc (Relations GIE CB)",
+            "control": "Source versionnée avec date de revue",
+            "test": "",
+            "nist": "Govern",
+            "status": "open"
+          },
+          {
+            "id": "R-06",
+            "risk": "Impayé pour fraude rédigé avant la déclaration de fraude au GIE CB",
+            "category": "Processus",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Priya (Fraude)",
+            "control": "Rédaction bloquée sans référence de déclaration",
+            "test": "Cas de test : pas de déclaration → refus",
+            "nist": "Map",
+            "status": "open"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scoring-fraude",
+      "label": "Assistant de scoring de fraude",
+      "hint": "Exclusion fraude, annexe III 5(b)",
+      "state": {
+        "system": "Assistant de scoring de fraude des autorisations carte",
+        "use": "Note chaque autorisation CB en temps réel et explique les signaux aux analystes fraude ; les analystes décident des oppositions.",
+        "data": "Messages d'autorisation (PAN masqué), données terminal et commerçant, historique de dépenses",
+        "does": "Renvoie un score et des motifs ; peut placer une carte « en revue » mais pas en opposition",
+        "users": "Analystes fraude ; indirectement tous les porteurs",
+        "hosting": "Sur site",
+        "answers": {
+          "p1": "no",
+          "p2": "no",
+          "p3": "no",
+          "p4": "no",
+          "p5": "no",
+          "h3": "no",
+          "h4": "no",
+          "h5": "no",
+          "t1": "no",
+          "t2": "no",
+          "t3": "no",
+          "t4": "no",
+          "h1": "unsure",
+          "h2": "yes",
+          "h7": "yes"
+        },
+        "risks": [
+          {
+            "id": "R-01",
+            "risk": "Le stand-in autorise une carte volée pendant son inscription en liste d'opposition (160 min au dernier incident) ; le score n'est pas utilisé en stand-in",
+            "category": "Processus",
+            "likelihood": 4,
+            "impact": 5,
+            "owner": "Priya (Fraude)",
+            "control": "Inscription temps réel (REQ-02) + règle stand-in pour les cartes en opposition < 24 h",
+            "test": "",
+            "nist": "Manage",
+            "status": "open"
+          },
+          {
+            "id": "R-02",
+            "risk": "Des réseaux testent les seuils par de petits paiements",
+            "category": "Adversarial",
+            "likelihood": 4,
+            "impact": 4,
+            "owner": "Priya (Fraude)",
+            "control": "",
+            "test": "",
+            "nist": "Manage",
+            "status": "open"
+          },
+          {
+            "id": "R-03",
+            "risk": "Faux positifs concentrés sur certains groupes de clients",
+            "category": "Biais",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Risque de modèle",
+            "control": "Revue mensuelle des faux positifs par segment",
+            "test": "Test de biais",
+            "nist": "Measure",
+            "status": "mitigating"
+          },
+          {
+            "id": "R-04",
+            "risk": "Dérive du modèle après un changement de fraude",
+            "category": "Dérive",
+            "likelihood": 3,
+            "impact": 4,
+            "owner": "Data science",
+            "control": "Suivi de dérive avec seuil d’alerte",
+            "test": "Backtest hebdo",
+            "nist": "Measure",
+            "status": "mitigating"
+          },
+          {
+            "id": "R-05",
+            "risk": "Refus non explicables au porteur (RGPD art. 22, à confirmer avec le DPO)",
+            "category": "Transparence",
+            "likelihood": 3,
+            "impact": 3,
+            "owner": "DPO",
+            "control": "Motifs conservés par décision",
+            "test": "",
+            "nist": "Govern",
+            "status": "open"
+          },
+          {
+            "id": "R-06",
+            "risk": "Score réutilisé pour l'octroi de crédit, hors exclusion fraude",
+            "category": "Périmètre",
+            "likelihood": 2,
+            "impact": 5,
+            "owner": "Gouvernance IA",
+            "control": "Limitation de finalité dans la fiche modèle",
+            "test": "",
+            "nist": "Map",
+            "status": "open"
+          }
+        ]
+      }
+    }
+  ]
+}

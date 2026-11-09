@@ -1,0 +1,188 @@
+{
+  "actions": {
+    "generate-cases": {
+      "type": "object",
+      "required": [
+        "cases"
+      ],
+      "properties": {
+        "cases": {
+          "type": "array",
+          "maxItems": 60,
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "steps"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "reset": {
+                "type": "boolean"
+              },
+              "data": {
+                "type": "array",
+                "maxItems": 50,
+                "items": {
+                  "type": "object"
+                }
+              },
+              "steps": {
+                "type": "array",
+                "maxItems": 10,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "req"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    "req": {
+                      "type": "object",
+                      "required": [
+                        "method",
+                        "url"
+                      ],
+                      "properties": {
+                        "method": {
+                          "enum": [
+                            "GET",
+                            "POST",
+                            "PUT",
+                            "PATCH",
+                            "DELETE",
+                            "HEAD",
+                            "OPTIONS"
+                          ]
+                        },
+                        "url": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "auth": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "enum": [
+                                "none",
+                                "bearer",
+                                "apikey",
+                                "basic"
+                              ]
+                            },
+                            "in": {
+                              "enum": [
+                                "header",
+                                "query"
+                              ]
+                            }
+                          }
+                        },
+                        "params": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "headers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "body": {
+                          "type": "string",
+                          "maxLength": 20000
+                        },
+                        "checks": {
+                          "type": "array",
+                          "maxItems": 30,
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "target",
+                              "op"
+                            ],
+                            "properties": {
+                              "target": {
+                                "enum": [
+                                  "status",
+                                  "time",
+                                  "json",
+                                  "header",
+                                  "body",
+                                  "size"
+                                ]
+                              },
+                              "key": {
+                                "type": "string"
+                              },
+                              "op": {
+                                "enum": [
+                                  "eq",
+                                  "ne",
+                                  "in",
+                                  "between",
+                                  "lt",
+                                  "lte",
+                                  "gt",
+                                  "contains",
+                                  "not_contains",
+                                  "starts",
+                                  "ends",
+                                  "exists",
+                                  "not_exists",
+                                  "empty",
+                                  "not_empty",
+                                  "type",
+                                  "matches",
+                                  "len"
+                                ]
+                              },
+                              "expected": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean",
+                                  "null"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "captures": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "var",
+                              "path"
+                            ],
+                            "properties": {
+                              "var": {
+                                "type": "string"
+                              },
+                              "path": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

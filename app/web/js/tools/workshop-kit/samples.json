@@ -1,0 +1,528 @@
+{
+  "en": [
+    {
+      "id": "declare-w1",
+      "label": "Lost / stolen card declaration · notes captured",
+      "hint": "Harbor Bank · Visa",
+      "state": {
+        "goal": "Agree how a lost, stolen or misused card is declared, blocked, listed on the Visa Exception File and disputed",
+        "attendees": "Ana (Head of cards, sponsor), Tom (Card IT, authorisation host), Priya (Fraud operations), Leo (Call centre manager), Kim (Disputes), BA (facilitator), Legal (absent)",
+        "duration": 120,
+        "date": "2026-11-13",
+        "start": "09:30",
+        "location": "Room 4B + Teams",
+        "preReads": "Incident timeline: stolen card approved in stand-in (block → Exception File listing 160 min)",
+        "nextWorkshop": "Liability wording, unblock rule, real-time Exception File, dispute deadline dashboard. Same attendees plus Legal (mandatory).",
+        "agenda": [
+          {
+            "id": "b1",
+            "title": "Objective, rules of the session, storyline: stolen card approved in stand-in",
+            "kind": "intro",
+            "minutes": 10,
+            "technique": "Timeline on screen",
+            "questions": "Does everyone agree on the 160-min gap between block and Exception File listing?"
+          },
+          {
+            "id": "b2",
+            "title": "Declare and block: app, phone, reasons",
+            "kind": "topic",
+            "minutes": 35,
+            "technique": "Process walk-through (BPMN on screen)",
+            "questions": "Which reasons do agents use today? What happens when the host is down? Who is accountable for the block?"
+          },
+          {
+            "id": "b3",
+            "title": "Exception File listing and stand-in",
+            "kind": "topic",
+            "minutes": 30,
+            "technique": "Example mapping",
+            "questions": "How long from block to listing today? Can the processor list in real time? What does Visa check?"
+          },
+          {
+            "id": "b4",
+            "title": "Break",
+            "kind": "break",
+            "minutes": 10,
+            "technique": "",
+            "questions": ""
+          },
+          {
+            "id": "b5",
+            "title": "Fraud declaration before dispute",
+            "kind": "topic",
+            "minutes": 25,
+            "technique": "5 whys",
+            "questions": "Who confirms fraud? When is it reported to Visa? What happens when it is late?"
+          },
+          {
+            "id": "b6",
+            "title": "Read back decisions and actions",
+            "kind": "readback",
+            "minutes": 10,
+            "technique": "Read-back",
+            "questions": ""
+          }
+        ],
+        "notes": [
+          {
+            "id": "D-01",
+            "type": "D",
+            "text": "Blocking is real time in the app and by phone (Ana)",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "D-02",
+            "type": "D",
+            "text": "Three reasons: lost, stolen, used without my permission (Ana, Leo)",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "D-03",
+            "type": "D",
+            "text": "A card declared stolen is never unblocked: a new PAN is issued",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "D-04",
+            "type": "D",
+            "text": "Confirmed fraud is declared to Visa before a fraud dispute is opened (Priya, Kim)",
+            "block": "b5",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-01",
+            "type": "REQ",
+            "text": "Block a card in real time from the app and from the call-centre tool (Ana, Must)",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-02",
+            "type": "REQ",
+            "text": "List a blocked PAN on the Visa Exception File as soon as it is blocked, not in the nightly batch: last incident took 160 min (Tom, Must, feasibility open)",
+            "block": "b3",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-03",
+            "type": "REQ",
+            "text": "Suspend the wallet tokens of a blocked card (Tom, Must)",
+            "block": "b3",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-04",
+            "type": "REQ",
+            "text": "Reason \"used without my permission\" when the card is still with the cardholder (Leo, Must)",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-05",
+            "type": "REQ",
+            "text": "Fraud operations confirm flagged transactions and declare each confirmed fraud to Visa (Priya, Must)",
+            "block": "b5",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-06",
+            "type": "REQ",
+            "text": "Dashboard of fraud cases close to the dispute deadline (Kim, Should)",
+            "block": "b5",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "Q-01",
+            "type": "Q",
+            "text": "Can our processor update the Visa Exception File in real time? At what cost?",
+            "block": "b3",
+            "owner": "Tom",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "Q-02",
+            "type": "Q",
+            "text": "Can a card blocked as lost be unblocked within 24 h? Leo for, Priya against",
+            "block": "b2",
+            "owner": "Ana",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "Q-03",
+            "type": "Q",
+            "text": "What do we tell the cardholder about liability before the declaration? (to confirm with Legal)",
+            "block": "b5",
+            "owner": "Legal",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "A-01",
+            "type": "A",
+            "text": "Ask the processor about real-time Exception File updates",
+            "block": "b3",
+            "owner": "Tom",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "A-02",
+            "type": "A",
+            "text": "Fix token suspension on block (bug, not a project)",
+            "block": "b3",
+            "owner": "Tom",
+            "due": "2026-11-27"
+          },
+          {
+            "id": "A-03",
+            "type": "A",
+            "text": "Volumes and lead times of fraud declarations today",
+            "block": "b5",
+            "owner": "Priya",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "A-04",
+            "type": "A",
+            "text": "Bring Legal to workshop 2",
+            "block": "b6",
+            "owner": "Ana",
+            "due": ""
+          },
+          {
+            "id": "A-05",
+            "type": "A",
+            "text": "Draft the SFD from this report",
+            "block": "b6",
+            "owner": "BA",
+            "due": "2026-11-20"
+          }
+        ],
+        "timer": {
+          "i": 0,
+          "startedAt": null,
+          "acc": 0,
+          "spent": {}
+        }
+      }
+    },
+    {
+      "id": "declare-w2",
+      "label": "Workshop 2 with Legal · plan to fix",
+      "hint": "Over-booked, no read-back",
+      "state": {
+        "goal": "Decide the liability wording and the unblock rule for lost cards",
+        "attendees": "Ana (Head of cards, sponsor), Legal counsel, Priya (Fraud operations), Leo (Call centre manager)",
+        "duration": 60,
+        "date": "2026-11-20",
+        "start": "14:00",
+        "location": "Teams",
+        "preReads": "Workshop 1 report",
+        "nextWorkshop": "",
+        "agenda": [
+          {
+            "id": "p1",
+            "title": "Objective and recap of workshop 1",
+            "kind": "intro",
+            "minutes": 10,
+            "technique": "",
+            "questions": ""
+          },
+          {
+            "id": "p2",
+            "title": "Cardholder liability wording",
+            "kind": "topic",
+            "minutes": 30,
+            "technique": "Example mapping",
+            "questions": "What do we promise before and after the declaration? (to confirm with Legal)"
+          },
+          {
+            "id": "p3",
+            "title": "Unblock rule for lost cards",
+            "kind": "topic",
+            "minutes": 30,
+            "technique": "Dot voting",
+            "questions": "What is the fraud risk if the card is found by someone else?"
+          },
+          {
+            "id": "p4",
+            "title": "Dispute deadline dashboard",
+            "kind": "topic",
+            "minutes": 20,
+            "technique": "Sketch on screen",
+            "questions": "Which cases are close to the deadline today?"
+          }
+        ],
+        "notes": [],
+        "timer": {
+          "i": 0,
+          "startedAt": null,
+          "acc": 0,
+          "spent": {}
+        }
+      }
+    }
+  ],
+  "fr": [
+    {
+      "id": "opposition-a1",
+      "label": "Opposition et déclaration de fraude · notes prises",
+      "hint": "Banque Lumière · CB",
+      "state": {
+        "goal": "Définir comment une carte perdue, volée ou utilisée frauduleusement est mise en opposition, inscrite en liste d'opposition CB, remboursée et traitée en impayé",
+        "attendees": "Anne (responsable monétique, sponsor), Thomas (IT monétique, serveur d'autorisation), Priya (fraude), Léo (centre d'appels), Karim (impayés), BA (animateur), Juridique (absent)",
+        "duration": 120,
+        "date": "2026-11-13",
+        "start": "09:30",
+        "location": "Salle 4B + Teams",
+        "preReads": "Chronologie de l'incident : carte volée autorisée en stand-in (opposition → liste d'opposition 160 min)",
+        "nextWorkshop": "Franchise et texte au porteur, levée d'opposition, seuil de remboursement automatique. Mêmes participants plus le Juridique (obligatoire).",
+        "agenda": [
+          {
+            "id": "b1",
+            "title": "Objectif, règles de séance, cas réel : carte volée autorisée en stand-in",
+            "kind": "intro",
+            "minutes": 10,
+            "technique": "Chronologie à l’écran",
+            "questions": "Tous d'accord sur les 160 min entre l'opposition et l'inscription en liste d'opposition ?"
+          },
+          {
+            "id": "b2",
+            "title": "Opposition : appli, téléphone, motifs",
+            "kind": "topic",
+            "minutes": 35,
+            "technique": "Parcours du processus (BPMN à l’écran)",
+            "questions": "Quels motifs les conseillers utilisent-ils ? Que se passe-t-il si le serveur d'autorisation est indisponible ? Qui est responsable ?"
+          },
+          {
+            "id": "b3",
+            "title": "Liste d'opposition CB et stand-in",
+            "kind": "topic",
+            "minutes": 30,
+            "technique": "Example mapping",
+            "questions": "Quel délai entre opposition et inscription aujourd'hui ? Temps réel possible ? Que contrôle le GIE CB ?"
+          },
+          {
+            "id": "b4",
+            "title": "Pause",
+            "kind": "break",
+            "minutes": 10,
+            "technique": "",
+            "questions": ""
+          },
+          {
+            "id": "b5",
+            "title": "Déclaration de fraude avant impayé",
+            "kind": "topic",
+            "minutes": 25,
+            "technique": "5 pourquoi",
+            "questions": "Qui confirme la fraude ? Quand est-elle déclarée au GIE CB ? Que se passe-t-il en cas de retard ?"
+          },
+          {
+            "id": "b6",
+            "title": "Relecture des décisions et actions",
+            "kind": "readback",
+            "minutes": 10,
+            "technique": "Relecture",
+            "questions": ""
+          }
+        ],
+        "notes": [
+          {
+            "id": "D-01",
+            "type": "D",
+            "text": "Opposition temps réel dans l'appli et au téléphone (Anne)",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "D-02",
+            "type": "D",
+            "text": "Trois motifs : perte, vol, utilisation frauduleuse (Anne, Léo)",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "D-03",
+            "type": "D",
+            "text": "Carte volée : jamais de levée d'opposition, nouvelle carte",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "D-04",
+            "type": "D",
+            "text": "La fraude est déclarée au GIE CB avant tout impayé (Priya, Karim)",
+            "block": "b5",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-01",
+            "type": "REQ",
+            "text": "Mettre une carte en opposition en temps réel depuis l'appli et l'outil du centre d'appels (Anne, Must)",
+            "block": "b2",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-02",
+            "type": "REQ",
+            "text": "Inscrire la carte en liste d'opposition dès l'opposition : dernier incident 160 min (Thomas, Must, faisabilité ouverte)",
+            "block": "b3",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-03",
+            "type": "REQ",
+            "text": "Suspendre les jetons de paiement mobile d'une carte en opposition (Thomas, Must)",
+            "block": "b3",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "REQ-04",
+            "type": "REQ",
+            "text": "Rembourser automatiquement les contestations à J+1 ouvré sauf soupçon de fraude du porteur (Priya, Must, seuil à définir)",
+            "block": "b5",
+            "owner": "",
+            "due": ""
+          },
+          {
+            "id": "Q-01",
+            "type": "Q",
+            "text": "Le serveur d'autorisation peut-il recevoir les oppositions en temps réel ? Coût ?",
+            "block": "b3",
+            "owner": "Thomas",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "Q-02",
+            "type": "Q",
+            "text": "Levée possible sous 24 h pour une carte perdue ? Léo pour, Priya contre",
+            "block": "b2",
+            "owner": "Anne",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "Q-03",
+            "type": "Q",
+            "text": "Franchise de 50 € et texte au porteur (à confirmer avec le Juridique)",
+            "block": "b5",
+            "owner": "Juridique",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "A-01",
+            "type": "A",
+            "text": "Chiffrer l'inscription temps réel en liste d'opposition",
+            "block": "b3",
+            "owner": "Thomas",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "A-02",
+            "type": "A",
+            "text": "Corriger la suspension des jetons à l’opposition",
+            "block": "b3",
+            "owner": "Thomas",
+            "due": "2026-11-27"
+          },
+          {
+            "id": "A-03",
+            "type": "A",
+            "text": "Volumes et délais de déclaration de fraude actuels",
+            "block": "b5",
+            "owner": "Priya",
+            "due": "2026-11-20"
+          },
+          {
+            "id": "A-04",
+            "type": "A",
+            "text": "Inviter le Juridique à l’atelier 2",
+            "block": "b6",
+            "owner": "Anne",
+            "due": ""
+          }
+        ],
+        "timer": {
+          "i": 0,
+          "startedAt": null,
+          "acc": 0,
+          "spent": {}
+        }
+      }
+    },
+    {
+      "id": "opposition-a2",
+      "label": "Atelier 2 avec le Juridique · plan à corriger",
+      "hint": "Trop chargé, sans relecture",
+      "state": {
+        "goal": "Décider du texte de franchise et de la règle de levée d'opposition",
+        "attendees": "Anne (responsable monétique, sponsor), Juriste, Priya (fraude), Léo (centre d’appels)",
+        "duration": 60,
+        "date": "2026-11-20",
+        "start": "14:00",
+        "location": "Teams",
+        "preReads": "Compte-rendu de l'atelier 1",
+        "nextWorkshop": "",
+        "agenda": [
+          {
+            "id": "p1",
+            "title": "Objectif et rappel de l'atelier 1",
+            "kind": "intro",
+            "minutes": 10,
+            "technique": "",
+            "questions": ""
+          },
+          {
+            "id": "p2",
+            "title": "Franchise et texte au porteur",
+            "kind": "topic",
+            "minutes": 30,
+            "technique": "Example mapping",
+            "questions": "Que promet-on avant et après la déclaration ? (à confirmer avec le Juridique)"
+          },
+          {
+            "id": "p3",
+            "title": "Levée d'opposition pour une carte perdue",
+            "kind": "topic",
+            "minutes": 30,
+            "technique": "Vote par points",
+            "questions": "Quel risque si la carte est retrouvée par un tiers ?"
+          },
+          {
+            "id": "p4",
+            "title": "Seuil de remboursement automatique",
+            "kind": "topic",
+            "minutes": 20,
+            "technique": "Esquisse à l’écran",
+            "questions": "Quel montant, quels cas exclus ?"
+          }
+        ],
+        "notes": [],
+        "timer": {
+          "i": 0,
+          "startedAt": null,
+          "acc": 0,
+          "spent": {}
+        }
+      }
+    }
+  ]
+}

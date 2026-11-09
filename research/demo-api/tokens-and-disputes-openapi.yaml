@@ -1,0 +1,715 @@
+openapi: 3.1.0
+info:
+  title: Harbor Bank Card API - tokens and payment lifecycle additions (demo mock)
+  version: 2.1.0-demo
+  summary: Adds wallet tokenization (Apple Pay style) and the payment lifecycle / chargeback flow to the Harbor Bank mock.
+  description: |
+    **Fictional and educational.** Additions to `harbor-bank-openapi.yaml` (same servers, `X-API-Key`, RFC 9457
+    errors, frozen clock 2026-11-08, `POST /_mock/reset`). Design notes and sources: `research/09-tokenization-chargebacks.md`.
+
+    **Nothing here is real cryptography.** Token numbers, Payment Account References (PAR), token reference IDs and
+    cryptograms are random-looking demo strings. Every such value is labelled (`demo_only: true`, `FAKE` prefixes).
+    A real Token Service Provider (Visa Token Service, Mastercard MDES, the CB tokenisation service) generates them with
+    keys held in hardware security modules; Apple never sees the token in clear and the cryptogram is computed inside
+    the device's Secure Element. The mock only imitates the **sequence and the data each actor sees**.
+
+    Roles imitated (EMVCo Payment Tokenisation Technical Framework vocabulary):
+    - **Token requestor** - the wallet (Apple Pay, Google Pay) or a merchant card-on-file; identified by a TRID.
+    - **TSP** - the network token service (VTS for Visa, MDES for Mastercard, CB for co-badged CB cards).
+    - **Issuer** - Harbor Bank: green / yellow / red decision and ID&V.
+    - **Token vault** - kept by the TSP: token ↔ PAN mapping, domain restrictions, status.
+
+    Rules prefixes: **T** tokens, **P** payments, **R** refunds, **D** disputes (D1-D6 already exist in the base spec).
+  license: { name: MIT (spec and fixtures only), identifier: MIT }
+
+servers:
+  - url: mock://harbor/v1
+    description: Harbor Bank (Visa terms) - in-browser mock
+  - url: mock://lumiere/v1
+    description: Banque Lumière (CB terms) - in-browser mock
+  - url: http://localhost:4317/mock/harbor/v1
+    description: Same mock served by the local app
+
+security:
+  - ApiKey: []
+
+tags:
+  - { name: Tokens, description: "Wallet tokenization (provisioning, ID&V, lifecycle, demo cryptogram)" }
+  - { name: Payments, description: "Authorise, capture (clearing), reversal, refund" }
+  - { name: Disputes, description: "Chargeback, representment, pre-arbitration, arbitration" }
+  - { name: Mock, description: Mock-only controls }
+
+paths:
+  /tokens:
+    post:
+      tags: [Tokens]
+      operationId: provisionToken
+      summary: Ask to add a card to a wallet (provisioning request from the token requestor)
+      description: |
+        Imitates Wallet → TSP → issuer ("Check Card" then "Link and Provision" in Apple's public description).
+        Checked **in this order**:
+        - **T1** PAN not in the fixtures → 422 `unknown-test-pan` (same safety rule as A1).
+        - **T2** `token_requestor_id` not in the fixture list → 422 `unknown-token-requestor`.
+        - **T3** Card blocked, expired or on fraud watch → **red**: 201 with `decision: red`, `status: declined`, no token.
+        - **T4** Same card already has an active or pending token on the same `device_id` → 409 `token-already-exists`.
+        - **T5** `device_risk: high` → red. `device_risk: medium`, or wallet account younger than 30 days → **yellow**:
+          token `pending_idv`, `idv_methods` returned; activation needs `POST /tokens/{ref}/idv`.
+        - **T6** Otherwise → **green**: token `active` at once.
+        A red decision is still HTTP 201 (the request was processed; the issuer said no) and returns `decision_reason`.
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProvisionRequest' }
+            examples:
+              green_apple_pay: { value: { pan: "4000000000001014", expiry: "2029-04", wallet: apple_pay, token_requestor_id: "40010030273", device_id: dev_iphone_demo_01, device_type: phone, device_risk: low, wallet_account_age_days: 400 } }
+              yellow_new_device: { value: { pan: "4000000000001087", expiry: "2029-05", wallet: apple_pay, token_requestor_id: "40010030273", device_id: dev_iphone_demo_02, device_type: phone, device_risk: medium, wallet_account_age_days: 3 } }
+              red_stolen_card: { value: { pan: "4000000000001050", expiry: "2029-01", wallet: google_pay, token_requestor_id: "40010075001", device_id: dev_android_demo_01, device_type: phone, device_risk: low, wallet_account_age_days: 900 } }
+      responses:
+        '201':
+          description: Provisioning decision (green, yellow or red)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Token' }
+              examples:
+                green:
+                  value:
+                    token_ref: TRF-HB-0001
+                    decision: green
+                    status: active
+                    card_id: crd_hb_001
+                    pan_masked: "400000******1014"
+                    token_masked: "400099******0012"
+                    token_expiry: "2029-04"
+                    par: "Z999FAKEPAR0000000000000001"
+                    wallet: apple_pay
+                    token_requestor_id: "40010030273"
+                    device_id: dev_iphone_demo_01
+                    domain_restrictions: { channels: [contactless, in_app, web], token_requestor_id: "40010030273", device_bound: true }
+                    assurance: { idv_method: none, level: issuer_approved }
+                    views:
+                      wallet_sees: [token_ref, token_masked, card art, last 4 of PAN]
+                      device_secure_element_holds: [token (device account number), cryptogram key]
+                      merchant_sees: [token_masked, cryptogram, eci, par]
+                      issuer_sees: [pan, token_ref, par, device_id, wallet]
+                    demo_only: true
+                yellow:
+                  value: { token_ref: TRF-HB-0002, decision: yellow, status: pending_idv, card_id: crd_hb_008, pan_masked: "400000******1087", token_masked: "400099******0020", par: "Z999FAKEPAR0000000000000008", wallet: apple_pay, idv_methods: [ { method: sms_otp, target: "+33 6** ** ** 42" }, { method: issuer_app }, { method: call_centre } ], idv_expires_at: "2026-11-08T10:30:00Z", demo_only: true }
+                red:
+                  value: { token_ref: null, decision: red, status: declined, card_id: crd_hb_005, decision_reason: card_blocked_stolen, demo_only: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /tokens/{token_ref}:
+    get:
+      tags: [Tokens]
+      operationId: getToken
+      summary: Read a token from the vault (status, PAN mapping, history)
+      description: |
+        - **T7** Never returns the full token or full PAN (masked 6+4), like C1.
+        - `history` lists every lifecycle event, including the ones caused by `POST /cards/{id}/block` (B3).
+      parameters: [ { $ref: '#/components/parameters/TokenRef' } ]
+      responses:
+        '200':
+          description: The token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Token' }
+              examples:
+                suspended_after_block:
+                  value: { token_ref: TRF-HB-0001, decision: green, status: suspended, card_id: crd_hb_001, pan_masked: "400000******1014", token_masked: "400099******0012", par: "Z999FAKEPAR0000000000000001", wallet: apple_pay, history: [ { at: "2026-11-08T10:00:00Z", event: provisioned, by: issuer }, { at: "2026-11-08T10:10:00Z", event: suspended, by: issuer, reason: card_blocked_stolen } ], demo_only: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /tokens/{token_ref}/idv:
+    post:
+      tags: [Tokens]
+      operationId: completeIdv
+      summary: Complete identification and verification (yellow path)
+      description: |
+        - **T8** Token must be `pending_idv` → else 409 `token-not-pending`.
+        - **T9** Demo one-time code is always `123456` (published on purpose). Wrong code → 422 `idv-failed`;
+          3 wrong codes → token `deleted`, decision becomes red.
+        - **T10** Code older than 10 minutes (`idv_expires_at`) → 422 `idv-expired`.
+      parameters: [ { $ref: '#/components/parameters/TokenRef' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method: { type: string, enum: [sms_otp, issuer_app, call_centre] }
+                otp: { type: string, pattern: '^\d{6}$', description: "Demo code: 123456" }
+            examples:
+              ok: { value: { method: sms_otp, otp: "123456" } }
+      responses:
+        '200': { description: Token active, content: { application/json: { schema: { $ref: '#/components/schemas/Token' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /tokens/{token_ref}/suspend:
+    post:
+      tags: [Tokens]
+      operationId: suspendToken
+      summary: Suspend a token (phone lost, card blocked, fraud suspicion)
+      description: |
+        - **T11** Only an `active` token can be suspended → else 409 `invalid-token-transition`.
+        - `POST /cards/{id}/block` calls this internally for every token of the card (B3).
+      parameters: [ { $ref: '#/components/parameters/TokenRef' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LifecycleRequest' }
+            examples:
+              device_lost: { value: { reason: device_lost, requested_by: cardholder } }
+      responses:
+        '200': { description: Token suspended, content: { application/json: { schema: { $ref: '#/components/schemas/Token' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /tokens/{token_ref}/resume:
+    post:
+      tags: [Tokens]
+      operationId: resumeToken
+      summary: Resume a suspended token, optionally moving it to the replacement card (PAN update)
+      description: |
+        - **T12** Only a `suspended` token can be resumed → else 409 `invalid-token-transition`.
+        - **T13** If the card behind the token is blocked, resume is refused (422 `card-blocked`) **unless**
+          `new_card_id` names the active replacement card of the same cardholder: the vault maps the token to the
+          new PAN (PAN update), keeps the same `par`, and the cardholder keeps paying from the phone without re-adding the card.
+        - **T14** A token suspended with reason `fraud_on_token` cannot be resumed → 422 `token-compromised` (delete it).
+      parameters: [ { $ref: '#/components/parameters/TokenRef' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LifecycleRequest' }
+            examples:
+              pan_update: { value: { reason: card_replaced, requested_by: issuer, new_card_id: crd_hb_008_r1 } }
+      responses:
+        '200': { description: Token active again, content: { application/json: { schema: { $ref: '#/components/schemas/Token' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /tokens/{token_ref}/delete:
+    post:
+      tags: [Tokens]
+      operationId: deleteToken
+      summary: Delete a token for good (card closed, device wiped, token compromised)
+      description: |
+        - **T15** `deleted` is final; any later lifecycle call → 409 `token-deleted`. A cryptogram request → 422.
+      parameters: [ { $ref: '#/components/parameters/TokenRef' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LifecycleRequest' }
+      responses:
+        '200': { description: Token deleted, content: { application/json: { schema: { $ref: '#/components/schemas/Token' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /tokens/{token_ref}/cryptogram:
+    post:
+      tags: [Tokens]
+      operationId: createDemoCryptogram
+      summary: Get a one-time DEMO cryptogram for one payment (imitates the Secure Element)
+      description: |
+        - **T16** Token must be `active` → else 422 `token-not-active` (suspended / deleted / pending_idv).
+        - **T17** `channel` must be inside the token's domain restrictions → else 422 `domain-restriction`
+          (e.g. a device-bound Apple Pay token used as card-on-file by another merchant).
+        - **T18** Each call increments `atc` (application transaction counter); the value is random hex prefixed
+          `FAKE`, **not** computed with any key. Using it with `POST /payments` (`payment_token`) proves nothing
+          cryptographically; the mock only checks that it was issued for this token and not used before (replay → 422).
+        - ECI returned is illustrative (`05` = authenticated); the exact ECI per scheme and wallet is *to confirm*.
+      parameters: [ { $ref: '#/components/parameters/TokenRef' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount_minor, currency, channel]
+              properties:
+                amount_minor: { type: integer, minimum: 1 }
+                currency: { type: string, pattern: '^[A-Z]{3}$' }
+                channel: { type: string, enum: [contactless, in_app, web, card_on_file] }
+                merchant_id: { type: string }
+      responses:
+        '200':
+          description: Demo cryptogram
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DemoCryptogram' }
+              examples:
+                in_app: { value: { token_ref: TRF-HB-0001, cryptogram: "FAKE9c41e07b2d5a8f36", atc: 7, eci: "05", single_use: true, demo_only: true, warning: "Random demo value. Not a cryptogram. No security meaning." } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /payments:
+    post:
+      tags: [Payments]
+      operationId: createPayment
+      summary: Authorise a payment from the merchant side (card or wallet token)
+      description: |
+        Wraps `POST /authorisations` (rules A1-A7) and creates a payment object whose lifecycle the simulator follows.
+        - **P1** Exactly one of `pan` (test fixture) or `payment_token` (`token_ref` + `cryptogram`) → else 400.
+        - **P2** With a token: token active (T16), cryptogram issued for it and unused (T18), then the issuer decides on the
+          mapped PAN. `wallet: true` and `authentication: cryptogram` are stored (used for liability, rule D9).
+        - `three_ds`: `authenticated` (ECI 05), `attempted` (ECI 06), `none` (ECI 07). Liability effects are rule D9.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentRequest' }
+            examples:
+              ecom_3ds: { value: { pan: "4000000000001014", expiry: "2029-04", amount_minor: 12000, currency: EUR, channel: ecom, merchant_id: M-004, three_ds: authenticated } }
+              apple_pay: { value: { payment_token: { token_ref: TRF-HB-0001, cryptogram: "FAKE9c41e07b2d5a8f36" }, amount_minor: 4250, currency: EUR, channel: in_app, merchant_id: M-001 } }
+      responses:
+        '201': { description: Payment authorised or declined (see response_code), content: { application/json: { schema: { $ref: '#/components/schemas/Payment' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /payments/{payment_id}:
+    get:
+      tags: [Payments]
+      operationId: getPayment
+      summary: Read a payment, its amounts and timeline
+      parameters: [ { $ref: '#/components/parameters/PaymentId' } ]
+      responses:
+        '200':
+          description: The payment
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Payment' }
+              examples:
+                refunded:
+                  value: { payment_id: pay_0001, status: partially_refunded, response_code: "00", authorised_minor: 12000, captured_minor: 12000, reversed_minor: 0, refunded_minor: 4000, disputed_minor: 0, currency: EUR, channel: ecom, three_ds: authenticated, wallet: false, arn: "74000002305000000009001", authorised_at: "2026-11-01T10:00:00Z", captured_at: "2026-11-02T02:00:00Z", timeline: [ { at: "2026-11-01T10:00:00Z", event: authorised }, { at: "2026-11-02T02:00:00Z", event: captured }, { at: "2026-11-08T09:00:00Z", event: refunded, amount_minor: 4000 } ] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /payments/{payment_id}/capture:
+    post:
+      tags: [Payments]
+      operationId: capturePayment
+      summary: Capture (send to clearing) all or part of the authorised amount
+      description: |
+        - **P3** Payment `authorised` (not reversed, not yet captured) → else 409 `invalid-payment-transition`.
+        - **P4** `amount_minor` ≤ authorised − reversed → else 422 `capture-exceeds-authorisation`
+          (an amount above the authorisation needs an incremental authorisation, out of scope in the demo).
+        - **P5** Capturing less than authorised releases the rest (simulator shows "partial reversal of the remainder").
+        - Effect: status `captured`, `arn` issued, `captured_at` = mock clock. Day 0 for refunds and disputes.
+      parameters: [ { $ref: '#/components/parameters/PaymentId' } ]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { amount_minor: { type: integer, minimum: 1, description: Defaults to the full authorised amount } } }
+      responses:
+        '200': { description: Captured, content: { application/json: { schema: { $ref: '#/components/schemas/Payment' } } } }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /payments/{payment_id}/reversal:
+    post:
+      tags: [Payments]
+      operationId: reversePayment
+      summary: Cancel before clearing (full or partial authorisation reversal)
+      description: |
+        - **P6** Only while the payment is `authorised` and not captured → else 409 `already-captured`
+          with `detail: "Payment is cleared: use POST /payments/{id}/refunds"`.
+        - **P7** `amount_minor` ≤ authorised − already reversed; omitted = full reversal → status `reversed`;
+          partial → `partially_reversed` (hold reduced, rest still capturable).
+        - Effect for the cardholder: the hold disappears from "pending"; no debit, no credit line on the statement.
+      parameters: [ { $ref: '#/components/parameters/PaymentId' } ]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { amount_minor: { type: integer, minimum: 1 }, reason: { type: string, enum: [customer_cancelled, merchant_cancelled, final_amount_lower, duplicate, timeout] } } }
+            examples:
+              full: { value: { reason: customer_cancelled } }
+      responses:
+        '200': { description: Reversed, content: { application/json: { schema: { $ref: '#/components/schemas/Payment' } } } }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /payments/{payment_id}/refunds:
+    post:
+      tags: [Payments]
+      operationId: refundPayment
+      summary: Refund after clearing (credit to the card, full or partial)
+      description: |
+        - **R1** Payment `captured` (or partially refunded) → else 409 `not-captured` with `detail: "Not cleared yet: use reversal"`.
+        - **R2** Sum of refunds ≤ captured − disputed → else 422 `refund-exceeds-captured`.
+        - **R3** A dispute is open on the payment → 409 `dispute-open` (refunding as well would pay the cardholder twice).
+        - Refund window is a merchant policy, not a scheme rule; the mock accepts any age.
+      parameters: [ { $ref: '#/components/parameters/PaymentId' }, { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [amount_minor], properties: { amount_minor: { type: integer, minimum: 1 }, reason: { type: string, enum: [goods_returned, service_cancelled, goodwill, duplicate] } } }
+            examples:
+              returned: { value: { amount_minor: 4000, reason: goods_returned } }
+      responses:
+        '201': { description: Refund created, content: { application/json: { schema: { $ref: '#/components/schemas/Payment' } } } }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /payments/{payment_id}/disputes:
+    post:
+      tags: [Disputes]
+      operationId: disputePayment
+      summary: Issuer raises a chargeback on a cleared payment
+      description: |
+        Applies D1-D6 of the base spec (D2 counted from `captured_at`), plus:
+        - **D7** Payment must be captured → 422 `not-cleared` (an authorisation-only hold is not charged back).
+        - **D8** Fully refunded payment, or 13.x amount ≤ already refunded → 422 `credit-already-processed`.
+        - **D9** Liability shift (Allocation pre-check, evaluated **before** D3 fraud-report checks): `10.4` on a payment with `three_ds: authenticated` or a wallet
+          cryptogram → 422 `liability-shifted` (the issuer bears the fraud). `three_ds: attempted` is *to confirm*
+          per region; the mock treats it as shifted and says so in `detail`.
+        - **D10** Workflow from the category: 10.x and 11.x → `allocation` (no merchant response step; acquirer may
+          go straight to pre-arbitration); 12.x and 13.x → `collaboration` (`respond_by` = today + 30 days, *to confirm*;
+          acquirers usually give merchants less).
+        - **D11** 13.1 needs `expected_delivery_date` in the past → else 422 `too-early`. Waiting rules are *to confirm*.
+      parameters: [ { $ref: '#/components/parameters/PaymentId' }, { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [condition_code, amount_minor]
+              properties:
+                condition_code: { type: string, pattern: '^1[0-3]\.\d{1,2}$' }
+                amount_minor: { type: integer, minimum: 1 }
+                fraud_report_id: { type: string }
+                expected_delivery_date: { type: string, format: date }
+                cardholder_statement: { type: string, maxLength: 500 }
+            examples:
+              not_received: { value: { condition_code: "13.1", amount_minor: 8900, expected_delivery_date: "2026-10-20", cardholder_statement: "Parcel never arrived" } }
+      responses:
+        '201': { description: Chargeback raised, content: { application/json: { schema: { $ref: '#/components/schemas/LifecycleDispute' } } } }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /disputes/{dispute_id}/representment:
+    post:
+      tags: [Disputes]
+      operationId: representDispute
+      summary: Merchant / acquirer answers the chargeback with evidence (dispute response)
+      description: |
+        - **D12** Status `chargeback` and today ≤ `respond_by` → else 422 `response-window-closed` (merchant loses by default).
+        - **D13** `accept: true` closes as `merchant_accepted` (merchant pays). Otherwise `evidence` is required.
+        - **D14** Mock issuer review (deterministic, for teaching): evidence types that match the condition win the
+          first round → status `won` (funds back to the merchant). Matching set: 13.1 ← `proof_of_delivery`;
+          13.3 ← `product_description` + `return_policy`; 13.6/13.7 ← `refund_issued` or `cancellation_policy_accepted`;
+          12.6 ← `two_separate_orders`; 10.4 ← `compelling_evidence_3_0` (*to confirm* eligibility). Anything else →
+          status `pre_arbitration` (issuer disagrees). Header `X-Mock-Issuer-Decision: accept|pre_arbitrate` forces it.
+      parameters: [ { name: dispute_id, in: path, required: true, schema: { type: string }, example: DSP-2026-0101 } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accept: { type: boolean, default: false }
+                evidence: { type: array, items: { type: string, enum: [proof_of_delivery, signed_delivery, tracking_only, refund_issued, product_description, return_policy, cancellation_policy_accepted, two_separate_orders, compelling_evidence_3_0, authorisation_proof] } }
+                note: { type: string, maxLength: 1000 }
+            examples:
+              delivered: { value: { evidence: [proof_of_delivery, signed_delivery], note: "Delivered 2026-10-18, signed by cardholder" } }
+      responses:
+        '200': { description: Response recorded, content: { application/json: { schema: { $ref: '#/components/schemas/LifecycleDispute' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /disputes/{dispute_id}/pre-arbitration:
+    post:
+      tags: [Disputes]
+      operationId: answerPreArbitration
+      summary: Answer the pre-arbitration, or escalate to arbitration
+      description: |
+        - **D15** Status `pre_arbitration`, answer within 30 days (*to confirm*) → else 422 `response-window-closed`.
+        - **D16** `accept: true` → `lost` (merchant pays the amount). `accept: false` → `arbitration`: the scheme decides;
+          the mock decides from the evidence already on file (D14 table) and adds `fee_minor` to the loser
+          (fee amount *to confirm*; public acquirer guides cite a scheme filing fee).
+      parameters: [ { name: dispute_id, in: path, required: true, schema: { type: string } } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [accept], properties: { accept: { type: boolean }, new_evidence: { type: array, items: { type: string } } } }
+      responses:
+        '200': { description: Outcome, content: { application/json: { schema: { $ref: '#/components/schemas/LifecycleDispute' } } } }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /_mock/clock:
+    post:
+      tags: [Mock]
+      operationId: advanceClock
+      summary: Move the mock clock forward (test deadlines without waiting)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [advance_days], properties: { advance_days: { type: integer, minimum: 1, maximum: 400 } } }
+      responses:
+        '200': { description: New mock date, content: { application/json: { schema: { type: object, properties: { today: { type: string, format: date } } } } } }
+
+components:
+  securitySchemes:
+    ApiKey: { type: apiKey, in: header, name: X-API-Key, description: "Same demo keys as the base spec (hb_test_demo_key, bl_test_demo_key)." }
+
+  parameters:
+    TokenRef: { name: token_ref, in: path, required: true, schema: { type: string, pattern: '^TRF-(HB|BL)-\d{4}$' }, example: TRF-HB-0001, description: Token reference ID. The token number itself never goes in a URL. }
+    PaymentId: { name: payment_id, in: path, required: true, schema: { type: string, pattern: '^pay_\d{4}$' }, example: pay_0001 }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 64 } }
+
+  schemas:
+    ProvisionRequest:
+      type: object
+      required: [pan, expiry, wallet, token_requestor_id, device_id]
+      properties:
+        pan: { type: string, pattern: '^\d{16}$', description: Test PAN from the fixtures only (T1) }
+        expiry: { type: string, pattern: '^\d{4}-\d{2}$' }
+        wallet: { type: string, enum: [apple_pay, google_pay, merchant_card_on_file] }
+        token_requestor_id: { type: string, pattern: '^\d{11}$', description: "TRID - fictional 11-digit demo values (see fixtures)" }
+        device_id: { type: string }
+        device_type: { type: string, enum: [phone, watch, tablet, browser] }
+        device_risk: { type: string, enum: [low, medium, high], description: "Stands for the wallet's device and account risk signals sent to the issuer" }
+        wallet_account_age_days: { type: integer, minimum: 0 }
+    Token:
+      type: object
+      required: [decision, status, demo_only]
+      properties:
+        token_ref: { type: [string, 'null'] }
+        decision: { type: string, enum: [green, yellow, red] }
+        decision_reason: { type: string }
+        status: { type: string, enum: [pending_idv, active, suspended, deleted, declined] }
+        card_id: { type: string }
+        pan_masked: { type: string }
+        token_masked: { type: string, description: "Demo token number from the fictional 400099 range, masked 6+4" }
+        token_expiry: { type: string }
+        par: { type: string, pattern: '^[A-Z0-9]{29}$', description: "Payment Account Reference: 29 characters, first 4 = BIN controller ID (Z999 = fictional)" }
+        wallet: { type: string }
+        token_requestor_id: { type: string }
+        device_id: { type: string }
+        domain_restrictions: { type: object }
+        assurance: { type: object }
+        idv_methods: { type: array, items: { type: object } }
+        idv_expires_at: { type: string, format: date-time }
+        views: { type: object, description: Which actor sees which data (shown as swimlanes by the simulator) }
+        history: { type: array, items: { type: object } }
+        demo_only: { const: true }
+    LifecycleRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, enum: [device_lost, device_found, card_blocked_lost, card_blocked_stolen, card_replaced, fraud_on_token, cardholder_request, card_closed] }
+        requested_by: { type: string, enum: [cardholder, issuer, wallet, tsp] }
+        new_card_id: { type: string, description: Replacement card for a PAN update (T13) }
+    DemoCryptogram:
+      type: object
+      required: [cryptogram, demo_only, warning]
+      properties:
+        token_ref: { type: string }
+        cryptogram: { type: string, pattern: '^FAKE[0-9a-f]{16}$' }
+        atc: { type: integer }
+        eci: { type: string }
+        single_use: { type: boolean }
+        demo_only: { const: true }
+        warning: { type: string }
+    PaymentRequest:
+      type: object
+      required: [amount_minor, currency, channel]
+      properties:
+        pan: { type: string, pattern: '^\d{16}$' }
+        expiry: { type: string }
+        payment_token: { type: object, properties: { token_ref: { type: string }, cryptogram: { type: string } } }
+        amount_minor: { type: integer, minimum: 1 }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        channel: { type: string, enum: [pos, ecom, in_app, contactless] }
+        merchant_id: { type: string }
+        three_ds: { type: string, enum: [authenticated, attempted, none], default: none }
+    Payment:
+      type: object
+      properties:
+        payment_id: { type: string }
+        status: { type: string, enum: [declined, authorised, partially_reversed, reversed, captured, partially_refunded, refunded, disputed] }
+        response_code: { type: string }
+        authorised_minor: { type: integer }
+        captured_minor: { type: integer }
+        reversed_minor: { type: integer }
+        refunded_minor: { type: integer }
+        disputed_minor: { type: integer }
+        currency: { type: string }
+        channel: { type: string }
+        three_ds: { type: string }
+        wallet: { type: boolean }
+        token_ref: { type: [string, 'null'] }
+        arn: { type: [string, 'null'] }
+        authorised_at: { type: string, format: date-time }
+        captured_at: { type: [string, 'null'], format: date-time }
+        timeline: { type: array, items: { type: object } }
+    LifecycleDispute:
+      type: object
+      properties:
+        dispute_id: { type: string }
+        payment_id: { type: string }
+        condition_code: { type: string }
+        workflow: { type: string, enum: [allocation, collaboration] }
+        status: { type: string, enum: [chargeback, represented, pre_arbitration, arbitration, won, lost, merchant_accepted] }
+        amount_minor: { type: integer }
+        respond_by: { type: [string, 'null'], format: date }
+        liability: { type: string, description: "Who carries the amount right now: issuer | merchant | pending" }
+        ledger:
+          type: array
+          description: Money moves so far (who is debited / credited), for the "who pays" panel
+          items: { type: object, properties: { at: { type: string }, debit: { type: string }, credit: { type: string }, amount_minor: { type: integer } } }
+        history: { type: array, items: { type: object } }
+        fee_minor: { type: integer, description: Arbitration fee charged to the loser (amount *to confirm*) }
+    Problem:   # same as harbor-bank-openapi.yaml, repeated so this file validates on its own (keep one copy on merge)
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        rule: { type: string }
+
+  responses:
+    BadRequest: { description: Malformed body, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    Unauthorized: { description: Missing or invalid key, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    NotFound: { description: "Unknown token, payment or dispute", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    Conflict: { description: State does not allow this transition, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' }, example: { type: 'https://harbor.example/problems/already-captured', title: Payment already captured, status: 409, detail: "Payment is cleared: use POST /payments/pay_0001/refunds", rule: P6 } } } }
+    Unprocessable: { description: Business rule refused the request, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' }, example: { type: 'https://harbor.example/problems/liability-shifted', title: Fraud liability shifted to the issuer, status: 422, detail: "Payment was 3-D Secure authenticated (ECI 05)", rule: D9 } } } }
+
+
+# ---------------------------------------------------------------- mock fixtures (additions)
+x-mock-fixtures:
+  token_requestors:
+    - { token_requestor_id: "40010030273", name: Apple Pay (demo TRID), type: wallet, device_bound: true }
+    - { token_requestor_id: "40010075001", name: Google Pay (demo TRID), type: wallet, device_bound: true }
+    - { token_requestor_id: "40010099001", name: QuickGift Codes card-on-file (demo), type: merchant, device_bound: false }
+  token_numbers:   # fictional 400099 range, Luhn-valid, never routable; assigned in order
+    - "4000990000000012"
+    - "4000990000000020"
+    - "4000990000000038"
+    - "4000990000000046"
+    - "4000990000000053"
+  provisioning_expectations:
+    - { card_id: crd_hb_001, device_risk: low,    expect: green }
+    - { card_id: crd_hb_008, device_risk: medium, expect: "yellow (OTP 123456)" }
+    - { card_id: crd_hb_006, device_risk: low,    expect: "red (fraud watch)" }
+    - { card_id: crd_hb_005, device_risk: low,    expect: "red (blocked stolen)" }
+    - { card_id: crd_hb_003, device_risk: low,    expect: "red (expired)" }
+    - { card_id: crd_bl_001, device_risk: low,    expect: "green (CB twin, TRF-BL-xxxx)" }
+  payments:
+    - { payment_id: pay_0001, card_id: crd_hb_001, amount_minor: 12000, status: captured, captured_at: "2026-11-02", three_ds: authenticated, channel: ecom, merchant: "M-004 Northwind Shoes (demo)" }
+    - { payment_id: pay_0002, card_id: crd_hb_001, amount_minor: 8900,  status: captured, captured_at: "2026-10-12", three_ds: none, channel: ecom, merchant: "M-007 Atlas Home (demo)", expected_delivery_date: "2026-10-20" }
+    - { payment_id: pay_0003, card_id: crd_hb_008, amount_minor: 6500,  status: authorised, channel: pos, merchant: "M-002 Harbour Hotel (demo)" }
+    - { payment_id: pay_0004, card_id: crd_hb_005, amount_minor: 34900, status: captured, captured_at: "2026-10-30", three_ds: none, channel: ecom, merchant: "M-011 QuickGift Codes (demo)", note: "after the theft; fraud report FR-2026-1301" }
+    - { payment_id: pay_0005, card_id: crd_hb_005, amount_minor: 21900, status: captured, captured_at: "2026-10-30", three_ds: authenticated, channel: ecom, merchant: "M-011 QuickGift Codes (demo)" }
+
+# ---------------------------------------------------------------- ready-made test cases
+x-test-cases:
+  - id: TK-01
+    name: Green path - card added to Apple Pay at once
+    request: { method: POST, path: /tokens, body: { pan: "4000000000001014", expiry: "2029-04", wallet: apple_pay, token_requestor_id: "40010030273", device_id: dev_iphone_demo_01, device_risk: low, wallet_account_age_days: 400 } }
+    assert: [ "status == 201", "body.decision == 'green'", "body.status == 'active'", "body.token_masked startsWith '400099'", "body has no field 'pan'", "body.par matches ^[A-Z0-9]{29}$", "body.demo_only == true" ]
+  - id: TK-02
+    name: Yellow path - one-time code activates the token
+    steps:
+      - { request: { method: POST, path: /tokens, body: { pan: "4000000000001087", expiry: "2029-05", wallet: apple_pay, token_requestor_id: "40010030273", device_id: dev_iphone_demo_02, device_risk: medium, wallet_account_age_days: 3 } }, assert: [ "body.decision == 'yellow'", "body.status == 'pending_idv'" ] }
+      - { request: { method: POST, path: "/tokens/{{token_ref}}/idv", body: { method: sms_otp, otp: "000000" } }, assert: [ "status == 422", "body.rule == 'T9'" ] }
+      - { request: { method: POST, path: "/tokens/{{token_ref}}/idv", body: { method: sms_otp, otp: "123456" } }, assert: [ "status == 200", "body.status == 'active'" ] }
+  - id: TK-03
+    name: Red path - blocked or fraud-watch cards get no token
+    request: { method: POST, path: /tokens, body: { pan: "{{pan}}", expiry: "{{expiry}}", wallet: apple_pay, token_requestor_id: "40010030273", device_id: dev_x, device_risk: low } }
+    data:
+      - { pan: "4000000000001050", expiry: "2029-01", expect_reason: card_blocked_stolen }
+      - { pan: "4000000000001069", expiry: "2029-02", expect_reason: fraud_watch }
+      - { pan: "4000000000001032", expiry: "2026-09", expect_reason: card_expired }
+    assert: [ "status == 201", "body.decision == 'red'", "body.token_ref == null", "body.decision_reason == {{expect_reason}}" ]
+  - id: TK-04
+    name: Demo cryptogram is single-use and respects domain restrictions
+    steps:
+      - { request: { method: POST, path: /tokens/TRF-HB-0001/cryptogram, body: { amount_minor: 4250, currency: EUR, channel: in_app } }, assert: [ "status == 200", "body.cryptogram startsWith 'FAKE'", "body.demo_only == true" ] }
+      - { request: { method: POST, path: /payments, body: { payment_token: { token_ref: TRF-HB-0001, cryptogram: "{{cryptogram}}" }, amount_minor: 4250, currency: EUR, channel: in_app } }, assert: [ "status == 201", "body.response_code == '00'", "body.wallet == true" ] }
+      - { request: { method: POST, path: /payments, body: { payment_token: { token_ref: TRF-HB-0001, cryptogram: "{{cryptogram}}" }, amount_minor: 4250, currency: EUR, channel: in_app } }, assert: [ "status == 422", "body.rule == 'T18'" ] }
+      - { request: { method: POST, path: /tokens/TRF-HB-0001/cryptogram, body: { amount_minor: 1000, currency: EUR, channel: card_on_file } }, assert: [ "status == 422", "body.rule == 'T17'" ] }
+    precondition: TK-01 ran (token TRF-HB-0001 active)
+  - id: TK-05
+    name: Storyline - stolen card suspends the token, no cryptogram, PAN update on the replacement card
+    steps:
+      - { request: { method: POST, path: /tokens, body: { pan: "4000000000001087", expiry: "2029-05", wallet: apple_pay, token_requestor_id: "40010030273", device_id: dev_iphone_demo_03, device_risk: low, wallet_account_age_days: 500 } }, assert: [ "body.status == 'active'" ] }
+      - { request: { method: POST, path: /cards/crd_hb_008/block, body: { reason: stolen, channel: app } }, assert: [ "status == 200", "every body.wallet_tokens.status == 'suspended'" ] }
+      - { request: { method: POST, path: "/tokens/{{token_ref}}/cryptogram", body: { amount_minor: 1000, currency: EUR, channel: contactless } }, assert: [ "status == 422", "body.rule == 'T16'" ] }
+      - { request: { method: POST, path: "/tokens/{{token_ref}}/resume", body: { reason: card_blocked_stolen } }, assert: [ "status == 422", "body.rule == 'T13'" ] }
+      - { request: { method: POST, path: "/tokens/{{token_ref}}/resume", body: { reason: card_replaced, requested_by: issuer, new_card_id: crd_hb_008_r1 } }, assert: [ "status == 200", "body.status == 'active'", "body.card_id == 'crd_hb_008_r1'", "body.par unchanged" ] }
+  - id: TK-06
+    name: Lifecycle transitions - delete is final
+    steps:
+      - { request: { method: POST, path: /tokens/TRF-HB-0001/resume, body: { reason: cardholder_request } }, assert: [ "status == 409", "body.rule == 'T12'" ] }
+      - { request: { method: POST, path: /tokens/TRF-HB-0001/suspend, body: { reason: device_lost, requested_by: cardholder } }, assert: [ "status == 200", "body.status == 'suspended'" ] }
+      - { request: { method: POST, path: /tokens/TRF-HB-0001/delete, body: { reason: cardholder_request } }, assert: [ "status == 200", "body.status == 'deleted'" ] }
+      - { request: { method: POST, path: /tokens/TRF-HB-0001/resume, body: { reason: device_found } }, assert: [ "status == 409", "body.type endsWith 'token-deleted'" ] }
+  - id: PL-01
+    name: Cancel before clearing is a reversal, not a refund
+    steps:
+      - { request: { method: POST, path: /payments/pay_0003/refunds, body: { amount_minor: 6500, reason: service_cancelled } }, assert: [ "status == 409", "body.rule == 'R1'" ] }
+      - { request: { method: POST, path: /payments/pay_0003/reversal, body: { reason: customer_cancelled } }, assert: [ "status == 200", "body.status == 'reversed'", "body.reversed_minor == 6500" ] }
+      - { request: { method: POST, path: /payments/pay_0003/capture }, assert: [ "status == 409", "body.rule == 'P3'" ] }
+  - id: PL-02
+    name: After clearing, cancel becomes a refund (partial)
+    steps:
+      - { request: { method: POST, path: /payments/pay_0001/reversal }, assert: [ "status == 409", "body.rule == 'P6'", "body.detail contains 'refunds'" ] }
+      - { request: { method: POST, path: /payments/pay_0001/refunds, body: { amount_minor: 4000, reason: goods_returned } }, assert: [ "status == 201", "body.status == 'partially_refunded'", "body.refunded_minor == 4000" ] }
+      - { request: { method: POST, path: /payments/pay_0001/refunds, body: { amount_minor: 8001 } }, assert: [ "status == 422", "body.rule == 'R2'" ] }
+  - id: PL-03
+    name: Goods not received - merchant wins with proof of delivery
+    steps:
+      - { request: { method: POST, path: /payments/pay_0002/disputes, body: { condition_code: "13.1", amount_minor: 8900, expected_delivery_date: "2026-10-20" } }, assert: [ "status == 201", "body.workflow == 'collaboration'", "body.status == 'chargeback'", "body.respond_by == '2026-12-08'" ] }
+      - { request: { method: POST, path: "/disputes/{{dispute_id}}/representment", body: { evidence: [proof_of_delivery, signed_delivery] } }, assert: [ "status == 200", "body.status == 'won'", "body.liability == 'issuer'" ] }
+      - { request: { method: POST, path: /payments/pay_0002/refunds, body: { amount_minor: 100 } }, assert: [ "status == 201" ], note: "dispute closed, refund allowed again" }
+  - id: PL-04
+    name: Fraud on a stolen card - liability depends on 3-D Secure
+    steps:
+      - { request: { method: POST, path: /payments/pay_0005/disputes, body: { condition_code: "10.4", amount_minor: 21900, fraud_report_id: FR-2026-1301 } }, assert: [ "status == 422", "body.rule == 'D9'" ] }
+      - { request: { method: POST, path: /payments/pay_0004/disputes, body: { condition_code: "10.4", amount_minor: 34900 } }, assert: [ "status == 422", "body.type endsWith 'fraud-report-required'" ] }
+      - { request: { method: POST, path: /payments/pay_0004/disputes, body: { condition_code: "10.4", amount_minor: 34900, fraud_report_id: FR-2026-1301 } }, assert: [ "status == 201", "body.workflow == 'allocation'", "body.liability == 'merchant'" ] }
+  - id: PL-05
+    name: Missed response window - merchant loses by default
+    steps:
+      - { request: { method: POST, path: /payments/pay_0002/disputes, body: { condition_code: "13.1", amount_minor: 8900, expected_delivery_date: "2026-10-20" } }, assert: [ "status == 201" ] }
+      - { request: { method: POST, path: /_mock/clock, body: { advance_days: 31 } }, assert: [ "body.today == '2026-12-09'" ] }
+      - { request: { method: POST, path: "/disputes/{{dispute_id}}/representment", body: { evidence: [proof_of_delivery] } }, assert: [ "status == 422", "body.rule == 'D12'" ] }
+  - id: PL-06
+    name: Weak evidence - pre-arbitration then arbitration with fee
+    steps:
+      - { request: { method: POST, path: /payments/pay_0002/disputes, body: { condition_code: "13.1", amount_minor: 8900, expected_delivery_date: "2026-10-20" } }, assert: [ "status == 201" ] }
+      - { request: { method: POST, path: "/disputes/{{dispute_id}}/representment", body: { evidence: [tracking_only] } }, assert: [ "body.status == 'pre_arbitration'" ] }
+      - { request: { method: POST, path: "/disputes/{{dispute_id}}/pre-arbitration", body: { accept: false } }, assert: [ "body.status == 'lost'", "body.ledger[-1].debit == 'merchant'", "body has field fee_minor" ] }
+
+x-cb-twin:
+  labels_fr: { tokens: "jeton (token) / numéro de compte de l'appareil", idv: "vérification d'identité (ID&V)", reversal: "annulation (avant remise)", refund: "remboursement / avoir", dispute: "impayé", representment: "représentation", pre-arbitration: "pré-arbitrage (*to confirm* terme CB)" }
+  differences:
+    - "TSP for CB-routed tokens: CB tokenisation service (public detail limited; *to confirm*). Co-badged Visa/CB cards may hold a token per network: *to confirm*."
+    - "Disputes: impayé motifs and deadlines are in the CB rulebook (not public) - the mock accepts 10.x-13.x labelled in French and marks every CB code *to confirm*."
+    - "Unauthorised payment reported by the cardholder: refund by the end of the next business day (CMF L133-18), within 13 months of the debit (L133-24). The mock returns refund_due_by and contest_until on FR disputes."

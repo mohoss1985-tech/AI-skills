@@ -1,0 +1,306 @@
+{
+ "en": [
+  {
+   "id": "harbor-lost-stolen",
+   "title": "Lost / stolen card: 2 stories → 6 tests (Xray Cloud)",
+   "client": "Harbor Bank (sample)",
+   "state": {
+    "title": "Lost / stolen card tests",
+    "project": "CARD",
+    "target": "cloud",
+    "folder": "/Cards/Lost or stolen",
+    "features": {
+     "CARD-110": "Block a lost or stolen card in the app",
+     "CARD-112": "List a blocked card on the Visa Exception File"
+    },
+    "background": {
+     "CARD-112": "Given the test card 4111 1111 1111 1111 is active\nAnd the issuer host is reachable"
+    },
+    "execution": {
+     "summary": "Lost / stolen release · UAT day 8 · staging",
+     "version": "R26.11",
+     "testPlanKey": "CARD-500",
+     "environments": "staging"
+    },
+    "tests": [
+     {
+      "id": "CARD-T01",
+      "type": "manual",
+      "summary": "Lost card, one active card: block in the app in under a minute",
+      "priority": "High",
+      "requirements": "CARD-110",
+      "labels": "cards happy-path",
+      "folder": "",
+      "precondition": "Test customer TST-0042 with one active Visa debit card ending 1111, logged in to the app (staging).",
+      "steps": [
+       {
+        "action": "Open Cards and tap Block on the card ending 1111",
+        "data": "Reason: lost",
+        "result": "A confirmation names the card ending 1111"
+       },
+       {
+        "action": "Confirm the block",
+        "data": "",
+        "result": "Card status is Blocked within 5 s"
+       },
+       {
+        "action": "Try a payment with the card on the test terminal",
+        "data": "Amount 12.00 EUR",
+        "result": "Declined with response code 41 (lost card) *to confirm*"
+       }
+      ],
+      "scenario": "",
+      "definition": "",
+      "status": "passed"
+     },
+     {
+      "id": "CARD-T02",
+      "type": "manual",
+      "summary": "Two active cards: the confirmation names the card chosen",
+      "priority": "Critical",
+      "requirements": "CARD-110",
+      "labels": "cards, high risk",
+      "folder": "",
+      "precondition": "Test customer TST-0057 with active cards ending 1111 and 1177.",
+      "steps": [
+       {
+        "action": "Tap Block on the card ending 1177",
+        "data": "Reason: stolen",
+        "result": "The confirmation names the card ending 1177"
+       },
+       {
+        "action": "Confirm the block",
+        "data": "",
+        "result": "Only the card ending 1177 is Blocked; 1111 stays Active"
+       }
+      ],
+      "scenario": "",
+      "definition": "",
+      "status": "failed",
+      "comment": "Confirmation shows the card ending 4821",
+      "defects": "CARD-302"
+     },
+     {
+      "id": "CARD-T03",
+      "type": "manual",
+      "summary": "Stolen card declined in stand-in after the block",
+      "priority": "Highest",
+      "requirements": "CARD-112",
+      "labels": "exception-file stand-in",
+      "folder": "",
+      "precondition": "Card 4111 1111 1111 1111 blocked as stolen at T0; issuer host switched to stand-in on the scheme simulator.",
+      "steps": [
+       {
+        "action": "Wait 5 minutes after the block",
+        "data": "",
+        "result": "The card is listed on the Exception File (listing confirmation received)"
+       },
+       {
+        "action": "Send an authorisation in stand-in",
+        "data": "Amount 49.90 EUR, MCC 5411",
+        "result": "Declined in stand-in"
+       }
+      ],
+      "scenario": "",
+      "definition": "",
+      "status": "failed",
+      "comment": "Stolen card approved in stand-in (Exception File listing took 160 min)",
+      "defects": "CARD-301"
+     },
+     {
+      "id": "CARD-T04",
+      "type": "cucumber",
+      "summary": "Listing is retried after a host time-out",
+      "priority": "High",
+      "requirements": "CARD-112",
+      "labels": "exception-file",
+      "folder": "",
+      "precondition": "",
+      "steps": [],
+      "scenario": "When the card is blocked as stolen\nAnd the first listing call times out\nThen the listing is retried until the scheme confirms it\nAnd the card is listed within 5 minutes of the block",
+      "definition": ""
+     },
+     {
+      "id": "CARD-T05",
+      "type": "cucumber",
+      "summary": "Block reasons map to the listing action code",
+      "priority": "High",
+      "requirements": "CARD-112",
+      "labels": "exception-file",
+      "folder": "",
+      "precondition": "",
+      "steps": [],
+      "scenario": "When the card is blocked with reason \"<reason>\"\nThen the Exception File listing uses action code \"<code>\"\nExamples:\n| reason | code |\n| lost | 41 |\n| stolen | 43 |",
+      "definition": ""
+     },
+     {
+      "id": "CARD-T06",
+      "type": "generic",
+      "summary": "Block API returns 200 and status blocked (API tester run)",
+      "priority": "High",
+      "requirements": "CARD-110",
+      "labels": "api regression",
+      "folder": "",
+      "precondition": "",
+      "steps": [],
+      "scenario": "",
+      "definition": "api.block-card.happy-path",
+      "status": "passed"
+     }
+    ]
+   }
+  }
+ ],
+ "fr": [
+  {
+   "id": "lumiere-opposition",
+   "title": "Mise en opposition : 2 stories → 6 tests (Xray Server / DC)",
+   "client": "Banque Lumière (exemple)",
+   "state": {
+    "title": "Tests de mise en opposition",
+    "project": "CARTE",
+    "target": "server",
+    "folder": "/Cartes/Opposition",
+    "features": {
+     "CARTE-110": "Mettre une carte en opposition dans l'appli",
+     "CARTE-112": "Inscrire la carte en liste d'opposition CB"
+    },
+    "background": {
+     "CARTE-112": "Soit la carte de test 4970 1000 0000 0001 active\nEt le serveur d'autorisation joignable"
+    },
+    "execution": {
+     "summary": "Release opposition · recette J8 · recette",
+     "version": "R26.11",
+     "testPlanKey": "CARTE-500",
+     "environments": "recette"
+    },
+    "tests": [
+     {
+      "id": "CARTE-T01",
+      "type": "manual",
+      "summary": "Carte perdue, une seule carte : opposition dans l'appli en moins d'une minute",
+      "priority": "High",
+      "requirements": "CARTE-110",
+      "labels": "cartes parcours-nominal",
+      "folder": "",
+      "precondition": "Client de test TST-0042 avec une carte CB active finissant par 0001, connecté à l'appli (recette).",
+      "steps": [
+       {
+        "action": "Ouvrir Cartes et toucher Faire opposition sur la carte 0001",
+        "data": "Motif : perte",
+        "result": "La confirmation nomme la carte 0001"
+       },
+       {
+        "action": "Confirmer l'opposition",
+        "data": "",
+        "result": "Statut En opposition en moins de 5 s"
+       },
+       {
+        "action": "Tenter un paiement sur le terminal de test",
+        "data": "Montant 12,00 EUR",
+        "result": "Refusé (carte en opposition) *code à confirmer*"
+       }
+      ],
+      "scenario": "",
+      "definition": "",
+      "status": "passed"
+     },
+     {
+      "id": "CARTE-T02",
+      "type": "manual",
+      "summary": "Deux cartes actives : la confirmation nomme la carte choisie",
+      "priority": "Critical",
+      "requirements": "CARTE-110",
+      "labels": "cartes, risque eleve",
+      "folder": "",
+      "precondition": "Client de test TST-0057 avec deux cartes actives finissant par 0001 et 1177.",
+      "steps": [
+       {
+        "action": "Toucher Faire opposition sur la carte 1177",
+        "data": "Motif : vol",
+        "result": "La confirmation nomme la carte 1177"
+       },
+       {
+        "action": "Confirmer l'opposition",
+        "data": "",
+        "result": "Seule la carte 1177 est En opposition ; 0001 reste Active"
+       }
+      ],
+      "scenario": "",
+      "definition": "",
+      "status": "failed",
+      "comment": "La confirmation affiche la carte 4821",
+      "defects": "CARTE-302"
+     },
+     {
+      "id": "CARTE-T03",
+      "type": "manual",
+      "summary": "Carte volée refusée en autorisation de secours (stand-in)",
+      "priority": "Highest",
+      "requirements": "CARTE-112",
+      "labels": "liste-opposition stand-in",
+      "folder": "",
+      "precondition": "Carte 4970 1000 0000 0001 en opposition pour vol à T0 ; serveur d'autorisation en mode secours sur le simulateur.",
+      "steps": [
+       {
+        "action": "Attendre 5 minutes après l'opposition",
+        "data": "",
+        "result": "La carte est inscrite en liste d'opposition (confirmation reçue)"
+       },
+       {
+        "action": "Envoyer une autorisation en stand-in",
+        "data": "Montant 49,90 EUR, MCC 5411",
+        "result": "Refusée en stand-in"
+       }
+      ],
+      "scenario": "",
+      "definition": "",
+      "status": "failed",
+      "comment": "Carte volée acceptée en stand-in (inscription en liste d'opposition en 160 min)",
+      "defects": "CARTE-301"
+     },
+     {
+      "id": "CARTE-T04",
+      "type": "cucumber",
+      "summary": "L'inscription est relancée après un time-out du serveur",
+      "priority": "High",
+      "requirements": "CARTE-112",
+      "labels": "liste-opposition",
+      "folder": "",
+      "precondition": "",
+      "steps": [],
+      "scenario": "Quand la carte est mise en opposition pour vol\nEt le premier appel d'inscription tombe en time-out\nAlors l'inscription est relancée jusqu'à confirmation\nEt la carte est inscrite moins de 5 minutes après l'opposition",
+      "definition": ""
+     },
+     {
+      "id": "CARTE-T05",
+      "type": "cucumber",
+      "summary": "Le motif d'opposition donne le bon code de la liste",
+      "priority": "High",
+      "requirements": "CARTE-112",
+      "labels": "liste-opposition",
+      "folder": "",
+      "precondition": "",
+      "steps": [],
+      "scenario": "Quand la carte est mise en opposition avec le motif \"<motif>\"\nAlors l'inscription utilise le code \"<code>\"\nExemples:\n| motif | code |\n| perte | *à confirmer* |\n| vol | *à confirmer* |",
+      "definition": ""
+     },
+     {
+      "id": "CARTE-T06",
+      "type": "generic",
+      "summary": "L'API d'opposition répond 200 et statut opposee (testeur d'API)",
+      "priority": "High",
+      "requirements": "CARTE-110",
+      "labels": "api regression",
+      "folder": "",
+      "precondition": "",
+      "steps": [],
+      "scenario": "",
+      "definition": "api.opposition-carte.nominal",
+      "status": "passed"
+     }
+    ]
+   }
+  }
+ ]
+}

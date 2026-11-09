@@ -1,0 +1,26 @@
+/* KB audit grid: styles scoped under .tool-kb-audit (owner I). Tokens only. */
+.tool-kb-audit [hidden] { display: none !important; }
+.tool-kb-audit .tf-command-inputs textarea { min-height: 76px; font-size: var(--fs-12); }
+.tool-kb-audit .advanced { margin-bottom: var(--s-4); }
+.tool-kb-audit .kb-adv { display: grid; gap: var(--s-4); max-width: 880px; }
+.tool-kb-audit .kb-adv-row, .tool-kb-audit .kb-cycles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s-3); align-items: end; }
+.tool-kb-audit .kb-adv-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1000px) { .tool-kb-audit .kb-adv-row, .tool-kb-audit .kb-cycles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tool-kb-audit .kb-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: var(--s-6); }
+@media (max-width: 1100px) { .tool-kb-audit .kb-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tool-kb-audit .kb-tile { padding: var(--s-4); border-right: 1px solid var(--line); min-width: 0; display: grid; gap: var(--s-1); align-content: start; }
+.tool-kb-audit .kb-tile:last-child { border-right: 0; }
+.tool-kb-audit .kb-tile-t { font-size: var(--fs-12); color: var(--fg-2); font-weight: var(--fw-medium); }
+.tool-kb-audit .kb-tile-big { font-size: var(--fs-20); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+.tool-kb-audit .kb-tile-sub { font-size: var(--fs-12); color: var(--fg-2); }
+.tool-kb-audit .kb-bar { display: flex; gap: 2px; height: 8px; margin: var(--s-1) 0; }
+.tool-kb-audit .kb-seg { border-radius: var(--r-sm); min-width: 4px; }
+.tool-kb-audit .b-fresh { background: var(--ok-solid); }
+.tool-kb-audit .b-due { background: var(--info-solid); }
+.tool-kb-audit .b-stale { background: var(--warn-solid); }
+.tool-kb-audit .b-never { background: var(--bad-solid); }
+.tool-kb-audit .kb-legend { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3); font-size: var(--fs-11); color: var(--fg-2); }
+.tool-kb-audit .kb-legend span { display: inline-flex; align-items: center; gap: var(--s-1); }
+.tool-kb-audit .kb-legend i { width: 8px; height: 8px; border-radius: var(--r-sm); }
+.tool-kb-audit .kb-owner, .tool-kb-audit .kb-cov { display: inline-flex; gap: var(--s-2); align-items: center; flex-wrap: wrap; }
+.tool-kb-audit .table td.mono, .tool-kb-audit .table td:first-child { white-space: nowrap; }

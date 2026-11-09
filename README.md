@@ -1,12 +1,51 @@
-# Analyst Kit · AI skills for card payments & API product work
+# Analyst Kit V2 · working tools for payments BAs & POs
 
-**Eighteen AI skills that do the work of a Business Analyst / Product Owner in card payments, in a local app where every deliverable starts from a few precise questions and your own documents. Samples in English follow Visa rules; samples in French follow CB (Cartes Bancaires) rules.**
+**Twenty tools that do the job of a Business Analyst / Product Owner in card payments: test an API, run SQL, draw a BPMN, plan a PI, run a UAT, tokenise a card, follow a chargeback. Each one needs 3–4 inputs and about 60 seconds, works without AI, and Claude drafts, critiques and explains on top. English samples follow Visa rules (Harbor Bank); French samples follow CB rules (Banque Lumière).**
 
-[![Open the live demo](https://img.shields.io/badge/%E2%96%B6%20Open%20the%20live%20demo-5e6ad2?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
+[![Open the live demo](https://img.shields.io/badge/%E2%96%B6%20Open%20the%20live%20demo-2563eb?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
+[![V1](https://img.shields.io/badge/V1%20(frozen)-gray?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/v1/)
 
-**[Live demo](https://mohoss1985-tech.github.io/AI-skills/)**: browse every skill and finished sample in your browser, in English (Visa) or French (CB). Read-only: generating your own deliverables runs locally with Claude Code.
+🇫🇷 [Version française](README.fr.md) · [Changelog](CHANGELOG.md)
 
-🇫🇷 [Version française](README.fr.md)
+![API tester](screenshots/v2/final/api-tester-en-light.png)
+
+## Try it in 60 seconds
+
+| Demo | What you see |
+|---|---|
+| [**Test a card-blocking API**](https://mohoss1985-tech.github.io/AI-skills/#/tool/api-tester?sample=en:0) | Method + URL, auth, data, expected result. Send → 200, click a value to make a check, then pay with the blocked card → declined 41. Export curl, Postman, pytest. |
+| [**Notes → user stories → Jira**](https://mohoss1985-tech.github.io/AI-skills/#/tool/story-builder?sample=en:0) | Example mapping turns rules into stories and Gherkin, with an INVEST check per story and a Jira CSV. |
+| [**Top decline codes with SQL**](https://mohoss1985-tech.github.io/AI-skills/#/tool/sql-runner?sample=en:0) | Real SQL on a sample card database, right in the browser. One query finds the stolen card approved in stand-in. |
+
+## V1 → V2
+
+| | V1 (Nov 2, [frozen at /v1/](https://mohoss1985-tech.github.io/AI-skills/v1/)) | V2 |
+|---|---|---|
+| What a skill gives you | A document written by Claude from a form | A working tool + the document |
+| API testing | A test plan to read | A real API client: 4 inputs, no-code checks, curl / Postman / pytest export |
+| SQL | A query to copy | Runs on a sample card database, locally and in the browser |
+| Process maps | Generated `.bpmn` | Editable BPMN canvas (bpmn-js) |
+| Backlog, UAT, RAG eval | Reports | Live WSJF grid, go/no-go gauge, release gate |
+| Payments depth | Authorisation, card blocking, chargebacks | + **Tokenisation simulator** (card → Apple Pay token) and **payment lifecycle & chargeback simulator** |
+| Design | Single column | Design system, light/dark, ⌘K, EN/FR |
+| Security | Local server | + Origin/Host checks and a per-boot write token |
+
+## The twenty tools
+
+| Group | Tools |
+|---|---|
+| Specify | BPMN editor · PRD builder (goal → requirement → metric trace) · Story builder · SFD builder |
+| Test | API tester · UAT tracker · Xray builder |
+| Data | SQL runner · Mapping grid · Tokenisation simulator · Payment lifecycle & chargebacks |
+| Plan | WSJF & PI planner · Impact heatmap |
+| Facilitate | Workshop kit (agenda, timer, notes → report) · RACI & power grid · Journey builder |
+| AI governance | AI risk register (EU AI Act) · RAG eval scorer · KB audit · AI use-case scorer |
+
+```bash
+python3 app/server/server.py      # then open http://localhost:4317 (no installs, no API key)
+```
+
+---
 
 I worked at a French card payment network. The work sits between **issuers** (émetteurs), **acquirers** (acquéreurs) and the network: card **authorisation**, **PAN declaration** (blocking a lost or stolen card, declaring fraud), **chargebacks** (impayés), interchange, clearing and settlement, and the APIs between them.
 
@@ -43,22 +82,22 @@ The English samples use **Visa** terms and the French samples use **CB** terms. 
 
 | Step | Skill | English (Visa) | French (CB) |
 |---|---|---|---|
-| Frame | PRD | [Declare a lost or stolen card in the app](app/seed/3-prd.md) | [Mise en opposition dans l'appli](app/seed/103-prd.md) |
-| Workshop | Workshop & report | [Notes → report](app/seed/16-workshop.md) | [Notes → compte-rendu](app/seed/116-workshop.md) |
-| Specify | Functional spec (SFD) | [Block, Exception File, fraud report](app/seed/17-sfd.md) | [Opposition, remboursement, déclaration](app/seed/117-sfd.md) |
-| Stories | User stories | [Block a card, flag unknown payments](app/seed/5-stories.md) | [Opposition et contestation](app/seed/105-stories.md) |
-| Plan | Backlog & PI planning | [WSJF, PI objectives, Jira CSV](app/seed/21-backlog.md) | [WSJF, objectifs de PI](app/seed/121-backlog.md) |
-| Test | UAT campaign | [Day 8 dashboard](app/seed/18-uat.md) | [Recette J8](app/seed/118-uat.md) |
-| Report fraud | Data mapping | [Fraud cases → Visa fraud reports](app/seed/20-mapping.md) | [Dossiers → déclarations GIE CB](app/seed/120-mapping.md) |
+| Frame | PRD | [Declare a lost or stolen card in the app](app/server/seed/3-prd.md) | [Mise en opposition dans l'appli](app/server/seed/103-prd.md) |
+| Workshop | Workshop & report | [Notes → report](app/server/seed/16-workshop.md) | [Notes → compte-rendu](app/server/seed/116-workshop.md) |
+| Specify | Functional spec (SFD) | [Block, Exception File, fraud report](app/server/seed/17-sfd.md) | [Opposition, remboursement, déclaration](app/server/seed/117-sfd.md) |
+| Stories | User stories | [Block a card, flag unknown payments](app/server/seed/5-stories.md) | [Opposition et contestation](app/server/seed/105-stories.md) |
+| Plan | Backlog & PI planning | [WSJF, PI objectives, Jira CSV](app/server/seed/21-backlog.md) | [WSJF, objectifs de PI](app/server/seed/121-backlog.md) |
+| Test | UAT campaign | [Day 8 dashboard](app/server/seed/18-uat.md) | [Recette J8](app/server/seed/118-uat.md) |
+| Report fraud | Data mapping | [Fraud cases → Visa fraud reports](app/server/seed/20-mapping.md) | [Dossiers → déclarations GIE CB](app/server/seed/120-mapping.md) |
 
 And around it:
 
 | Work | Skill | English (Visa) | French (CB) |
 |---|---|---|---|
-| Authorisation flow | Process map | [Visa authorisation with stand-in](app/seed/1-process.md) (BPMN) | [Autorisation CB avec secours](app/seed/101-process.md) (BPMN) |
-| Authorisation analytics | SQL query | [Approval rate and top decline codes](app/seed/4-sql.md) | [Taux d'acceptation et codes de refus](app/seed/104-sql.md) |
-| Chargebacks API | API test plan | [Disputes API (Visa conditions)](app/seed/2-api.md) | [API impayés](app/seed/102-api.md) |
-| Chargebacks process | Gap & impact analysis | [Chargebacks out of spreadsheets](app/seed/19-impact.md) | [Contestations et impayés hors Excel](app/seed/119-impact.md) |
+| Authorisation flow | Process map | [Visa authorisation with stand-in](app/server/seed/1-process.md) (BPMN) | [Autorisation CB avec secours](app/server/seed/101-process.md) (BPMN) |
+| Authorisation analytics | SQL query | [Approval rate and top decline codes](app/server/seed/4-sql.md) | [Taux d'acceptation et codes de refus](app/server/seed/104-sql.md) |
+| Chargebacks API | API test plan | [Disputes API (Visa conditions)](app/server/seed/2-api.md) | [API impayés](app/server/seed/102-api.md) |
+| Chargebacks process | Gap & impact analysis | [Chargebacks out of spreadsheets](app/server/seed/19-impact.md) | [Contestations et impayés hors Excel](app/server/seed/119-impact.md) |
 
 The figures come from the skills' scripts ([`uat_report.py`](skills/running-uat/scripts/uat_report.py), [`wsjf.py`](skills/managing-backlog/scripts/wsjf.py), [`check_mapping.py`](skills/mapping-data/scripts/check_mapping.py), [`build_bpmn.py`](skills/modeling-processes/scripts/build_bpmn.py)), and the SQL was run on test data.
 
@@ -103,7 +142,7 @@ The figures come from the skills' scripts ([`uat_report.py`](skills/running-uat/
 ## Analyst Kit: the app
 
 ```bash
-python3 app/server.py      # then open http://localhost:4317
+python3 app/server/server.py      # then open http://localhost:4317
 ```
 
 - **Quick questions and documents** on every deliverable, plus a reusable **knowledge** folder per skill.
@@ -111,7 +150,7 @@ python3 app/server.py      # then open http://localhost:4317
 - **A finished sample and two scenarios per skill**, in each language.
 - **Files your tools import**, each with Copy and Download.
 - **Guide and Xray assistant:** instant answers on the skills, the jargon (stand-in, Exception File, opposition, response codes, WSJF…) and the app.
-- **No API key:** requests wait in a local queue; Claude, in a Claude Code session, picks them up with [`app/kit.py`](app/kit.py), which lists the answers and the documents to read first.
+- **No API key:** requests wait in a local queue; Claude, in a Claude Code session, picks them up with [`app/server/kit.py`](app/server/kit.py), which lists the answers and the documents to read first.
 
 ## What the market asks for
 
@@ -120,8 +159,9 @@ The six delivery skills come from [an analysis of 740 freelance BA / PO contract
 ## Repository layout
 
 ```
-skills/     eighteen skills, one SKILL.md each (+ scripts/, templates/, examples/)
-app/        server.py, kit.py, questions.py, sources.py (uploads), i18n_fr.py, static/, seed/ samples (1–21 English, 101–121 French)
+skills/     twenty skills, one SKILL.md each (+ scripts/, templates/, examples/)
+app/        server/ (server.py, kit.py, catalog.py, db.py, router.py, routes/, tools/, seed/ samples: 1–21 English,
+            101–121 French), web/ (index.html, css/, js/ ES modules, js/tools/<id>/), data/ (local database, not in git)
 examples/   conversational AI case study
 market/     freelance market analysis and method
 ```
@@ -131,5 +171,7 @@ market/     freelance market analysis and method
 | Project | What it is |
 |---|---|
 | [**Fitbit Air on Steroids (MRH1)**](https://github.com/mohoss1985-tech/fitbit-air-on-steroids) · [live demo](https://mohoss1985-tech.github.io/fitbit-air-on-steroids/demo/) | A custom iOS app (SwiftUI + HealthKit) for the Google Fitbit Air: Whoop-style scores, lab-style body panels and every health metric explained. Built with Claude. |
+
+All organisations, cards and figures are fictional (test card numbers only). Not affiliated with Visa or GIE CB. Code: MIT · samples, docs and screenshots: CC BY 4.0.
 
 All organisations and figures are fictional. Scheme rules are paraphrased for the samples; confirm codes and deadlines against the current Visa Core Rules or CB rules, and legal points with your legal and compliance teams.

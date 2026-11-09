@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#fcfcfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)">
+<title>Analyst Kit</title>
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/print.css">
+<script>try { var t = localStorage.getItem('kit-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+<a class="skip-link" href="#main" data-i18n="Skip to content">Skip to content</a>
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Navigation">
+    <a class="ws" href="#/">
+      <span class="ws-mark" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M1 9 L4.5 3 L7 7 L9 4.5 L11 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <span class="ws-text"><span class="ws-name">Analyst Kit</span><span class="ws-sub" data-i18n="Working tools for payments BAs & POs">Working tools for payments BAs &amp; POs</span></span>
+    </a>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <a class="me" href="#/profile" data-nav="profile" id="me"><span class="avatar" id="me-avatar">?</span><span class="me-text"><b id="me-name">Your profile</b><span class="me-sub" id="me-sub"></span></span></a>
+    </div>
+  </aside>
+  <div class="main-col">
+    <header class="topbar" id="topbar"></header>
+    <div class="offline" id="offline" role="alert" hidden></div>
+    <main class="main" id="main" tabindex="-1"></main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script src="config.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

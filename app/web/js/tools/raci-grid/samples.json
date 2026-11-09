@@ -1,0 +1,338 @@
+{
+  "en": [
+    {
+      "id": "card-blocking",
+      "label": "Card-blocking project · 6 stakeholders",
+      "hint": "Harbor Bank · Visa",
+      "state": {
+        "decision": "How do we list blocked cards on the Visa Exception File in near real time?",
+        "decider": "Ana, Head of cards (issuer operations)",
+        "decideBy": "2026-11-27",
+        "context": "Last month a stolen card was approved in stand-in (STIP) because its Exception File listing took 160 min after the block. The nightly batch leaves the same gap for every block.",
+        "stakeholders": [
+          {
+            "id": "S1",
+            "name": "Ana",
+            "role": "Issuer operations (Head of cards)",
+            "cares": "Losses, cardholder trust, budget",
+            "power": 85,
+            "interest": 90
+          },
+          {
+            "id": "S2",
+            "name": "Priya",
+            "role": "Fraud team lead",
+            "cares": "Fraud losses, stand-in exposure",
+            "power": 60,
+            "interest": 95
+          },
+          {
+            "id": "S3",
+            "name": "Marc",
+            "role": "Scheme liaison (Visa relationship)",
+            "cares": "Exception File rules and fees",
+            "power": 70,
+            "interest": 35
+          },
+          {
+            "id": "S4",
+            "name": "Jade",
+            "role": "App team (product owner)",
+            "cares": "In-app block journey, release plan",
+            "power": 40,
+            "interest": 75
+          },
+          {
+            "id": "S5",
+            "name": "Omar",
+            "role": "Compliance",
+            "cares": "PSD2 liability, complaints",
+            "power": 80,
+            "interest": 40
+          },
+          {
+            "id": "S6",
+            "name": "Leo",
+            "role": "Customer service manager",
+            "cares": "Call volumes, agent scripts",
+            "power": 30,
+            "interest": 70
+          }
+        ],
+        "activities": [
+          {
+            "id": "R1",
+            "name": "Prioritise real-time listing on the roadmap",
+            "raci": {
+              "S1": "A",
+              "S2": "R",
+              "S3": "C",
+              "S4": "C",
+              "S5": "I",
+              "S6": "I"
+            }
+          },
+          {
+            "id": "R2",
+            "name": "Change request to the processor / Visa Exception File",
+            "raci": {
+              "S1": "I",
+              "S2": "C",
+              "S3": "A",
+              "S4": "R",
+              "S5": "C"
+            }
+          },
+          {
+            "id": "R3",
+            "name": "Block reasons and agent script (\"used without my permission\")",
+            "raci": {
+              "S1": "A",
+              "S2": "C",
+              "S5": "C",
+              "S6": "R"
+            }
+          },
+          {
+            "id": "R4",
+            "name": "Release go / no-go of the in-app block journey",
+            "raci": {
+              "S1": "A",
+              "S2": "R",
+              "S4": "A",
+              "S5": "C",
+              "S6": "I"
+            }
+          },
+          {
+            "id": "R5",
+            "name": "Stand-in (STIP) risk rules while listing is pending",
+            "raci": {
+              "S1": "C",
+              "S2": "A",
+              "S3": "R"
+            }
+          },
+          {
+            "id": "R6",
+            "name": "Cardholder liability wording",
+            "raci": {
+              "S1": "C",
+              "S2": "R",
+              "S5": "A",
+              "S6": "C"
+            }
+          },
+          {
+            "id": "R7",
+            "name": "Fraud reporting to Visa before dispute",
+            "raci": {
+              "S1": "I",
+              "S2": "R",
+              "S3": "C",
+              "S5": "C"
+            }
+          }
+        ],
+        "overload": 4,
+        "options": [
+          {
+            "option": "A · Processor real-time listing API",
+            "customer": "Gap closes to minutes",
+            "business": "Lowest fraud exposure",
+            "effort": "M (processor fee to confirm)",
+            "risk": "Processor dependency",
+            "prefers": "Priya, Ana"
+          },
+          {
+            "option": "B · Hourly listing batch",
+            "customer": "Gap up to 60 min",
+            "business": "Partial fix",
+            "effort": "S",
+            "risk": "Stand-in still exposed",
+            "prefers": "Marc"
+          },
+          {
+            "option": "C · Keep nightly batch + tighter stand-in rules",
+            "customer": "More declines for good cardholders",
+            "business": "No build cost",
+            "effort": "S",
+            "risk": "Fraud and complaints",
+            "prefers": "—"
+          }
+        ],
+        "recommendation": "Option A: it is the only option that closes the 160-min gap; confirm the processor fee and the Visa listing rules (to confirm with the scheme liaison).",
+        "ifNot": "Every block keeps a gap of up to a day in stand-in; the next stolen card can be approved again.",
+        "strategies": {}
+      }
+    }
+  ],
+  "fr": [
+    {
+      "id": "opposition",
+      "label": "Projet opposition carte · 6 parties prenantes",
+      "hint": "Banque Lumière · CB",
+      "state": {
+        "decision": "Comment inscrire les cartes en opposition sur la liste d'opposition CB quasi en temps réel ?",
+        "decider": "Anne, responsable monétique (opérations émetteur)",
+        "decideBy": "2026-11-27",
+        "context": "Le mois dernier, une carte volée a été autorisée en stand-in parce que son inscription en liste d'opposition a pris 160 min après l'opposition. Le batch laisse le même délai à chaque opposition.",
+        "stakeholders": [
+          {
+            "id": "S1",
+            "name": "Anne",
+            "role": "Opérations émetteur (responsable monétique)",
+            "cares": "Pertes, confiance, budget",
+            "power": 85,
+            "interest": 90
+          },
+          {
+            "id": "S2",
+            "name": "Priya",
+            "role": "Responsable fraude",
+            "cares": "Pertes fraude, exposition stand-in",
+            "power": 60,
+            "interest": 95
+          },
+          {
+            "id": "S3",
+            "name": "Marc",
+            "role": "Relations GIE CB",
+            "cares": "Règles et coûts de la liste d'opposition",
+            "power": 70,
+            "interest": 35
+          },
+          {
+            "id": "S4",
+            "name": "Jade",
+            "role": "Équipe appli (product owner)",
+            "cares": "Parcours d'opposition, planning",
+            "power": 40,
+            "interest": 75
+          },
+          {
+            "id": "S5",
+            "name": "Omar",
+            "role": "Conformité",
+            "cares": "Responsabilité DSP2, réclamations",
+            "power": 80,
+            "interest": 40
+          },
+          {
+            "id": "S6",
+            "name": "Léo",
+            "role": "Responsable service client",
+            "cares": "Volumes d'appels, scripts",
+            "power": 30,
+            "interest": 70
+          }
+        ],
+        "activities": [
+          {
+            "id": "R1",
+            "name": "Prioriser l'inscription temps réel dans la feuille de route",
+            "raci": {
+              "S1": "A",
+              "S2": "R",
+              "S3": "C",
+              "S4": "C",
+              "S5": "I",
+              "S6": "I"
+            }
+          },
+          {
+            "id": "R2",
+            "name": "Demande d'évolution au processeur / liste d'opposition CB",
+            "raci": {
+              "S1": "I",
+              "S2": "C",
+              "S3": "A",
+              "S4": "R",
+              "S5": "C"
+            }
+          },
+          {
+            "id": "R3",
+            "name": "Motifs d’opposition et script conseiller (« utilisation frauduleuse »)",
+            "raci": {
+              "S1": "A",
+              "S2": "C",
+              "S5": "C",
+              "S6": "R"
+            }
+          },
+          {
+            "id": "R4",
+            "name": "Go / no-go du parcours d'opposition dans l'appli",
+            "raci": {
+              "S1": "A",
+              "S2": "R",
+              "S4": "A",
+              "S5": "C",
+              "S6": "I"
+            }
+          },
+          {
+            "id": "R5",
+            "name": "Règles de risque en stand-in pendant l’inscription",
+            "raci": {
+              "S1": "C",
+              "S2": "A",
+              "S3": "R"
+            }
+          },
+          {
+            "id": "R6",
+            "name": "Texte de responsabilité porteur (franchise 50 €)",
+            "raci": {
+              "S1": "C",
+              "S2": "R",
+              "S5": "A",
+              "S6": "C"
+            }
+          },
+          {
+            "id": "R7",
+            "name": "Déclaration de fraude au GIE CB avant impayé",
+            "raci": {
+              "S1": "I",
+              "S2": "R",
+              "S3": "C",
+              "S5": "C"
+            }
+          }
+        ],
+        "overload": 4,
+        "options": [
+          {
+            "option": "A · API temps réel du processeur",
+            "customer": "Délai réduit à quelques minutes",
+            "business": "Exposition fraude minimale",
+            "effort": "M (coût processeur à confirmer)",
+            "risk": "Dépendance processeur",
+            "prefers": "Priya, Anne"
+          },
+          {
+            "option": "B · Batch horaire",
+            "customer": "Jusqu'à 60 min de délai",
+            "business": "Correctif partiel",
+            "effort": "S",
+            "risk": "Stand-in toujours exposé",
+            "prefers": "Marc"
+          },
+          {
+            "option": "C · Batch de nuit + règles stand-in durcies",
+            "customer": "Plus de refus pour les bons porteurs",
+            "business": "Pas de coût de développement",
+            "effort": "S",
+            "risk": "Fraude et réclamations",
+            "prefers": "—"
+          }
+        ],
+        "recommendation": "Option A : seule option qui supprime les 160 min ; confirmer le coût processeur et les règles de la liste d'opposition (à confirmer avec les relations GIE CB).",
+        "ifNot": "Chaque opposition garde jusqu'à une journée d'exposition en stand-in ; la prochaine carte volée peut à nouveau être autorisée.",
+        "strategies": {}
+      }
+    }
+  ]
+}

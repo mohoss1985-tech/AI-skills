@@ -1,0 +1,50 @@
+/* Payment lifecycle & chargeback simulator: styles scoped under .tool-payment-lifecycle (owner K). Tokens only. */
+.tool-payment-lifecycle .pl-actions { display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-4); }
+.tool-payment-lifecycle .pl-head { display: flex; flex-direction: column; gap: var(--s-1); }
+.tool-payment-lifecycle .pl-h { font-size: var(--fs-16); font-weight: 600; line-height: 24px; margin: 0; }
+.tool-payment-lifecycle .pl-group { display: flex; flex-direction: column; gap: var(--s-2); border-top: 1px solid var(--line); padding-top: var(--s-4); }
+.tool-payment-lifecycle .pl-small { font-size: var(--fs-12); line-height: 16px; }
+.tool-payment-lifecycle .pl-today { display: inline-flex; align-items: center; gap: var(--s-1); margin-right: var(--s-2); }
+.tool-payment-lifecycle .pl-evidence { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-1) var(--s-3); }
+.tool-payment-lifecycle .pl-check { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--h-xs); font-size: var(--fs-13); cursor: pointer; }
+.tool-payment-lifecycle .pl-check input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+.tool-payment-lifecycle .pl-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.tool-payment-lifecycle .advanced { margin-top: var(--s-4); }
+
+/* who carries the money */
+.tool-payment-lifecycle .pl-who { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-4); padding: var(--s-3) var(--s-4); }
+.tool-payment-lifecycle .pl-who-main { display: flex; flex-direction: column; gap: var(--s-1); min-width: 220px; flex: 1 1 260px; }
+.tool-payment-lifecycle .pl-who-party { font-size: var(--fs-16); line-height: 24px; }
+.tool-payment-lifecycle .pl-positions { display: grid; grid-template-columns: repeat(4, minmax(88px, 1fr)); gap: var(--s-2); flex: 2 1 360px; }
+.tool-payment-lifecycle .pl-pos { display: flex; flex-direction: column; gap: 0; padding: var(--s-2) var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-subtle); }
+.tool-payment-lifecycle .pl-pos b { font-size: var(--fs-14); }
+.tool-payment-lifecycle .pl-pos .is-neg { color: var(--bad); }
+.tool-payment-lifecycle .pl-pos .is-pos { color: var(--ok); }
+
+/* FR two tracks */
+.tool-payment-lifecycle .pl-tracks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.tool-payment-lifecycle .pl-track { padding: var(--s-3) var(--s-4); display: flex; flex-direction: column; gap: var(--s-1); }
+.tool-payment-lifecycle .pl-track p { margin: 0; }
+
+/* timeline */
+.tool-payment-lifecycle .pl-timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.tool-payment-lifecycle .pl-stage { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: var(--s-3); position: relative; padding-bottom: var(--s-4); }
+.tool-payment-lifecycle .pl-stage::before { content: ""; position: absolute; left: 11px; top: 24px; bottom: 0; width: 1px; background: var(--line-strong); }
+.tool-payment-lifecycle .pl-stage:last-child::before { display: none; }
+.tool-payment-lifecycle .pl-dot { display: inline-grid; place-items: center; width: 24px; height: 24px; color: var(--fg-3); background: var(--surface); position: relative; z-index: 1; }
+.tool-payment-lifecycle .pl-stage.is-done .pl-dot { color: var(--ok); }
+.tool-payment-lifecycle .pl-stage.is-current .pl-dot { color: var(--accent-text); }
+.tool-payment-lifecycle .pl-stage.is-refused .pl-dot { color: var(--bad); }
+.tool-payment-lifecycle .pl-stage.is-skipped .pl-stage-body > .row > b { color: var(--fg-2); font-weight: 500; }
+.tool-payment-lifecycle .pl-stage-body { display: flex; flex-direction: column; gap: var(--s-1); padding-top: 2px; min-width: 0; }
+.tool-payment-lifecycle .pl-stage-text { margin: 0; }
+
+/* liability shift */
+.tool-payment-lifecycle .pl-ls { display: flex; gap: var(--s-3); align-items: flex-start; padding: var(--s-3) var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-subtle); }
+.tool-payment-lifecycle .pl-ls p { margin: 0; }
+.tool-payment-lifecycle .pl-ls .icon { flex: none; margin-top: 2px; color: var(--fg-2); }
+
+@media (max-width: 760px) {
+  .tool-payment-lifecycle .pl-tracks, .tool-payment-lifecycle .pl-dates, .tool-payment-lifecycle .pl-evidence { grid-template-columns: 1fr; }
+  .tool-payment-lifecycle .pl-positions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

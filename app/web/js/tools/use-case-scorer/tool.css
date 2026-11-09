@@ -1,0 +1,59 @@
+/* Use-case scorer: styles scoped under .tool-use-case-scorer (owner F). Tokens only (research/04 §4). */
+.tool-use-case-scorer .advanced { margin-bottom: var(--s-4); }
+.tool-use-case-scorer .ucs-adv { display: grid; gap: var(--s-3); max-width: 760px; }
+.tool-use-case-scorer .ucs-rules { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: var(--s-3); }
+.tool-use-case-scorer h2 { font-size: var(--fs-16); line-height: 24px; font-weight: var(--fw-semibold); margin: 0 0 var(--s-2); }
+.tool-use-case-scorer .ucs-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.tool-use-case-scorer .ucs-head h2 { margin: 0; }
+.tool-use-case-scorer .ucs-strip { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.tool-use-case-scorer .ucs-whint { margin: 0; color: var(--fg-2); font-size: var(--fs-12); }
+.tool-use-case-scorer .ucs-hint { color: var(--fg-2); font-size: var(--fs-12); margin: var(--s-1) 0 var(--s-2); }
+.tool-use-case-scorer .ucs-grid td:nth-child(2) .cell-input { min-width: 240px; }
+.tool-use-case-scorer .ucs-score { font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
+
+.tool-use-case-scorer .ucs-lower { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s-6); margin-top: var(--s-6); }
+.tool-use-case-scorer .ucs-lower[hidden] { display: none; }
+@media (max-width: 1100px) { .tool-use-case-scorer .ucs-lower { grid-template-columns: 1fr; } .tool-use-case-scorer .ucs-rules { grid-template-columns: repeat(2, 1fr); } }
+
+/* chart */
+.tool-use-case-scorer .ucs-chart { width: 100%; height: auto; display: block; max-width: 640px; }
+.tool-use-case-scorer .ucs-chart .ucs-gl { stroke: var(--line); stroke-width: 1; }
+.tool-use-case-scorer .ucs-chart .ucs-mid { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 4; }
+.tool-use-case-scorer .ucs-chart text { font-family: var(--sans); fill: var(--fg-2); }
+.tool-use-case-scorer .ucs-chart .ucs-tick { font-size: var(--fs-11); font-variant-numeric: tabular-nums; }
+.tool-use-case-scorer .ucs-chart .ucs-axis { font-size: var(--fs-12); font-weight: var(--fw-medium); }
+.tool-use-case-scorer .ucs-chart .ucs-quad { font-size: var(--fs-11); font-weight: var(--fw-medium); fill: var(--fg-2); text-transform: uppercase; letter-spacing: .04em; }
+.tool-use-case-scorer .ucs-chart .ucs-label { font: var(--fw-medium) var(--fs-11) var(--mono); fill: var(--fg); }
+.tool-use-case-scorer .ucs-bubble circle { stroke-width: 2; transition: opacity var(--t-1, 100ms) var(--ease, ease); }
+.tool-use-case-scorer .ucs-bubble:hover circle, .tool-use-case-scorer .ucs-bubble:focus circle { stroke-width: 3; }
+.tool-use-case-scorer .ucs-bubble:focus { outline: none; }
+.tool-use-case-scorer .ucs-bubble:focus-visible circle { stroke: var(--focus); }
+.tool-use-case-scorer .lane-now circle { fill: var(--accent); fill-opacity: .85; stroke: var(--surface); }
+.tool-use-case-scorer .lane-next circle { fill: var(--accent-soft); stroke: var(--accent); }
+.tool-use-case-scorer .lane-later circle { fill: var(--hover); stroke: var(--fg-3); }
+.tool-use-case-scorer .lane-excluded circle { fill: none; stroke: var(--fg-3); stroke-dasharray: 3 3; }
+
+.tool-use-case-scorer .ucs-legend { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; font-size: var(--fs-12); color: var(--fg-2); margin-bottom: var(--s-2); }
+.tool-use-case-scorer .ucs-key { display: inline-flex; align-items: center; gap: var(--s-1); }
+.tool-use-case-scorer .ucs-key i { width: 12px; height: 12px; border-radius: var(--r-full); border: 2px solid var(--fg-3); box-sizing: border-box; }
+.tool-use-case-scorer .ucs-key.lane-now i { background: var(--accent); border-color: var(--accent); }
+.tool-use-case-scorer .ucs-key.lane-next i { background: var(--accent-soft); border-color: var(--accent); }
+.tool-use-case-scorer .ucs-key.lane-later i { background: var(--hover); }
+.tool-use-case-scorer .ucs-key.lane-excluded i { border-style: dashed; }
+.tool-use-case-scorer .ucs-size { margin-left: auto; }
+
+/* lanes: columns separated by hairlines, items by hairlines (no cards in cards) */
+.tool-use-case-scorer .ucs-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r-md); }
+@media (max-width: 1280px) { .tool-use-case-scorer .ucs-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tool-use-case-scorer .ucs-lane { padding: var(--s-3); border-right: 1px solid var(--line); min-width: 0; }
+.tool-use-case-scorer .ucs-lane:last-child { border-right: 0; }
+.tool-use-case-scorer .ucs-lane h3 { display: flex; justify-content: space-between; align-items: baseline; margin: 0; font-size: var(--fs-13); font-weight: var(--fw-semibold); }
+.tool-use-case-scorer .ucs-n { color: var(--fg-2); font-weight: var(--fw-medium); }
+.tool-use-case-scorer .ucs-sub { margin: 0 0 var(--s-2); font-size: var(--fs-12); color: var(--fg-2); }
+.tool-use-case-scorer .ucs-lane ul { list-style: none; margin: 0; padding: 0; }
+.tool-use-case-scorer .ucs-lane li { padding: var(--s-2) 0; border-top: 1px solid var(--line); }
+.tool-use-case-scorer .ucs-li-top { display: flex; justify-content: space-between; font-size: var(--fs-12); }
+.tool-use-case-scorer .ucs-li-top code { font-family: var(--mono); color: var(--fg-2); }
+.tool-use-case-scorer .ucs-li-name { font-weight: var(--fw-medium); overflow-wrap: anywhere; }
+.tool-use-case-scorer .ucs-li-why { font-size: var(--fs-12); color: var(--fg-2); margin-top: var(--s-1); }
+.tool-use-case-scorer .ucs-none { color: var(--fg-2); font-size: var(--fs-12); }

@@ -1,0 +1,15 @@
+/* Print = the client copy (all @media print rules, last so they win). Light colours whatever the theme. */
+@media print {
+  :root, :root[data-theme="dark"] { --bg: #fff; --bg-subtle: #fff; --surface: #fff; --fg: #111; --fg-2: #333; --line: #ddd; --line-strong: #ccc; --hover: #f3f3f3; --code-bg: #f6f6f6; color-scheme: light; }
+  .sidebar, .topbar, .offline, .skip-link, .doc-actions, .crumb, details.box, .box, .no-print, .toast, .site-foot, .tf-actions, .tf-command, .tf-head-actions { display: none !important; }
+  .app, .main-col { display: block; height: auto; }
+  .main { overflow: visible; }
+  .page { padding: 0; max-width: none; }
+  .paper { border: 0; padding: 0; }
+  .md pre, .md table, .mermaid-box { break-inside: avoid; }
+  .panel, .next, .verbar, .old-note { display: none !important; }
+  .split { display: block; }
+  .bpmn-tools, .bpmn-legend a { display: none !important; }
+  .bpmn-box { break-inside: avoid; }
+  .guide, .guide-btn, .palette { display: none !important; }
+}

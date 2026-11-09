@@ -1,0 +1,525 @@
+openapi: 3.1.0
+info:
+  title: Harbor Bank Card API (demo mock)
+  version: 2.0.0-demo
+  summary: Fictional issuer card API for the Analyst Kit V2 API tester. Runs as an in-browser mock.
+  description: |
+    **Fictional.** Harbor Bank (Visa, English) and Banque Lumière (CB, French) do not exist. No real card
+    numbers, no scheme-confidential content. Every PAN below is a Luhn-valid number in the `400000` test
+    prefix that payment gateways publish for testing; the mock **refuses any PAN that is not in its fixture
+    list** (HTTP 422 `unknown-test-pan`), so a real card number can never be "processed".
+
+    Response codes follow the ISO 8583 field 39 values used by both Visa and CB:
+    00 approved · 05 do not honour · 41 lost card · 43 stolen card · 51 insufficient funds ·
+    54 expired card · 59 suspected fraud · 91 issuer unavailable.
+    Which code an issuer returns for which case is an issuer choice; scheme-specific mappings are *to confirm*.
+
+    **Mock behaviour**
+    - Clock frozen at `2026-11-08` (so day-120 tests are stable).
+    - State (blocks, reports, disputes) lives in memory; the tester calls `POST /_mock/reset` before each test case.
+    - Header `X-Mock-Fault: 500|503|504` forces a server error; more than 60 calls a minute returns 429.
+    - Errors use RFC 9457 `application/problem+json`; bodies never contain a full PAN.
+
+    **CB / French twin (Banque Lumière):** same paths and rules, server `/lumiere/v1`, key `bl_test_demo_key`,
+    labels in French (opposition, déclaration de fraude, impayé). Differences are listed in `x-cb-twin`.
+  contact: { name: Analyst Kit, url: "https://mohoss1985-tech.github.io/AI-skills/" }
+  license: { name: MIT (spec and fixtures only), identifier: MIT }
+
+servers:
+  - url: mock://harbor/v1
+    description: Harbor Bank (Visa terms, English) - in-browser mock
+  - url: mock://lumiere/v1
+    description: Banque Lumière (CB terms, French) - in-browser mock
+  - url: http://localhost:4317/mock/harbor/v1
+    description: Same mock served by the local app (server.py), for curl / pytest exports
+
+security:
+  - ApiKey: []
+
+tags:
+  - { name: Cards, description: Card status and PAN declaration (block / unblock) }
+  - { name: Authorisations, description: Issuer decision incl. Stand-In Processing }
+  - { name: Fraud, description: Fraud reports to the scheme }
+  - { name: Disputes, description: Chargebacks (Visa dispute conditions / impayés CB) }
+
+paths:
+  /cards/{card_id}:
+    get:
+      tags: [Cards]
+      operationId: getCard
+      summary: Get a card (masked PAN, status, block, limits)
+      description: |
+        Rules: C1 the full PAN is never returned (masked 6+4). C2 a key without `cards:read` gets 403.
+      parameters: [ { $ref: '#/components/parameters/CardId' } ]
+      responses:
+        '200':
+          description: The card
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Card' }
+              examples:
+                active:
+                  value:
+                    card_id: crd_hb_001
+                    pan_masked: "400000******1014"
+                    brand: VISA
+                    issuer: Harbor Bank
+                    product: debit
+                    status: active
+                    block: null
+                    expiry: "2029-04"
+                    available_minor: 250000
+                    currency: EUR
+                    wallet_tokens: [ { token_id: tok_hb_001_a, wallet: mobile, status: active } ]
+                blocked_lost:
+                  value:
+                    card_id: crd_hb_004
+                    pan_masked: "400000******1041"
+                    brand: VISA
+                    issuer: Harbor Bank
+                    product: debit
+                    status: blocked
+                    block: { reason: lost, blocked_at: "2026-11-02T09:14:00Z", channel: app, exception_file: listed, unblock_allowed_until: "2026-11-03T09:14:00Z" }
+                    expiry: "2028-11"
+                    available_minor: 92000
+                    currency: EUR
+                    wallet_tokens: [ { token_id: tok_hb_004_a, wallet: mobile, status: suspended } ]
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /authorisations:
+    post:
+      tags: [Authorisations]
+      operationId: createAuthorisation
+      summary: Ask the issuer to authorise a payment
+      description: |
+        The issuer decision, checked **in this order** (first match wins):
+        - **A1** PAN not in the fixtures → HTTP 422 `unknown-test-pan` (safety rule of the demo).
+        - **A2** Issuer host unavailable: if the card's programme has stand-in, VisaNet **Stand-In Processing**
+          decides with the issuer's limits (amount ≤ `stip_limit_minor` → 00, else 05) and `stip: true`;
+          blocked PANs listed on the Exception File → 41/43 in stand-in. No stand-in → **91**.
+        - **A3** Card blocked → **41** lost, **43** stolen, **05** used without permission (choice made in the SFD, RG-02).
+        - **A4** Card expired (expiry month < transaction month) → **54**.
+        - **A5** Fraud rule: card on fraud watch and channel `ecom` → **59**.
+        - **A6** Amount > available balance → **51**.
+        - **A7** Otherwise → **00**, balance reduced, `auth_code` issued.
+        A business decline is still HTTP **200** (the API worked; the payment was declined).
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' }, { $ref: '#/components/parameters/MockFault' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthorisationRequest' }
+            examples:
+              pos_coffee: { value: { pan: "4000000000001014", expiry: "2029-04", amount_minor: 4250, currency: EUR, channel: pos, entry_mode: CONTACTLESS, merchant_id: M-001, mcc: "5812" } }
+      responses:
+        '200':
+          description: Issuer decision (approved or declined)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Authorisation' }
+              examples:
+                approved: { value: { auth_id: auth_7Q2M, response_code: "00", approved: true, message: Approved, auth_code: "A1B2C3", stip: false, amount_minor: 4250, currency: EUR, card_id: crd_hb_001, created_at: "2026-11-08T10:02:11Z" } }
+                insufficient_funds: { value: { auth_id: auth_8K1P, response_code: "51", approved: false, message: Insufficient funds, auth_code: null, stip: false, amount_minor: 8000, currency: EUR, card_id: crd_hb_002, created_at: "2026-11-08T10:03:40Z" } }
+                stand_in: { value: { auth_id: auth_9X4D, response_code: "00", approved: true, message: Approved in Stand-In Processing, auth_code: "S90412", stip: true, amount_minor: 4500, currency: EUR, card_id: crd_hb_007, created_at: "2026-11-08T10:05:02Z" } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooMany' }
+        '500': { $ref: '#/components/responses/ServerError' }
+        '503': { $ref: '#/components/responses/ServerError' }
+        '504': { $ref: '#/components/responses/ServerError' }
+
+  /cards/{card_id}/block:
+    post:
+      tags: [Cards]
+      operationId: blockCard
+      summary: Declare the card lost, stolen or used without permission (PAN declaration)
+      description: |
+        - **B1** `reason` ∈ lost | stolen | used_without_permission → else 400.
+        - **B2** Card already blocked → 409 `card-already-blocked`.
+        - **B3** Effects, all in the same call: status `blocked`; next authorisations return 41 / 43 / 05;
+          PAN listed on the Visa Exception File (`exception_file: listed`, mock lists instantly; target ≤ 5 min in the SFD);
+          wallet tokens `suspended`; replacement card ordered except for `used_without_permission` (cardholder chooses).
+        - **B4** Only a `lost` block can be undone, within 24 h, and only if no authorisation was attempted since (see unblock).
+        - **B5** Same `Idempotency-Key` + same body → same response; same key + different body → 409.
+      parameters: [ { $ref: '#/components/parameters/CardId' }, { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BlockRequest' }
+            examples:
+              stolen: { value: { reason: stolen, channel: app, declared_by: cardholder } }
+      responses:
+        '200':
+          description: Card blocked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Card' }
+              examples:
+                stolen:
+                  value:
+                    card_id: crd_hb_001
+                    pan_masked: "400000******1014"
+                    brand: VISA
+                    issuer: Harbor Bank
+                    product: debit
+                    status: blocked
+                    block: { reason: stolen, blocked_at: "2026-11-08T10:10:00Z", channel: app, exception_file: listed, unblock_allowed_until: null }
+                    expiry: "2029-04"
+                    available_minor: 250000
+                    currency: EUR
+                    wallet_tokens: [ { token_id: tok_hb_001_a, wallet: mobile, status: suspended } ]
+                    replacement: { ordered: true, card_id: crd_hb_001_r1 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /cards/{card_id}/unblock:
+    post:
+      tags: [Cards]
+      operationId: unblockCard
+      summary: Undo a "lost" block (card found again)
+      description: |
+        - **U1** Only when block reason is `lost` → else 422 `unblock-not-allowed` (stolen / used without permission need a new PAN).
+        - **U2** Within 24 h of `blocked_at` → else 422 `unblock-window-expired`.
+        - **U3** No authorisation attempted since the block → else 422 `activity-since-block`.
+        - Effect: status active, Exception File entry removed, wallet tokens resumed.
+      parameters: [ { $ref: '#/components/parameters/CardId' } ]
+      responses:
+        '200': { description: Card active again, content: { application/json: { schema: { $ref: '#/components/schemas/Card' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /fraud-reports:
+    post:
+      tags: [Fraud]
+      operationId: createFraudReport
+      summary: Report a confirmed fraudulent transaction to the scheme
+      description: |
+        - **F1** `transaction_id` (ARN) exists and belongs to `card_id` → else 404 / 422 `transaction-card-mismatch`.
+        - **F2** `fraud_type` ∈ 0 lost · 1 stolen · 2 not received · 3 fraudulent application · 4 counterfeit ·
+          5 miscellaneous · 6 card not present. Values follow the publicly documented Visa fraud types; *to confirm* against the current Visa rules.
+        - **F3** Only approved transactions are reported → 422 `transaction-not-approved`.
+        - **F4** One report per transaction → 409 `fraud-already-reported`.
+        - **F5** Reporting deadline: *to confirm* (scheme rulebook); the mock does not enforce one.
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FraudReportRequest' }
+            examples:
+              cnp: { value: { transaction_id: "74000002305000000004418", card_id: crd_hb_005, fraud_type: "6", case_id: CASE-2026-0412, confirmed_at: "2026-11-06" } }
+      responses:
+        '201':
+          description: Fraud report sent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FraudReport' }
+              examples:
+                sent: { value: { fraud_report_id: FR-2026-1201, transaction_id: "74000002305000000004418", card_id: crd_hb_005, fraud_type: "6", status: sent, amount_minor: 12990, currency: EUR, reported_at: "2026-11-08T10:20:00Z" } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /disputes:
+    post:
+      tags: [Disputes]
+      operationId: createDispute
+      summary: Open a chargeback on a cardholder transaction
+      description: |
+        Same rules as the V1 sample "Disputes API test plan":
+        - **D1** `condition_code` in a handled Visa category: 10.x fraud, 11.x authorisation, 12.x processing errors, 13.x consumer disputes → else 422 `unknown-condition`.
+        - **D2** Within **120 days** of the transaction date (day 120 inclusive; mock clock 2026-11-08) → else 422 `time-limit-exceeded`.
+        - **D3** 10.x needs a fraud report on the same transaction → 422 `fraud-report-required` / `fraud-report-mismatch`.
+        - **D4** `amount_minor` ≤ transaction amount − already disputed → 422 `amount-exceeds-transaction`.
+        - **D5** One open dispute per transaction → 409 `dispute-already-open`.
+        - **D6** Key needs `disputes:write` → 403.
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DisputeRequest' }
+            examples:
+              fraud_cnp: { value: { transaction_id: "74000002305000000001187", condition_code: "10.4", amount_minor: 8990, currency: EUR, fraud_report_id: FR-2026-1182 } }
+              not_received: { value: { transaction_id: "74000002305000000002265", condition_code: "13.1", amount_minor: 5400, currency: EUR } }
+      responses:
+        '201':
+          description: Dispute submitted
+          headers: { Location: { schema: { type: string }, example: /disputes/DSP-2026-0031 } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dispute' }
+              examples:
+                submitted: { value: { dispute_id: DSP-2026-0031, transaction_id: "74000002305000000001187", condition_code: "10.4", amount_minor: 8990, currency: EUR, status: submitted, fraud_report_id: FR-2026-1182, opened_at: "2026-11-08T10:30:00Z", respond_by: null } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /disputes/{dispute_id}:
+    get:
+      tags: [Disputes]
+      operationId: getDispute
+      summary: Follow a dispute
+      parameters:
+        - { name: dispute_id, in: path, required: true, schema: { type: string, pattern: '^DSP-\d{4}-\d{4}$' }, example: DSP-2026-0007 }
+      responses:
+        '200':
+          description: The dispute and its history
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dispute' }
+              examples:
+                in_progress: { value: { dispute_id: DSP-2026-0007, transaction_id: "74000002305000000001187", condition_code: "10.4", amount_minor: 8990, currency: EUR, status: acquirer_responded, fraud_report_id: FR-2026-1182, opened_at: "2026-10-12T08:00:00Z", respond_by: "2026-11-11", history: [ { at: "2026-10-12T08:00:00Z", status: submitted }, { at: "2026-10-30T14:12:00Z", status: acquirer_responded } ] } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /_mock/reset:
+    post:
+      tags: [Cards]
+      operationId: resetMock
+      summary: Reset the mock to its fixtures (tester calls it before each test case)
+      security: []
+      responses: { '204': { description: State reset } }
+
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        Demo keys (published on purpose, they only open the mock):
+        `hb_test_demo_key` all scopes · `hb_test_readonly` only `cards:read` (403 on writes) ·
+        CB twin `bl_test_demo_key`. Missing or unknown key → 401.
+
+  parameters:
+    CardId: { name: card_id, in: path, required: true, schema: { type: string, pattern: '^crd_(hb|bl)_\d{3}$' }, example: crd_hb_001, description: Card reference. The PAN is never put in a URL. }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 64 }, example: 6f1c2a9e-1b4e-4c38-9a51-0d1a0f3b7e21 }
+    MockFault: { name: X-Mock-Fault, in: header, required: false, schema: { type: string, enum: ['500', '503', '504'] }, description: Mock only - forces a server error. }
+
+  schemas:
+    Card:
+      type: object
+      required: [card_id, pan_masked, brand, status, expiry, currency]
+      properties:
+        card_id: { type: string }
+        pan_masked: { type: string, pattern: '^\d{6}\*{6}\d{4}$' }
+        brand: { type: string, enum: [VISA, CB] }
+        issuer: { type: string }
+        product: { type: string, enum: [debit, credit] }
+        status: { type: string, enum: [active, blocked, expired] }
+        block:
+          type: [object, 'null']
+          properties:
+            reason: { type: string, enum: [lost, stolen, used_without_permission] }
+            blocked_at: { type: string, format: date-time }
+            channel: { type: string, enum: [app, call_centre] }
+            exception_file: { type: string, enum: [pending, listed, failed, removed], description: "Visa Exception File listing (CB twin - fichier des oppositions - name to confirm)" }
+            unblock_allowed_until: { type: [string, 'null'], format: date-time }
+        expiry: { type: string, pattern: '^\d{4}-\d{2}$' }
+        available_minor: { type: integer, description: Available balance in minor units (cents) }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+        wallet_tokens:
+          type: array
+          items: { type: object, properties: { token_id: { type: string }, wallet: { type: string }, status: { type: string, enum: [active, suspended] } } }
+        replacement: { type: object, properties: { ordered: { type: boolean }, card_id: { type: string } } }
+    AuthorisationRequest:
+      type: object
+      required: [pan, expiry, amount_minor, currency, channel]
+      properties:
+        pan: { type: string, pattern: '^\d{16}$', description: Test PAN from the fixtures only (A1) }
+        expiry: { type: string, pattern: '^\d{4}-\d{2}$' }
+        amount_minor: { type: integer, minimum: 1, maximum: 10000000 }
+        currency: { type: string, enum: [EUR, USD, GBP] }
+        channel: { type: string, enum: [pos, ecom, atm] }
+        entry_mode: { type: string, enum: [CHIP, CONTACTLESS, ECOM, MAGSTRIPE, MANUAL] }
+        merchant_id: { type: string }
+        mcc: { type: string, pattern: '^\d{4}$' }
+    Authorisation:
+      type: object
+      required: [auth_id, response_code, approved, stip]
+      properties:
+        auth_id: { type: string }
+        response_code: { type: string, enum: ['00', '05', '41', '43', '51', '54', '59', '91'] }
+        approved: { type: boolean }
+        message: { type: string }
+        auth_code: { type: [string, 'null'], pattern: '^[A-Z0-9]{6}$' }
+        stip: { type: boolean, description: Decided by Visa Stand-In Processing (CB twin - traitement de secours) }
+        amount_minor: { type: integer }
+        currency: { type: string }
+        card_id: { type: string }
+        created_at: { type: string, format: date-time }
+    BlockRequest:
+      type: object
+      required: [reason, channel]
+      properties:
+        reason: { type: string, enum: [lost, stolen, used_without_permission] }
+        channel: { type: string, enum: [app, call_centre] }
+        declared_by: { type: string, enum: [cardholder, agent] }
+    FraudReportRequest:
+      type: object
+      required: [transaction_id, card_id, fraud_type, case_id]
+      properties:
+        transaction_id: { type: string, pattern: '^\d{23}$', description: ARN }
+        card_id: { type: string }
+        fraud_type: { type: string, enum: ['0', '1', '2', '3', '4', '5', '6'] }
+        case_id: { type: string }
+        confirmed_at: { type: string, format: date }
+    FraudReport:
+      allOf:
+        - $ref: '#/components/schemas/FraudReportRequest'
+        - type: object
+          properties:
+            fraud_report_id: { type: string }
+            status: { type: string, enum: [sent, accepted, rejected] }
+            amount_minor: { type: integer }
+            currency: { type: string }
+            reported_at: { type: string, format: date-time }
+    DisputeRequest:
+      type: object
+      required: [transaction_id, condition_code, amount_minor, currency]
+      properties:
+        transaction_id: { type: string, pattern: '^\d{23}$' }
+        condition_code: { type: string, pattern: '^\d{2}\.\d{1,2}$', examples: ['10.4', '12.6', '13.1'] }
+        amount_minor: { type: integer, minimum: 1 }
+        currency: { type: string }
+        fraud_report_id: { type: string, description: Required for 10.x }
+    Dispute:
+      allOf:
+        - $ref: '#/components/schemas/DisputeRequest'
+        - type: object
+          properties:
+            dispute_id: { type: string }
+            status: { type: string, enum: [submitted, acquirer_responded, pre_arbitration, won, lost, withdrawn] }
+            opened_at: { type: string, format: date-time }
+            respond_by: { type: [string, 'null'], format: date }
+            history: { type: array, items: { type: object, properties: { at: { type: string, format: date-time }, status: { type: string } } } }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri, example: 'https://harbor.example/problems/time-limit-exceeded' }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        rule: { type: string, example: D2 }
+
+  responses:
+    BadRequest: { description: Malformed body or invalid enum, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' }, example: { type: 'https://harbor.example/problems/invalid-field', title: Invalid field, status: 400, detail: "channel must be one of pos, ecom, atm" } } } }
+    Unauthorized: { description: Missing or unknown X-API-Key, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' }, example: { type: 'https://harbor.example/problems/unauthorized', title: Missing or invalid API key, status: 401 } } } }
+    Forbidden: { description: Key lacks the scope, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' }, example: { type: 'https://harbor.example/problems/forbidden', title: "Scope disputes:write required", status: 403 } } } }
+    NotFound: { description: "Unknown card, transaction or dispute", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' }, example: { type: 'https://harbor.example/problems/not-found', title: Not found, status: 404 } } } }
+    Conflict: { description: Already blocked / reported / dispute open / idempotency key reused, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' }, example: { type: 'https://harbor.example/problems/card-already-blocked', title: Card already blocked, status: 409, rule: B2 } } } }
+    Unprocessable: { description: Business rule refused the request, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' }, example: { type: 'https://harbor.example/problems/time-limit-exceeded', title: Dispute time limit exceeded, status: 422, detail: "Transaction is 121 days old (limit 120)", rule: D2 } } } }
+    TooMany: { description: Over 60 calls a minute, headers: { Retry-After: { schema: { type: integer }, example: 30 } }, content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+    ServerError: { description: "Forced by X-Mock-Fault (500 internal - 503 host down - 504 timeout)", content: { application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } } } }
+
+# ---------------------------------------------------------------- mock fixtures
+x-mock-fixtures:
+  today: "2026-11-08"
+  cards:   # all PANs Luhn-valid, 400000 test prefix; expected decision for a 10-50 EUR POS payment
+    - { card_id: crd_hb_001, pan: "4000000000001014", expiry: "2029-04", status: active,  available_minor: 250000, expect: "00" }
+    - { card_id: crd_hb_002, pan: "4000000000001023", expiry: "2028-06", status: active,  available_minor: 1500,   expect: "51" }
+    - { card_id: crd_hb_003, pan: "4000000000001032", expiry: "2026-09", status: expired, available_minor: 40000,  expect: "54" }
+    - { card_id: crd_hb_004, pan: "4000000000001041", expiry: "2028-11", status: blocked, block_reason: lost,    expect: "41" }
+    - { card_id: crd_hb_005, pan: "4000000000001050", expiry: "2029-01", status: blocked, block_reason: stolen,  expect: "43" }
+    - { card_id: crd_hb_006, pan: "4000000000001069", expiry: "2029-02", status: active,  fraud_watch: true, available_minor: 300000, expect: "59 on ecom, 00 on pos" }
+    - { card_id: crd_hb_007, pan: "4000000000001078", expiry: "2029-03", status: active,  issuer_host: down, stand_in: true, stip_limit_minor: 10000, expect: "00 stip<=100 EUR, 05 stip above" }
+    - { card_id: crd_hb_008, pan: "4000000000001087", expiry: "2029-05", status: active,  available_minor: 80000, expect: "00 (spare card for block / unblock tests)" }
+    - { card_id: crd_bl_001, pan: "4000000000002013", expiry: "2029-04", status: active,  available_minor: 180000, expect: "00" }
+    - { card_id: crd_bl_002, pan: "4000000000002022", expiry: "2028-12", status: blocked, block_reason: used_without_permission, expect: "05" }
+    - { card_id: crd_bl_003, pan: "4000000000002031", expiry: "2029-06", status: active,  issuer_host: down, stand_in: false, expect: "91" }
+  transactions:  # ARNs are fictional 23-digit numbers
+    - { transaction_id: "74000002305000000001187", card_id: crd_hb_005, date: "2026-10-05", amount_minor: 8990,  channel: ecom, approved: true, fraud_report_id: FR-2026-1182 }
+    - { transaction_id: "74000002305000000002265", card_id: crd_hb_001, date: "2026-07-11", amount_minor: 5400,  channel: ecom, approved: true, note: day 120 on 2026-11-08 }
+    - { transaction_id: "74000002305000000003349", card_id: crd_hb_001, date: "2026-07-10", amount_minor: 3200,  channel: pos,  approved: true, note: day 121 }
+    - { transaction_id: "74000002305000000004418", card_id: crd_hb_005, date: "2026-10-06", amount_minor: 12990, channel: ecom, approved: true }
+    - { transaction_id: "74000002305000000005502", card_id: crd_hb_002, date: "2026-10-20", amount_minor: 8000,  channel: pos,  approved: false, response_code: "51" }
+  disputes:
+    - { dispute_id: DSP-2026-0007, transaction_id: "74000002305000000001187", condition_code: "10.4", status: acquirer_responded }
+
+# ---------------------------------------------------------------- ready-made test cases
+x-test-cases:
+  - id: TC-01
+    name: No API key is refused
+    request: { method: GET, path: /cards/crd_hb_001, headers: {} }
+    assert: [ "status == 401", "body.type endsWith 'unauthorized'" ]
+  - id: TC-02
+    name: Card read never exposes the PAN
+    request: { method: GET, path: /cards/crd_hb_001 }
+    assert: [ "status == 200", "body.status == 'active'", "body.pan_masked == '400000******1014'", "body has no field 'pan'", "response time < 500 ms" ]
+  - id: TC-03
+    name: Approved contactless payment
+    request: { method: POST, path: /authorisations, body: { pan: "4000000000001014", expiry: "2029-04", amount_minor: 4250, currency: EUR, channel: pos, entry_mode: CONTACTLESS } }
+    assert: [ "status == 200", "body.response_code == '00'", "body.approved == true", "body.stip == false", "body.auth_code matches ^[A-Z0-9]{6}$" ]
+  - id: TC-04
+    name: Each decline code (data-driven, one row per card)
+    request: { method: POST, path: /authorisations, body: { pan: "{{pan}}", expiry: "{{expiry}}", amount_minor: 8000, currency: EUR, channel: "{{channel}}" } }
+    data:
+      - { pan: "4000000000001023", expiry: "2028-06", channel: pos,  expect: "51" }
+      - { pan: "4000000000001032", expiry: "2026-09", channel: pos,  expect: "54" }
+      - { pan: "4000000000001041", expiry: "2028-11", channel: pos,  expect: "41" }
+      - { pan: "4000000000001050", expiry: "2029-01", channel: pos,  expect: "43" }
+      - { pan: "4000000000001069", expiry: "2029-02", channel: ecom, expect: "59" }
+    assert: [ "status == 200", "body.response_code == {{expect}}", "body.approved == false", "body.auth_code == null" ]
+  - id: TC-05
+    name: Stand-In Processing decides when the issuer is down
+    steps:
+      - { request: { method: POST, path: /authorisations, body: { pan: "4000000000001078", expiry: "2029-03", amount_minor: 4500,  currency: EUR, channel: pos } }, assert: [ "body.response_code == '00'", "body.stip == true" ] }
+      - { request: { method: POST, path: /authorisations, body: { pan: "4000000000001078", expiry: "2029-03", amount_minor: 25000, currency: EUR, channel: pos } }, assert: [ "body.response_code == '05'", "body.stip == true" ] }
+  - id: TC-06
+    name: Block as stolen, then the card is refused with 43 and wallet tokens are suspended
+    steps:
+      - { request: { method: POST, path: /cards/crd_hb_008/block, body: { reason: stolen, channel: app, declared_by: cardholder } }, assert: [ "status == 200", "body.status == 'blocked'", "body.block.exception_file == 'listed'", "every body.wallet_tokens.status == 'suspended'", "body.replacement.ordered == true" ] }
+      - { request: { method: POST, path: /authorisations, body: { pan: "4000000000001087", expiry: "2029-05", amount_minor: 1000, currency: EUR, channel: pos } }, assert: [ "body.response_code == '43'" ] }
+      - { request: { method: POST, path: /cards/crd_hb_008/block, body: { reason: lost, channel: app } }, assert: [ "status == 409", "body.rule == 'B2'" ] }
+  - id: TC-07
+    name: A stolen card cannot be unblocked; a lost one can
+    steps:
+      - { request: { method: POST, path: /cards/crd_hb_005/unblock }, assert: [ "status == 422", "body.type endsWith 'unblock-not-allowed'" ] }
+      - { request: { method: POST, path: /cards/crd_hb_008/block, body: { reason: lost, channel: app } }, assert: [ "status == 200" ] }
+      - { request: { method: POST, path: /cards/crd_hb_008/unblock }, assert: [ "status == 200", "body.status == 'active'", "body.block == null" ] }
+  - id: TC-08
+    name: Fraud report sent once per transaction
+    steps:
+      - { request: { method: POST, path: /fraud-reports, body: { transaction_id: "74000002305000000004418", card_id: crd_hb_005, fraud_type: "6", case_id: CASE-2026-0412 } }, assert: [ "status == 201", "body.status == 'sent'", "body.fraud_report_id matches ^FR-" ] }
+      - { request: { method: POST, path: /fraud-reports, body: { transaction_id: "74000002305000000004418", card_id: crd_hb_005, fraud_type: "6", case_id: CASE-2026-0412 } }, assert: [ "status == 409" ] }
+      - { request: { method: POST, path: /fraud-reports, body: { transaction_id: "74000002305000000005502", card_id: crd_hb_002, fraud_type: "6", case_id: CASE-2026-0413 } }, assert: [ "status == 422", "body.rule == 'F3'" ] }
+  - id: TC-09
+    name: Fraud dispute needs the fraud report first
+    steps:
+      - { request: { method: POST, path: /disputes, body: { transaction_id: "74000002305000000004418", condition_code: "10.4", amount_minor: 12990, currency: EUR } }, assert: [ "status == 422", "body.type endsWith 'fraud-report-required'" ] }
+      - { request: { method: POST, path: /disputes, body: { transaction_id: "74000002305000000001187", condition_code: "10.4", amount_minor: 8990, currency: EUR, fraud_report_id: FR-2026-1182 } }, assert: [ "status == 409", "body.type endsWith 'dispute-already-open'" ] }
+  - id: TC-10
+    name: 120-day limit, inclusive
+    steps:
+      - { request: { method: POST, path: /disputes, body: { transaction_id: "74000002305000000002265", condition_code: "13.1", amount_minor: 5400, currency: EUR } }, assert: [ "status == 201", "body.status == 'submitted'", "header Location startsWith /disputes/" ] }
+      - { request: { method: POST, path: /disputes, body: { transaction_id: "74000002305000000003349", condition_code: "13.1", amount_minor: 3200, currency: EUR } }, assert: [ "status == 422", "body.rule == 'D2'" ] }
+      - { request: { method: POST, path: /disputes, body: { transaction_id: "74000002305000000002265", condition_code: "13.1", amount_minor: 5401, currency: EUR } }, assert: [ "status == 409 or status == 422" ], note: "D5 is checked before D4 - order to confirm with dev" }
+
+# ---------------------------------------------------------------- CB twin
+x-cb-twin:
+  issuer: Banque Lumière
+  server: mock://lumiere/v1
+  api_key: bl_test_demo_key
+  labels_fr: { block: mise en opposition, fraud-reports: déclaration de fraude au GIE CB, disputes: impayé, stip: traitement de secours (STIP CB - *to confirm* name) }
+  differences:
+    - "Authorisation: same ISO 8583 codes; CB2A field names and any CB-specific code use are *to confirm* against the CB2A spec (not public)."
+    - "crd_bl_003: issuer down without fallback → 91 (no stand-in)."
+    - "crd_bl_002: opposition for fraudulent use → 05 (issuer choice, mirrors the Visa SFD)."
+    - "Opposition: unauthorised transactions refunded by end of next business day (CMF art. L133-18) - mock returns refund_due_by on block."
+    - "Disputes: cardholder contestation window 13 months after debit (CMF art. L133-24); scheme impayé reason codes and deadlines *to confirm* (CB rulebook)."
+    - "Fraud report: fraud type list of the GIE CB declaration *to confirm*; mock accepts the same 0-6 list labelled in French."

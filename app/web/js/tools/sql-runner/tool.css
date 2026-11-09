@@ -1,0 +1,53 @@
+/* SQL runner: styles scoped under .tool-sql-runner (owner D). Tokens only. */
+.tool-sql-runner .sr-question { flex: 2 1 320px; min-width: 0; }
+.tool-sql-runner .sr-question .input { width: 100%; }
+.tool-sql-runner .sr-chips { display: flex; flex-wrap: wrap; gap: var(--s-1); align-items: center; min-height: var(--h-md); }
+
+.tool-sql-runner .sr-editor-tools { margin-top: var(--s-2); }
+.tool-sql-runner .sr-ai-note { display: flex; gap: var(--s-2); align-items: center; padding: var(--s-2) var(--s-3); margin-bottom: var(--s-3); }
+.tool-sql-runner .sr-translation { margin-top: var(--s-4); }
+.tool-sql-runner .sr-notes { margin: var(--s-2) 0; padding-left: var(--s-5); color: var(--fg-2); font-size: var(--fs-12); line-height: var(--lh-12); }
+
+/* schema browser */
+.tool-sql-runner .sr-schema { margin-top: var(--s-5); }
+.tool-sql-runner .sr-schema-list { margin-top: var(--s-2); border: 1px solid var(--line); border-radius: var(--r-md); color: var(--fg-2); font-size: var(--fs-12); }
+.tool-sql-runner .sr-table + .sr-table { border-top: 1px solid var(--line); }
+.tool-sql-runner .sr-table > summary {
+  display: flex; align-items: center; gap: var(--s-2); min-height: var(--h-md); padding: 0 var(--s-2) 0 var(--s-3);
+  cursor: pointer; list-style: none; color: var(--fg);
+}
+.tool-sql-runner .sr-table > summary::-webkit-details-marker { display: none; }
+.tool-sql-runner .sr-table > summary:hover { background: var(--hover); }
+.tool-sql-runner .sr-table input[type=checkbox] { width: var(--s-4); height: var(--s-4); margin: 0; accent-color: var(--accent); }
+.tool-sql-runner .sr-tname { font-size: var(--fs-12); font-weight: var(--fw-medium); }
+.tool-sql-runner .sr-tcount { margin-left: auto; font-size: var(--fs-12); font-variant-numeric: tabular-nums; }
+.tool-sql-runner .sr-cols { list-style: none; margin: 0; padding: 0 0 var(--s-2) var(--s-8); }
+.tool-sql-runner .sr-col {
+  display: flex; align-items: center; gap: var(--s-2); width: 100%; min-height: var(--h-sm); padding: 0 var(--s-2);
+  border: 0; border-radius: var(--r-sm); background: none; color: var(--fg); font: inherit; font-size: var(--fs-12); text-align: left; cursor: pointer;
+  transition: background-color var(--t-1) var(--ease);
+}
+.tool-sql-runner .sr-col:hover { background: var(--hover); }
+.tool-sql-runner .sr-ctype { font-size: var(--fs-11); }
+
+/* results */
+.tool-sql-runner .sr-checks { margin-bottom: var(--s-3); }
+.tool-sql-runner .sr-trunc { margin: 0 0 var(--s-2); font-size: var(--fs-12); }
+.tool-sql-runner .sr-result-body .table-wrap { max-height: 60vh; overflow: auto; }
+.tool-sql-runner .sr-interp { margin-top: var(--s-4); }
+.tool-sql-runner .sr-interp textarea { width: 100%; }
+
+/* mini bar chart: one series, accent bars, values in text ink, 2 px gaps, rounded data end */
+.tool-sql-runner .sr-chart { margin: 0; }
+.tool-sql-runner .sr-chart figcaption { margin-bottom: var(--s-2); }
+.tool-sql-runner .sr-bars { display: grid; gap: 2px; }
+.tool-sql-runner .sr-bar-row {
+  display: grid; grid-template-columns: minmax(calc(var(--s-12) * 2), 32%) 1fr minmax(var(--s-12), auto); align-items: center; gap: var(--s-3);
+  min-height: var(--h-sm); padding: 0 var(--s-1); border-radius: var(--r-sm); font-size: var(--fs-12);
+}
+.tool-sql-runner .sr-bar-row:hover { background: var(--hover); }
+.tool-sql-runner .sr-bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg); }
+.tool-sql-runner .sr-bar-track { display: block; height: var(--s-3); }
+.tool-sql-runner .sr-bar { display: block; height: 100%; background: var(--accent); border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.tool-sql-runner .sr-bar-value { color: var(--fg-2); text-align: right; font-variant-numeric: tabular-nums; }
+@media (forced-colors: active) { .tool-sql-runner .sr-bar { background: CanvasText; } }

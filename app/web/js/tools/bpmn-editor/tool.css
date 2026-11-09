@@ -1,0 +1,37 @@
+/* BPMN editor: styles scoped under .tool-bpmn-editor (owner E). Tokens only.
+   Licence: the bpmn.io watermark sits in the bottom-right corner of .be-canvas. Nothing is positioned over it and the
+   canvas is never clipped there (no overlay, no absolutely placed control in that corner). */
+.tool-bpmn-editor .be-command { flex-wrap: wrap; }
+.tool-bpmn-editor .be-command > .field:first-child { flex: 1 1 240px; }
+.tool-bpmn-editor .be-command > .field:nth-child(2) { flex: 2 1 360px; }
+.tool-bpmn-editor .be-steps textarea { min-height: calc(var(--h-lg) * 6); font-size: var(--fs-12); line-height: var(--lh-12, 18px); white-space: pre; overflow-x: auto; tab-size: 2; }
+.tool-bpmn-editor .be-syntax { margin: var(--s-2) 0 0; font-size: var(--fs-12); color: var(--fg-2); }
+.tool-bpmn-editor .be-syntax summary { cursor: pointer; width: max-content; min-height: var(--s-6); display: flex; align-items: center; }
+.tool-bpmn-editor .be-syntax ul { margin: var(--s-1) 0 0; padding-left: var(--s-4); display: grid; gap: var(--s-1); font-family: var(--mono); white-space: pre-wrap; }
+.tool-bpmn-editor .tf-config > * + * { margin-top: var(--s-4); }
+.tool-bpmn-editor .be-draft { border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-3); background: var(--accent-soft); display: grid; gap: var(--s-2); }
+.tool-bpmn-editor .be-draft[hidden] { display: none; }
+.tool-bpmn-editor .be-draft p { margin: 0; display: flex; gap: var(--s-2); align-items: center; color: var(--fg); }
+.tool-bpmn-editor .be-tabs { margin-top: var(--s-4); }
+.tool-bpmn-editor .be-checks { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; gap: 0; }
+.tool-bpmn-editor .be-checks li { display: flex; gap: var(--s-2); align-items: flex-start; padding: var(--s-2) 0; border-bottom: 1px solid var(--line); }
+.tool-bpmn-editor .be-checks li > span { flex: 1; min-width: 0; padding-top: 2px; }
+.tool-bpmn-editor .be-checks li .badge { flex: none; }
+.tool-bpmn-editor .be-ok { display: flex; gap: var(--s-2); align-items: center; color: var(--ok); margin: var(--s-3) 0; }
+.tool-bpmn-editor .be-ok svg { flex: none; }
+
+.tool-bpmn-editor .be-stage { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+.tool-bpmn-editor .be-bar { display: flex; gap: var(--s-2); align-items: center; flex-wrap: wrap; min-height: var(--h-md); }
+.tool-bpmn-editor .be-src { font-size: var(--fs-12); }
+.tool-bpmn-editor .be-note { flex: 1 1 240px; display: flex; gap: var(--s-2); align-items: center; justify-content: flex-end; font-size: var(--fs-12); color: var(--fg-2); }
+.tool-bpmn-editor .be-note[hidden] { display: none; }
+.tool-bpmn-editor .be-canvas-wrap { position: relative; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden;
+  height: clamp(400px, calc(100vh - 460px), 960px); background: var(--bg-subtle); }
+/* The diagram keeps a light "paper" in both themes so default-coloured shapes and labels stay readable. */
+.tool-bpmn-editor .be-canvas { position: absolute; inset: 0; color-scheme: light; background: Canvas; color: CanvasText; }
+.tool-bpmn-editor .be-canvas[hidden] { display: none; }
+.tool-bpmn-editor .be-loading { position: absolute; top: var(--s-4); left: var(--s-4); font-size: var(--fs-12); }
+.tool-bpmn-editor .be-loading[hidden], .tool-bpmn-editor .be-empty[hidden] { display: none; }
+.tool-bpmn-editor .be-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--s-6); }
+.tool-bpmn-editor .be-canvas .djs-container:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+@media (max-width: 760px) { .tool-bpmn-editor .be-canvas-wrap { height: 420px; } }

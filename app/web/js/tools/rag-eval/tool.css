@@ -1,0 +1,57 @@
+/* RAG eval scorer: styles scoped under .tool-rag-eval (owner G). Tokens only (research/04 §4). */
+.tool-rag-eval .re-tab { display: grid; gap: var(--s-1); padding-top: var(--s-3); }
+.tool-rag-eval .re-csv { font-size: var(--fs-12); line-height: var(--lh-16); white-space: pre; overflow-x: auto; min-height: 280px; }
+.tool-rag-eval .re-meta { margin: 0; font-size: var(--fs-12); color: var(--fg-2); }
+.tool-rag-eval .advanced { margin-top: var(--s-4); }
+.tool-rag-eval .re-adv { display: grid; gap: var(--s-3); }
+.tool-rag-eval .re-gates { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--s-3); }
+.tool-rag-eval h2 { font-size: var(--fs-16); line-height: var(--lh-24); font-weight: var(--fw-semibold); margin: 0 0 var(--s-2); }
+.tool-rag-eval h3 { font-size: var(--fs-13); font-weight: var(--fw-semibold); margin: var(--s-3) 0 var(--s-1); }
+.tool-rag-eval .re-sub { color: var(--fg-2); font-size: var(--fs-12); margin: var(--s-1) 0 var(--s-2); }
+.tool-rag-eval .re-warn { color: var(--warn); font-size: var(--fs-12); margin: var(--s-1) 0; }
+.tool-rag-eval .re-sec { margin-top: var(--s-6); }
+
+/* verdict */
+.tool-rag-eval .re-verdict { border: 1px solid var(--line); border-left-width: 4px; border-radius: var(--r-md); padding: var(--s-4); background: var(--surface); }
+.tool-rag-eval .re-verdict.tone-ok { border-left-color: var(--ok-solid); }
+.tool-rag-eval .re-verdict.tone-bad { border-left-color: var(--bad-solid); }
+.tool-rag-eval .re-v-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.tool-rag-eval .re-v-big { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--fs-20); line-height: var(--lh-24); font-weight: var(--fw-semibold); }
+.tool-rag-eval .tone-ok .re-v-big { color: var(--ok); }
+.tool-rag-eval .tone-bad .re-v-big { color: var(--bad); }
+.tool-rag-eval .re-v-score { display: grid; justify-items: end; }
+.tool-rag-eval .re-v-l { font-size: var(--fs-12); color: var(--fg-2); }
+.tool-rag-eval .re-v-n { font-size: var(--fs-24); line-height: var(--lh-24); font-weight: var(--fw-semibold); }
+.tool-rag-eval .re-bar { position: relative; height: 10px; background: var(--bg-subtle); border-radius: var(--r-full); margin: var(--s-4) 0 var(--s-5); }
+.tool-rag-eval .re-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--r-full); }
+.tool-rag-eval .re-bar-fill.tone-ok { background: var(--ok-solid); }
+.tool-rag-eval .re-bar-fill.tone-bad { background: var(--bad-solid); }
+.tool-rag-eval .re-bar-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--fg); }
+.tool-rag-eval .re-bar-lab { position: absolute; top: 14px; transform: translateX(-50%); font-size: var(--fs-11); color: var(--fg-2); white-space: nowrap; }
+.tool-rag-eval .re-verdict ul { margin: 0; padding-left: var(--s-4); }
+.tool-rag-eval .re-verdict li { margin: var(--s-1) 0; }
+
+/* question table */
+.tool-rag-eval .re-qtable tbody tr { cursor: pointer; }
+.tool-rag-eval .re-qtable tbody tr.is-selected { background: var(--selected); box-shadow: inset 2px 0 0 var(--accent); }
+.tool-rag-eval .re-qtable td, .tool-rag-eval .re-qtable th { white-space: nowrap; }
+.tool-rag-eval .re-m { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: var(--r-sm); }
+.tool-rag-eval .re-m.is-pass { color: var(--ok); background: var(--ok-soft); }
+.tool-rag-eval .re-m.is-fail { color: var(--bad); background: var(--bad-soft); }
+.tool-rag-eval .re-m.is-na { color: var(--fg-2); }
+.tool-rag-eval .re-m.is-ov { outline: 1px dashed var(--fg-2); outline-offset: 1px; }
+
+/* detail */
+.tool-rag-eval .re-detail { margin-top: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-4); background: var(--surface); display: grid; gap: var(--s-2); }
+.tool-rag-eval .re-d-head { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.tool-rag-eval .re-d-head h3 { margin: 0; }
+.tool-rag-eval .re-dl { display: grid; grid-template-columns: 140px 1fr; gap: var(--s-1) var(--s-3); margin: 0; font-size: var(--fs-13); }
+.tool-rag-eval .re-dl dt { color: var(--fg-2); }
+.tool-rag-eval .re-dl dd { margin: 0; overflow-wrap: anywhere; }
+.tool-rag-eval .re-claims { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-1); }
+.tool-rag-eval .re-claims li { display: flex; gap: var(--s-2); align-items: baseline; flex-wrap: wrap; font-size: var(--fs-13); }
+.tool-rag-eval .re-why { color: var(--bad); font-size: var(--fs-12); }
+.tool-rag-eval .re-ov { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--s-1) var(--s-3); }
+.tool-rag-eval .re-ov-row { display: grid; grid-template-columns: 1fr 140px; gap: var(--s-2); align-items: center; font-size: var(--fs-12); }
+.tool-rag-eval .re-cause { grid-template-columns: 140px minmax(0, 360px); }
+@media (max-width: 720px) { .tool-rag-eval .re-dl { grid-template-columns: 1fr; } }

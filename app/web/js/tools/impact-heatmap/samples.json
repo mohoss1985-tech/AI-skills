@@ -1,0 +1,280 @@
+{
+ "en": [
+  {
+   "id": "exception-file-realtime",
+   "label": "Exception File listing in real time",
+   "hint": "Harbor Bank (sample)",
+   "state": {
+    "title": "Exception File listing in real time: impact",
+    "change": "Move Exception File listing from a 4-hourly batch to real time: every blocked PAN listed within 5 minutes",
+    "deadline": "PI 2027.1 (F-02 in the WSJF plan)",
+    "scale": "effort",
+    "areas": "Card management system, system, Card IT\nAuthorisation host and stand-in, system, Card IT\nVisa Exception File interface, system, Card IT\nBlock card process, process, Card servicing\nFraud operations, team, Fraud ops\nCall centre, team, Contact centre\nCard IT run and on-call, team, Card IT\nCompliance and audit, team, Compliance",
+    "scores": {
+     "Card management system": {
+      "people": 0,
+      "process": 1,
+      "data": 2,
+      "tech": 3,
+      "compliance": 1
+     },
+     "Authorisation host and stand-in": {
+      "people": 0,
+      "process": 1,
+      "data": 1,
+      "tech": 3,
+      "compliance": 2
+     },
+     "Visa Exception File interface": {
+      "people": 0,
+      "process": 1,
+      "data": 2,
+      "tech": 3,
+      "compliance": 2
+     },
+     "Block card process": {
+      "people": 1,
+      "process": 3,
+      "data": 1,
+      "tech": 1,
+      "compliance": 2
+     },
+     "Fraud operations": {
+      "people": 2,
+      "process": 2,
+      "data": 1,
+      "tech": 1,
+      "compliance": 2
+     },
+     "Call centre": {
+      "people": 2,
+      "process": 1,
+      "data": 0,
+      "tech": 0,
+      "compliance": 0
+     },
+     "Card IT run and on-call": {
+      "people": 3,
+      "process": 2,
+      "data": 0,
+      "tech": 1,
+      "compliance": 0
+     },
+     "Compliance and audit": {
+      "people": 0,
+      "process": 1,
+      "data": 1,
+      "tech": 0,
+      "compliance": 3
+     }
+    },
+    "gaps": [
+     {
+      "area": "Visa Exception File interface",
+      "dim": "tech",
+      "asIs": "Blocked PANs sent in a batch every 4 hours (illustrative). 18 Oct: crd_hb_009 listed after 160 min and approved in stand-in at 10:15.",
+      "toBe": "Online Exception File update on each block, listed within 5 min; retry 3 times, then alert ops. Visa update method and timings to confirm.",
+      "type": "change",
+      "owner": "Card IT",
+      "size": "L"
+     },
+     {
+      "area": "Authorisation host and stand-in",
+      "dim": "tech",
+      "asIs": "Stand-in checks only the last Exception File copy it received.",
+      "toBe": "Blocked status reaches stand-in in real time (option to confirm with the processor).",
+      "type": "change",
+      "owner": "Card IT",
+      "size": "L"
+     },
+     {
+      "area": "Card management system",
+      "dim": "data",
+      "asIs": "Block status written to the listing table at the next batch.",
+      "toBe": "Block event published at once with reason, time and channel.",
+      "type": "change",
+      "owner": "Card IT",
+      "size": "M"
+     },
+     {
+      "area": "Block card process",
+      "dim": "process",
+      "asIs": "Agents tell the cardholder \"your card is blocked everywhere\" while listing is pending.",
+      "toBe": "Confirm the listing status to the cardholder; escalate if not listed within 5 min.",
+      "type": "change",
+      "owner": "Card servicing",
+      "size": "M"
+     },
+     {
+      "area": "Card IT run and on-call",
+      "dim": "people",
+      "asIs": "No alert when a listing fails; found the next day.",
+      "toBe": "On-call alerted 24/7 after 3 failed retries, with a runbook.",
+      "type": "missing",
+      "owner": "Card IT",
+      "size": "M"
+     },
+     {
+      "area": "Compliance and audit",
+      "dim": "compliance",
+      "asIs": "Approvals after a block are not tracked; liability not measured.",
+      "toBe": "Monthly report of approvals after a block; listing timeliness against scheme rules (to confirm).",
+      "type": "missing",
+      "owner": "Compliance",
+      "size": "S"
+     },
+     {
+      "area": "Fraud operations",
+      "dim": "process",
+      "asIs": "Approvals after a block are found by chance during disputes.",
+      "toBe": "Daily exception report of approvals after a block, reviewed by fraud ops.",
+      "type": "missing",
+      "owner": "",
+      "size": "S"
+     }
+    ],
+    "notes": "Storyline: SQL Q5, UAT-05 (failed), BPMN retry path and WSJF F-02 describe the same incident."
+   },
+   "autorun": true
+  }
+ ],
+ "fr": [
+  {
+   "id": "liste-opposition-temps-reel",
+   "label": "Liste d'opposition en temps réel",
+   "hint": "Banque Lumière (exemple)",
+   "state": {
+    "title": "Inscription en temps réel sur la liste d'opposition : impacts",
+    "change": "Inscrire chaque carte mise en opposition sur la liste d'opposition en temps réel (cible : moins de 5 minutes) au lieu d'un lot toutes les 4 heures",
+    "deadline": "PI 2027.1 (F-02 du plan WSJF)",
+    "scale": "effort",
+    "areas": "Système de gestion des cartes, système, Informatique carte\nServeur d'autorisation, système, Informatique carte\nInterface liste d'opposition CB, système, Informatique carte\nProcessus de mise en opposition, processus, Relation client\nÉquipe fraude, équipe, Fraude\nCentre de relation client, équipe, Relation client\nExploitation et astreinte, équipe, Informatique carte\nConformité et contrôle interne, équipe, Conformité",
+    "scores": {
+     "Système de gestion des cartes": {
+      "people": 0,
+      "process": 1,
+      "data": 2,
+      "tech": 3,
+      "compliance": 1
+     },
+     "Serveur d'autorisation": {
+      "people": 0,
+      "process": 1,
+      "data": 1,
+      "tech": 2,
+      "compliance": 2
+     },
+     "Interface liste d'opposition CB": {
+      "people": 0,
+      "process": 1,
+      "data": 2,
+      "tech": 3,
+      "compliance": 2
+     },
+     "Processus de mise en opposition": {
+      "people": 1,
+      "process": 3,
+      "data": 1,
+      "tech": 1,
+      "compliance": 2
+     },
+     "Équipe fraude": {
+      "people": 2,
+      "process": 2,
+      "data": 1,
+      "tech": 1,
+      "compliance": 2
+     },
+     "Centre de relation client": {
+      "people": 2,
+      "process": 1,
+      "data": 0,
+      "tech": 0,
+      "compliance": 0
+     },
+     "Exploitation et astreinte": {
+      "people": 3,
+      "process": 2,
+      "data": 0,
+      "tech": 1,
+      "compliance": 0
+     },
+     "Conformité et contrôle interne": {
+      "people": 0,
+      "process": 1,
+      "data": 1,
+      "tech": 0,
+      "compliance": 3
+     }
+    },
+    "gaps": [
+     {
+      "area": "Interface liste d'opposition CB",
+      "dim": "tech",
+      "asIs": "Oppositions envoyées par lot toutes les 4 heures (illustratif).",
+      "toBe": "Inscription unitaire à chaque opposition, en moins de 5 min ; 3 relances puis alerte. Modalités GIE CB à confirmer.",
+      "type": "change",
+      "owner": "Informatique carte",
+      "size": "L"
+     },
+     {
+      "area": "Serveur d'autorisation",
+      "dim": "compliance",
+      "asIs": "Un refus 91 quand l'émetteur est indisponible (pas de stand-in CB), mais la carte n'est pas toujours connue comme opposée.",
+      "toBe": "Le statut d'opposition est connu du serveur d'autorisation en temps réel.",
+      "type": "change",
+      "owner": "Informatique carte",
+      "size": "M"
+     },
+     {
+      "area": "Système de gestion des cartes",
+      "dim": "data",
+      "asIs": "Statut d'opposition écrit dans la table d'inscription au lot suivant.",
+      "toBe": "Événement d'opposition publié immédiatement (motif, heure, canal).",
+      "type": "change",
+      "owner": "Informatique carte",
+      "size": "M"
+     },
+     {
+      "area": "Processus de mise en opposition",
+      "dim": "process",
+      "asIs": "Le conseiller annonce « carte bloquée partout » alors que l'inscription est en attente.",
+      "toBe": "Confirmer au client le statut d'inscription ; escalade au-delà de 5 min.",
+      "type": "change",
+      "owner": "Relation client",
+      "size": "M"
+     },
+     {
+      "area": "Exploitation et astreinte",
+      "dim": "people",
+      "asIs": "Aucune alerte en cas d'échec d'inscription ; détecté le lendemain.",
+      "toBe": "Astreinte alertée 24 h/24 après 3 échecs, avec procédure.",
+      "type": "missing",
+      "owner": "Informatique carte",
+      "size": "M"
+     },
+     {
+      "area": "Conformité et contrôle interne",
+      "dim": "compliance",
+      "asIs": "Paiements acceptés après opposition non suivis ; responsabilité (remboursement J+1, art. L133-18 CMF) non mesurée.",
+      "toBe": "Rapport mensuel des paiements acceptés après opposition ; délais d'inscription au regard des règles CB (à confirmer).",
+      "type": "missing",
+      "owner": "Conformité",
+      "size": "S"
+     },
+     {
+      "area": "Équipe fraude",
+      "dim": "process",
+      "asIs": "Paiements après opposition découverts lors des contestations.",
+      "toBe": "Rapport quotidien des paiements acceptés après opposition, revu par l'équipe fraude.",
+      "type": "missing",
+      "owner": "",
+      "size": "S"
+     }
+    ],
+    "notes": "Fil rouge : requête SQL Q5, recette UAT-05 (échec), chemin de relance BPMN et F-02 du WSJF décrivent le même incident."
+   },
+   "autorun": true
+  }
+ ]
+}

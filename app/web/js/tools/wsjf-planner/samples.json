@@ -1,0 +1,294 @@
+{
+ "en": [
+  {
+   "id": "harbor-pi",
+   "title": "PI planning: cards team, PAN declaration and disputes",
+   "client": "Harbor Bank (sample)",
+   "state": {
+    "title": "PI planning: cards team, PAN declaration and disputes",
+    "capacity": 120,
+    "project": "CARD",
+    "calc": {
+     "sprints": 4,
+     "velocity": 40,
+     "runPct": 10,
+     "bufferPct": 15
+    },
+    "items": [
+     {
+      "id": "F-01",
+      "title": "Block a lost or stolen card in the app",
+      "type": "Epic",
+      "business_value": 20,
+      "time_criticality": 13,
+      "risk_reduction": 13,
+      "job_size": 8,
+      "points": 34,
+      "depends_on": "F-06",
+      "deadline": "in-pi",
+      "note": "Promised before June."
+     },
+     {
+      "id": "F-02",
+      "title": "Add blocked PANs to the Visa Exception File automatically",
+      "type": "Epic",
+      "business_value": 8,
+      "time_criticality": 13,
+      "risk_reduction": 20,
+      "job_size": 5,
+      "points": 21,
+      "depends_on": "F-06",
+      "deadline": "in-pi",
+      "note": "Storyline: on 18 Oct a stolen card was approved in stand-in because its Exception File listing took 160 min (target 5 min). Audit point."
+     },
+     {
+      "id": "F-03",
+      "title": "Fraud declaration workflow for unrecognised transactions",
+      "type": "Epic",
+      "business_value": 13,
+      "time_criticality": 8,
+      "risk_reduction": 13,
+      "job_size": 8,
+      "points": 30,
+      "depends_on": "",
+      "deadline": "",
+      "note": ""
+     },
+     {
+      "id": "F-04",
+      "title": "Open disputes from the fraud declaration",
+      "type": "Epic",
+      "business_value": 8,
+      "time_criticality": 3,
+      "risk_reduction": 5,
+      "job_size": 13,
+      "points": 40,
+      "depends_on": "F-03",
+      "deadline": "",
+      "note": ""
+     },
+     {
+      "id": "F-05",
+      "title": "Explain declined payments in the app (response codes)",
+      "type": "Story",
+      "business_value": 5,
+      "time_criticality": 2,
+      "risk_reduction": 2,
+      "job_size": 3,
+      "points": 13,
+      "depends_on": "",
+      "deadline": "",
+      "note": ""
+     },
+     {
+      "id": "F-06",
+      "title": "Real-time block API on the authorisation host",
+      "type": "Enabler",
+      "business_value": 3,
+      "time_criticality": 13,
+      "risk_reduction": 20,
+      "job_size": 5,
+      "points": 21,
+      "depends_on": "",
+      "deadline": "in-pi",
+      "note": ""
+     },
+     {
+      "id": "F-07",
+      "title": "Suspend wallet tokens when the card is blocked",
+      "type": "Story",
+      "business_value": 8,
+      "time_criticality": 8,
+      "risk_reduction": 13,
+      "job_size": 3,
+      "points": 13,
+      "depends_on": "F-06",
+      "deadline": "",
+      "note": ""
+     },
+     {
+      "id": "F-08",
+      "title": "Merchant category controls set by the cardholder",
+      "type": "Epic",
+      "business_value": 5,
+      "time_criticality": 2,
+      "risk_reduction": 3,
+      "job_size": 8,
+      "points": 26,
+      "depends_on": "",
+      "deadline": "",
+      "note": ""
+     }
+    ],
+    "objectives": [
+     {
+      "text": "A blocked card is refused everywhere at once, including wallet payments and stand-in",
+      "bv": 10,
+      "committed": true
+     },
+     {
+      "text": "Cardholders block a lost or stolen card in the app in under a minute",
+      "bv": 9,
+      "committed": true
+     },
+     {
+      "text": "Fraud ops declare confirmed fraud to Visa from the case, the same day",
+      "bv": 7,
+      "committed": true
+     },
+     {
+      "text": "Declined payments explained in the app",
+      "bv": 3,
+      "committed": false
+     }
+    ]
+   }
+  }
+ ],
+ "fr": [
+  {
+   "id": "lumiere-pi",
+   "title": "PI planning : équipe monétique, opposition et impayés",
+   "client": "Banque Lumière (exemple)",
+   "state": {
+    "title": "PI planning : équipe monétique, opposition et impayés",
+    "capacity": 120,
+    "project": "CARTE",
+    "calc": {
+     "sprints": 4,
+     "velocity": 40,
+     "runPct": 10,
+     "bufferPct": 15
+    },
+    "items": [
+     {
+      "id": "F-01",
+      "title": "Mise en opposition dans l'application",
+      "type": "Epic",
+      "business_value": 20,
+      "time_criticality": 13,
+      "risk_reduction": 13,
+      "job_size": 8,
+      "points": 34,
+      "depends_on": "F-06",
+      "deadline": "in-pi",
+      "note": "Promis avant juin."
+     },
+     {
+      "id": "F-02",
+      "title": "Inscription automatique des cartes en opposition sur la liste d'opposition CB",
+      "type": "Epic",
+      "business_value": 8,
+      "time_criticality": 13,
+      "risk_reduction": 20,
+      "job_size": 5,
+      "points": 21,
+      "depends_on": "F-06",
+      "deadline": "in-pi",
+      "note": "Fil rouge : le 18 oct., une carte volée a été acceptée en autorisation de secours car son inscription en liste d'opposition a pris 160 min (cible 5 min). Point d'audit."
+     },
+     {
+      "id": "F-03",
+      "title": "Déclaration de fraude au GIE CB depuis le dossier",
+      "type": "Epic",
+      "business_value": 13,
+      "time_criticality": 8,
+      "risk_reduction": 13,
+      "job_size": 8,
+      "points": 30,
+      "depends_on": "",
+      "deadline": "",
+      "note": ""
+     },
+     {
+      "id": "F-04",
+      "title": "Émission des impayés depuis le dossier de fraude",
+      "type": "Epic",
+      "business_value": 8,
+      "time_criticality": 3,
+      "risk_reduction": 5,
+      "job_size": 13,
+      "points": 40,
+      "depends_on": "F-03",
+      "deadline": "",
+      "note": ""
+     },
+     {
+      "id": "F-05",
+      "title": "Explication des refus de paiement dans l'appli",
+      "type": "Story",
+      "business_value": 5,
+      "time_criticality": 2,
+      "risk_reduction": 2,
+      "job_size": 3,
+      "points": 13,
+      "depends_on": "",
+      "deadline": "",
+      "note": ""
+     },
+     {
+      "id": "F-06",
+      "title": "API d'opposition temps réel sur le serveur d'autorisation",
+      "type": "Enabler",
+      "business_value": 3,
+      "time_criticality": 13,
+      "risk_reduction": 20,
+      "job_size": 5,
+      "points": 21,
+      "depends_on": "",
+      "deadline": "in-pi",
+      "note": ""
+     },
+     {
+      "id": "F-07",
+      "title": "Suspension des jetons de paiement mobile à l'opposition",
+      "type": "Story",
+      "business_value": 8,
+      "time_criticality": 8,
+      "risk_reduction": 13,
+      "job_size": 3,
+      "points": 13,
+      "depends_on": "F-06",
+      "deadline": "",
+      "note": ""
+     },
+     {
+      "id": "F-08",
+      "title": "Blocage par catégorie de commerçant",
+      "type": "Epic",
+      "business_value": 5,
+      "time_criticality": 2,
+      "risk_reduction": 3,
+      "job_size": 8,
+      "points": 26,
+      "depends_on": "",
+      "deadline": "",
+      "note": ""
+     }
+    ],
+    "objectives": [
+     {
+      "text": "Une carte en opposition est refusée partout immédiatement, y compris en paiement mobile et en autorisation de secours",
+      "bv": 10,
+      "committed": true
+     },
+     {
+      "text": "Les porteurs font opposition dans l'appli en moins d'une minute",
+      "bv": 9,
+      "committed": true
+     },
+     {
+      "text": "La fraude confirmée est déclarée au GIE CB le jour même",
+      "bv": 7,
+      "committed": true
+     },
+     {
+      "text": "Refus de paiement expliqués dans l'appli",
+      "bv": 3,
+      "committed": false
+     }
+    ]
+   }
+  }
+ ]
+}

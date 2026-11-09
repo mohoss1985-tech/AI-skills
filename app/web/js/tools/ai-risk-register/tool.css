@@ -1,0 +1,56 @@
+/* AI risk register: styles scoped under .tool-ai-risk-register (owner J). Tokens only. */
+.tool-ai-risk-register .ar-system { flex: 1 1 220px; }
+.tool-ai-risk-register .ar-use { flex: 2 1 340px; }
+.tool-ai-risk-register .ar-data { flex: 2 1 280px; }
+.tool-ai-risk-register .advanced { margin-bottom: var(--s-4); }
+.tool-ai-risk-register .ar-adv { display: grid; gap: var(--s-3); max-width: 960px; }
+.tool-ai-risk-register .ar-adv-row { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: var(--s-3); }
+.tool-ai-risk-register h2 { font-size: var(--fs-16); line-height: 24px; font-weight: var(--fw-semibold); margin: 0 0 var(--s-2); }
+.tool-ai-risk-register h3 { font-size: var(--fs-13); font-weight: var(--fw-semibold); margin: var(--s-4) 0 var(--s-1); }
+.tool-ai-risk-register .tab-panel { padding-top: var(--s-4); }
+.tool-ai-risk-register .ar-strip { display: flex; justify-content: flex-end; margin-bottom: var(--s-2); }
+.tool-ai-risk-register .ar-sub { color: var(--fg-2); font-size: var(--fs-12); margin: var(--s-1) 0 var(--s-2); }
+.tool-ai-risk-register .ar-sec-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-2); }
+.tool-ai-risk-register .ar-sec-head h2 { margin: 0; }
+
+/* wizard */
+.tool-ai-risk-register .ar-wiz { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: var(--s-6); align-items: start; }
+@media (max-width: 1100px) { .tool-ai-risk-register .ar-wiz, .tool-ai-risk-register .ar-lower { grid-template-columns: 1fr; } .tool-ai-risk-register .ar-adv-row { grid-template-columns: 1fr; } }
+.tool-ai-risk-register .ar-step { border: 0; padding: 0; margin: 0 0 var(--s-6); min-width: 0; }
+.tool-ai-risk-register .ar-step legend { font-size: var(--fs-14); font-weight: var(--fw-semibold); padding: 0; margin-bottom: var(--s-2); }
+.tool-ai-risk-register .ar-q { display: flex; gap: var(--s-4); align-items: center; justify-content: space-between; padding: var(--s-2) var(--s-2); border-top: 1px solid var(--line); }
+.tool-ai-risk-register .ar-q.is-unsure { background: var(--warn-soft); border-radius: var(--r-sm); }
+.tool-ai-risk-register .ar-q-text { display: grid; gap: var(--s-1); min-width: 0; font-size: var(--fs-13); }
+.tool-ai-risk-register .ar-q .segmented { flex: 0 0 auto; }
+.tool-ai-risk-register .ar-ref { font-family: var(--mono); font-size: var(--fs-11); color: var(--fg-2); }
+.tool-ai-risk-register .ar-note { font-size: var(--fs-12); color: var(--fg-2); }
+.tool-ai-risk-register .ar-result { padding: var(--s-4); position: sticky; top: var(--s-4); }
+.tool-ai-risk-register .ar-tier { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: var(--s-1) 0; }
+.tool-ai-risk-register .ar-tier .badge:first-child { font-size: var(--fs-14); }
+.tool-ai-risk-register .ar-list { margin: 0; padding-left: var(--s-4); font-size: var(--fs-13); display: grid; gap: var(--s-1); }
+.tool-ai-risk-register .ar-confirm em { color: var(--fg-2); }
+
+/* register */
+.tool-ai-risk-register .ar-grid td:nth-child(2) .cell-input, .tool-ai-risk-register .ar-grid td:nth-child(8) .cell-input { min-width: 240px; }
+.tool-ai-risk-register .ar-lower { display: grid; grid-template-columns: minmax(280px, 420px) minmax(0, 1fr); gap: var(--s-6); margin-top: var(--s-6); align-items: start; }
+.tool-ai-risk-register .ar-heat-wrap { display: flex; align-items: center; gap: var(--s-2); }
+.tool-ai-risk-register .ar-axis-y { writing-mode: vertical-rl; transform: rotate(180deg); font-size: var(--fs-12); color: var(--fg-2); }
+.tool-ai-risk-register .ar-axis-x { font-size: var(--fs-12); color: var(--fg-2); text-align: center; margin-top: var(--s-1); }
+.tool-ai-risk-register .ar-heat-t { border-collapse: separate; border-spacing: 2px; }
+.tool-ai-risk-register .ar-heat-t th { font-size: var(--fs-11); font-weight: var(--fw-medium); color: var(--fg-2); padding: 0 var(--s-1); }
+.tool-ai-risk-register .ar-h { width: 64px; height: 48px; border-radius: var(--r-sm); text-align: center; vertical-align: middle; font: var(--fw-medium) var(--fs-11) var(--mono); }
+.tool-ai-risk-register .ar-h-low { background: var(--ok-soft); }
+.tool-ai-risk-register .ar-h-medium { background: var(--warn-soft); }
+.tool-ai-risk-register .ar-h-high { background: var(--bad-soft); }
+.tool-ai-risk-register .ar-h.has { outline: 1px solid var(--line-strong); color: var(--fg); }
+.tool-ai-risk-register .ar-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+.tool-ai-risk-register .ar-checks .badge { white-space: normal; height: auto; min-height: 24px; line-height: 1.4; padding-top: var(--s-1); padding-bottom: var(--s-1); text-align: left; align-items: flex-start; }
+.tool-ai-risk-register .ar-nist { list-style: none; margin: 0; padding: 0; max-width: 240px; }
+.tool-ai-risk-register .ar-nist li { display: flex; justify-content: space-between; padding: var(--s-1) 0; border-top: 1px solid var(--line); font-size: var(--fs-13); }
+
+.tool-ai-risk-register .jk-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-2); }
+.tool-ai-risk-register .jk-top > .advanced { margin-bottom: 0; flex: 1 1 480px; }
+.tool-ai-risk-register .ar-grid .table { min-width: 1560px; }
+.tool-ai-risk-register .ar-grid .grid-ro { white-space: nowrap; }
+.tool-ai-risk-register .ar-grid td:nth-child(3) .cell-input { min-width: 120px; }
+.tool-ai-risk-register .ar-grid td:nth-child(7) .cell-input, .tool-ai-risk-register .ar-grid td:nth-child(9) .cell-input { min-width: 140px; }

@@ -1,0 +1,338 @@
+{
+ "en": [
+  {
+   "id": "visa-fraud-report",
+   "label": "Fraud cases → Visa fraud reports",
+   "hint": "Harbor Bank (sample)",
+   "state": {
+    "title": "Fraud cases → Visa fraud reports",
+    "targetTable": "fraud_report",
+    "key": "transaction_id",
+    "dialect": "postgres",
+    "sources": "fraud_case_txn.arn, varchar(23), 74000002305000000007790\nfraud_case.card_token, varchar(19), tok_9f3a09\nfraud_case.fraud_reason, varchar(15), STOLEN\nfraud_case_txn.txn_date, date, 2026-10-18\nfraud_case.confirmed_at, timestamp, 2026-10-20T10:30:00Z\nfraud_case_txn.amount, decimal(9,2), 64.90\nfraud_case_txn.currency, varchar(3), eur\nfraud_case_txn.pos_entry, varchar(2), 81\nfraud_case.case_no, varchar(12), CASE-0421\nfraud_case.analyst, varchar(40), J. Morgan",
+    "targets": "transaction_id, varchar(23), Y\npan_token, varchar(19), Y\nfraud_type, varchar(2), Y, 0|1|2|3|4|5|6, fraud type values to confirm against the current Visa fraud reporting rules\ntransaction_date, date, Y\nfraud_reported_date, date, Y, , reporting deadline after confirmation to confirm\namount_minor, bigint, Y\ncurrency, varchar(3), Y, EUR|USD|GBP\nentry_mode, varchar(12), N, CHIP|CONTACTLESS|ECOM|MAGSTRIPE|MANUAL\ncase_id, varchar(12), Y",
+    "rules": "DQ-01, Uniqueness, One fraud report per transaction (ARN); a case can have several transactions, 100%, Do not send the duplicate, Fraud operations\nDQ-02, Validity, Card number is a token: no clear PAN in any field (Luhn-valid 16-digit strings), 100%, Block the file and alert security, Security\nDQ-03, Validity, Fraud type and entry mode translate with T-01 and T-02, 100%, Hold the record for the analyst, Fraud operations\nDQ-04, Consistency, Fraud reported date is on or after the transaction date, 100%, Hold the record for the analyst, Fraud operations\nDQ-05, Validity, Amount is positive and the currency is ISO 4217, 100%, Hold the record, Fraud operations\nDQ-06, Timeliness, Reported within the scheme deadline after the fraud is confirmed (deadline to confirm), 99%, Escalate to the fraud manager, Fraud operations",
+    "translations": "T-01, LOST, 0, Lost\nT-01, STOLEN, 1, Stolen\nT-01, NOT_RECEIVED, 2, Card not received as issued\nT-01, APPLICATION, 3, Fraudulent application\nT-01, COUNTERFEIT, 4, Counterfeit\nT-01, OTHER, 5, Miscellaneous\nT-01, CNP, 6, Fraudulent use of account number (card not present)\nT-02, 05, CHIP, Chip\nT-02, 07, CONTACTLESS, Contactless\nT-02, 81, ECOM, E-commerce\nT-02, 90, MAGSTRIPE, Magnetic stripe\nT-02, 01, MANUAL, Manual key entry",
+    "map": [
+     {
+      "source": "fraud_case_txn.arn",
+      "target": "transaction_id",
+      "transformation": "TRIM(src.arn)",
+      "default": "",
+      "rule": "DQ-01"
+     },
+     {
+      "source": "fraud_case.card_token",
+      "target": "pan_token",
+      "transformation": "src.card_token (never the PAN)",
+      "default": "",
+      "rule": "DQ-02"
+     },
+     {
+      "source": "fraud_case.fraud_reason",
+      "target": "fraud_type",
+      "transformation": "translation table T-01",
+      "default": "",
+      "rule": "DQ-03"
+     },
+     {
+      "source": "fraud_case_txn.txn_date",
+      "target": "transaction_date",
+      "transformation": "src.txn_date",
+      "default": "",
+      "rule": "DQ-04"
+     },
+     {
+      "source": "fraud_case.confirmed_at",
+      "target": "fraud_reported_date",
+      "transformation": "CAST(src.confirmed_at AS DATE)",
+      "default": "",
+      "rule": "DQ-04"
+     },
+     {
+      "source": "fraud_case_txn.amount",
+      "target": "amount_minor",
+      "transformation": "ROUND(src.amount * 100)",
+      "default": "",
+      "rule": "DQ-05"
+     },
+     {
+      "source": "fraud_case_txn.currency",
+      "target": "currency",
+      "transformation": "UPPER(src.currency)",
+      "default": "",
+      "rule": "DQ-05"
+     },
+     {
+      "source": "fraud_case_txn.pos_entry",
+      "target": "entry_mode",
+      "transformation": "translation table T-02",
+      "default": "",
+      "rule": "DQ-03"
+     },
+     {
+      "source": "fraud_case.case_no",
+      "target": "case_id",
+      "transformation": "src.case_no",
+      "default": "",
+      "rule": "DQ-01"
+     }
+    ],
+    "record": {},
+    "notes": "Storyline: crd_hb_009 was blocked as stolen at 09:00 on 18 Oct but listed on the Exception File only at 11:40; E008 (€64.90, e-commerce) was approved in stand-in at 10:15. This is the fraud report for E008."
+   },
+   "autorun": true
+  },
+  {
+   "id": "iso8583-json",
+   "label": "ISO 8583 → internal JSON (with defects)",
+   "hint": "Harbor Bank (sample)",
+   "state": {
+    "title": "ISO 8583 authorisation → internal JSON (with defects)",
+    "targetTable": "auth_event",
+    "key": "stan",
+    "dialect": "postgres",
+    "sources": "iso.de2, n..19, 4000000000001091\niso.de3, n6, 000000\niso.de4, n12, 000000006490\niso.de7, n10, 1018101500\niso.de11, n6, 004512\niso.de12, n6, 101500\niso.de22, n3, 812\niso.de38, an6, A1B2C3\niso.de39, an2, 00\niso.de43, ans40, QUICKGIFT ONLINE STORE      LONDON    GB\niso.de49, n3, 978",
+    "targets": "pan_masked, varchar(19), Y\namount_minor, bigint, Y\ncurrency, varchar(3), Y, EUR|USD|GBP\ntxn_time, varchar(10), Y\nstan, varchar(6), Y\nentry_mode, varchar(12), Y, CHIP|CONTACTLESS|ECOM|MAGSTRIPE|MANUAL\nauth_code, varchar(6), N\nresponse_code, varchar(2), Y, 00|05|41|43|51|54|59|91\nmerchant_name, varchar(25), N\nprocessing_code, varchar(6), N",
+    "rules": "DQ-01, Uniqueness, One event per STAN and transmission time, 100%, Drop the duplicate, Card IT\nDQ-02, Validity, No clear PAN in the event: masked 6 + 4 only, 100%, Block the stream and alert security, Security\nDQ-03, Validity, Currency translates from ISO 4217 numeric (T-01), 100%, Hold the event, Card IT",
+    "translations": "T-01, 978, EUR, Euro\nT-01, 840, USD, US dollar\nT-01, 826, GBP, Pound sterling",
+    "map": [
+     {
+      "source": "iso.de2",
+      "target": "pan_masked",
+      "transformation": "MASK(src.de2)",
+      "default": "",
+      "rule": "DQ-02"
+     },
+     {
+      "source": "iso.de4",
+      "target": "amount_minor",
+      "transformation": "CAST(src.de4 AS BIGINT)",
+      "default": "",
+      "rule": ""
+     },
+     {
+      "source": "iso.de49",
+      "target": "currency",
+      "transformation": "translation table T-01",
+      "default": "",
+      "rule": "DQ-03"
+     },
+     {
+      "source": "iso.de7",
+      "target": "txn_time",
+      "transformation": "src.de7",
+      "default": "",
+      "rule": "DQ-01"
+     },
+     {
+      "source": "iso.de12",
+      "target": "txn_time",
+      "transformation": "src.de12",
+      "default": "",
+      "rule": "DQ-01"
+     },
+     {
+      "source": "iso.de11",
+      "target": "stan",
+      "transformation": "src.de11",
+      "default": "",
+      "rule": "DQ-01"
+     },
+     {
+      "source": "iso.de38",
+      "target": "auth_code",
+      "transformation": "",
+      "default": "",
+      "rule": ""
+     },
+     {
+      "source": "iso.de39",
+      "target": "response_code",
+      "transformation": "",
+      "default": "",
+      "rule": "DQ-04"
+     },
+     {
+      "source": "iso.de43",
+      "target": "merchant_name",
+      "transformation": "",
+      "default": "",
+      "rule": ""
+     }
+    ],
+    "record": {},
+    "notes": "Defects on purpose: txn_time mapped twice, entry_mode (mandatory) not mapped, merchant name 40 → 25 characters, rule DQ-04 unknown. Try mapping de2 straight to pan_masked: the preview blocks the clear PAN."
+   },
+   "autorun": true
+  }
+ ],
+ "fr": [
+  {
+   "id": "cb-declaration",
+   "label": "Dossiers de fraude → déclarations GIE CB",
+   "hint": "Banque Lumière (exemple)",
+   "state": {
+    "title": "Dossiers de fraude → déclarations GIE CB",
+    "targetTable": "declaration_fraude",
+    "key": "reference_operation",
+    "dialect": "postgres",
+    "sources": "dossier_operation.arn, varchar(23), 74000002305000000006102\ndossier_fraude.jeton_carte, varchar(19), tok_7c1b02\ndossier_fraude.motif, varchar(15), VAD\ndossier_operation.date_op, date, 2026-10-11\ndossier_fraude.confirme_le, timestamp, 2026-10-14T09:00:00Z\ndossier_operation.montant, decimal(9,2), 59.99\ndossier_operation.devise, varchar(3), eur\ndossier_operation.mode_saisie, varchar(2), 81\ndossier_fraude.num_dossier, varchar(12), CASE-0405\ndossier_fraude.analyste, varchar(40), C. Martin",
+    "targets": "reference_operation, varchar(23), O, , format de la référence d'opération CB à confirmer\njeton_pan, varchar(19), O\ntypologie, varchar(15), O, PERTE_VOL|NON_PARVENUE|CONTREFACON|NUMERO_USURPE|AUTRE, codes exacts du format GIE CB à confirmer (liste non publique)\ndate_operation, date, O\ndate_declaration, date, O, , délai de déclaration à confirmer\nmontant_centimes, bigint, O\ndevise, varchar(3), O, EUR|USD|GBP\nmode_lecture, varchar(12), N, PUCE|SANS_CONTACT|VAD|PISTE|MANUEL, codes à confirmer\nnumero_dossier, varchar(12), O",
+    "rules": "DQ-01, Unicité, Une déclaration par opération, 100 %, Ne pas envoyer le doublon, Fraude\nDQ-02, Validité, Aucun PAN en clair (suites de 16 chiffres valides Luhn), 100 %, Bloquer le fichier et alerter la sécurité, Sécurité\nDQ-03, Validité, Typologie et mode de lecture transcodés (T-01 et T-02), 100 %, Attente analyste, Fraude\nDQ-04, Cohérence, Date de déclaration postérieure ou égale à la date de l'opération, 100 %, Attente analyste, Fraude\nDQ-05, Validité, Montant positif et devise ISO 4217, 100 %, Attente, Fraude",
+    "translations": "T-01, PERTE, PERTE_VOL, Carte perdue\nT-01, VOL, PERTE_VOL, Carte volée\nT-01, NON_RECUE, NON_PARVENUE, Carte non parvenue\nT-01, CONTREFACON, CONTREFACON, Carte contrefaite\nT-01, VAD, NUMERO_USURPE, Numéro de carte usurpé\nT-01, AUTRE, AUTRE, Autre\nT-02, 05, PUCE, Puce\nT-02, 07, SANS_CONTACT, Sans contact\nT-02, 81, VAD, Vente à distance\nT-02, 90, PISTE, Piste magnétique\nT-02, 01, MANUEL, Saisie manuelle",
+    "map": [
+     {
+      "source": "dossier_operation.arn",
+      "target": "reference_operation",
+      "transformation": "TRIM(src.arn)",
+      "default": "",
+      "rule": "DQ-01"
+     },
+     {
+      "source": "dossier_fraude.jeton_carte",
+      "target": "jeton_pan",
+      "transformation": "src.jeton_carte (jamais le PAN)",
+      "default": "",
+      "rule": "DQ-02"
+     },
+     {
+      "source": "dossier_fraude.motif",
+      "target": "typologie",
+      "transformation": "table de transcodage T-01",
+      "default": "",
+      "rule": "DQ-03"
+     },
+     {
+      "source": "dossier_operation.date_op",
+      "target": "date_operation",
+      "transformation": "src.date_op",
+      "default": "",
+      "rule": "DQ-04"
+     },
+     {
+      "source": "dossier_fraude.confirme_le",
+      "target": "date_declaration",
+      "transformation": "CAST(src.confirme_le AS DATE)",
+      "default": "",
+      "rule": "DQ-04"
+     },
+     {
+      "source": "dossier_operation.montant",
+      "target": "montant_centimes",
+      "transformation": "ROUND(src.montant * 100)",
+      "default": "",
+      "rule": "DQ-05"
+     },
+     {
+      "source": "dossier_operation.devise",
+      "target": "devise",
+      "transformation": "UPPER(src.devise)",
+      "default": "",
+      "rule": "DQ-05"
+     },
+     {
+      "source": "dossier_operation.mode_saisie",
+      "target": "mode_lecture",
+      "transformation": "table de transcodage T-02",
+      "default": "",
+      "rule": "DQ-03"
+     },
+     {
+      "source": "dossier_fraude.num_dossier",
+      "target": "numero_dossier",
+      "transformation": "src.num_dossier",
+      "default": "",
+      "rule": "DQ-01"
+     }
+    ],
+    "record": {},
+    "notes": "Fil rouge : crd_bl_002 mise en opposition le 12 oct. (usage frauduleux), inscrite sur la liste d'opposition en 1 min ; l'opération E010 (59,99 €, VAD) est déclarée au GIE CB."
+   },
+   "autorun": true
+  },
+  {
+   "id": "iso8583-json",
+   "label": "ISO 8583 → JSON interne (avec défauts)",
+   "hint": "Banque Lumière (exemple)",
+   "state": {
+    "title": "Autorisation ISO 8583 → JSON interne (avec défauts)",
+    "targetTable": "auth_event",
+    "key": "stan",
+    "dialect": "postgres",
+    "sources": "iso.de2, n..19, 4000000000002024\niso.de3, n6, 000000\niso.de4, n12, 000000005999\niso.de7, n10, 1018101500\niso.de11, n6, 004512\niso.de12, n6, 101500\niso.de22, n3, 812\niso.de38, an6, A1B2C3\niso.de39, an2, 00\niso.de43, ans40, BOUTIQUE EN LIGNE LUMIERE  PARIS     FR\niso.de49, n3, 978",
+    "targets": "pan_masked, varchar(19), O\namount_minor, bigint, O\ncurrency, varchar(3), O, EUR|USD|GBP\ntxn_time, varchar(10), O\nstan, varchar(6), O\nentry_mode, varchar(12), O, CHIP|CONTACTLESS|ECOM|MAGSTRIPE|MANUAL\nauth_code, varchar(6), N\nresponse_code, varchar(2), O, 00|05|41|43|51|54|59|91\nmerchant_name, varchar(25), N\nprocessing_code, varchar(6), N, , correspondance avec le format CB2A à confirmer",
+    "rules": "DQ-01, Unicité, Un événement par STAN et heure de transmission, 100 %, Supprimer le doublon, Informatique carte\nDQ-02, Validité, Aucun PAN en clair : masqué 6 + 4 seulement, 100 %, Bloquer le flux et alerter la sécurité, Sécurité\nDQ-03, Validité, Devise transcodée depuis le code ISO 4217 numérique (T-01), 100 %, Mettre en attente, Informatique carte",
+    "translations": "T-01, 978, EUR, Euro\nT-01, 840, USD, Dollar US\nT-01, 826, GBP, Livre sterling",
+    "map": [
+     {
+      "source": "iso.de2",
+      "target": "pan_masked",
+      "transformation": "MASK(src.de2)",
+      "default": "",
+      "rule": "DQ-02"
+     },
+     {
+      "source": "iso.de4",
+      "target": "amount_minor",
+      "transformation": "CAST(src.de4 AS BIGINT)",
+      "default": "",
+      "rule": ""
+     },
+     {
+      "source": "iso.de49",
+      "target": "currency",
+      "transformation": "translation table T-01",
+      "default": "",
+      "rule": "DQ-03"
+     },
+     {
+      "source": "iso.de7",
+      "target": "txn_time",
+      "transformation": "src.de7",
+      "default": "",
+      "rule": "DQ-01"
+     },
+     {
+      "source": "iso.de12",
+      "target": "txn_time",
+      "transformation": "src.de12",
+      "default": "",
+      "rule": "DQ-01"
+     },
+     {
+      "source": "iso.de11",
+      "target": "stan",
+      "transformation": "src.de11",
+      "default": "",
+      "rule": "DQ-01"
+     },
+     {
+      "source": "iso.de38",
+      "target": "auth_code",
+      "transformation": "",
+      "default": "",
+      "rule": ""
+     },
+     {
+      "source": "iso.de39",
+      "target": "response_code",
+      "transformation": "",
+      "default": "",
+      "rule": "DQ-04"
+     },
+     {
+      "source": "iso.de43",
+      "target": "merchant_name",
+      "transformation": "",
+      "default": "",
+      "rule": ""
+     }
+    ],
+    "record": {},
+    "notes": "Défauts volontaires : txn_time mappé deux fois, entry_mode (obligatoire) non mappé, nom du commerçant 40 → 25 caractères, règle DQ-04 inconnue. Mappez de2 directement sur pan_masked : l'aperçu bloque le PAN en clair."
+   },
+   "autorun": true
+  }
+ ]
+}

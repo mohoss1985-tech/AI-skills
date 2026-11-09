@@ -1,0 +1,760 @@
+{
+ "en": [
+  {
+   "id": "harbor-day8",
+   "title": "Day 8 of 10 · lost / stolen card release",
+   "client": "Harbor Bank (sample)",
+   "state": {
+    "title": "UAT day 8 · lost / stolen card release",
+    "scope": "Lost / stolen card release: block in app and by phone, Exception File listing, fraud declaration, replacement card",
+    "planned": 26,
+    "day": 8,
+    "days": 10,
+    "testers": "Priya, Marc, Lena, Tom",
+    "decisionMaker": "Ana (business owner)",
+    "criteria": {
+     "allRun": true,
+     "passRate": true,
+     "passRateMin": 95,
+     "reqCovered": true,
+     "noBlocking": true,
+     "noMajor": true
+    },
+    "cases": [
+     {
+      "id": "UAT-01",
+      "title": "Block a card in the app, one active card",
+      "feature": "Block card in the app",
+      "req": "CARD-110",
+      "tester": "Priya",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Status Blocked after 4 s (test card 4111 11** **** 1111)",
+      "day": 1,
+      "expected": "Card status is Blocked and the confirmation names the card"
+     },
+     {
+      "id": "UAT-02",
+      "title": "Block in the app with two cards: choose the card ending 1177",
+      "feature": "Block card in the app",
+      "req": "CARD-110",
+      "tester": "Priya",
+      "status": "fail",
+      "defect": "CARD-302",
+      "evidence": "Confirmation shows the card ending 4821; the block is on 1177",
+      "day": 2,
+      "expected": "Confirmation shows the card ending 1177"
+     },
+     {
+      "id": "UAT-03",
+      "title": "Block a virtual card",
+      "feature": "Block card in the app",
+      "req": "CARD-110",
+      "tester": "Priya",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Block button shown, status Blocked",
+      "day": 2,
+      "expected": "Virtual card can be blocked"
+     },
+     {
+      "id": "UAT-04",
+      "title": "Unblock a temporarily blocked card",
+      "feature": "Block card in the app",
+      "req": "CARD-110",
+      "tester": "Priya",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Unblocked, payment approved after",
+      "day": 3,
+      "expected": "Temporary block can be lifted"
+     },
+     {
+      "id": "UAT-05",
+      "title": "Phone block (IVR) visible in the app",
+      "feature": "Block card by phone",
+      "req": "CARD-111",
+      "tester": "Marc",
+      "status": "fail",
+      "defect": "CARD-303",
+      "evidence": "Visible in the app after 15 min",
+      "day": 3,
+      "expected": "Block visible in the app within 1 min"
+     },
+     {
+      "id": "UAT-06",
+      "title": "Phone block by an agent with reason \"stolen\"",
+      "feature": "Block card by phone",
+      "req": "CARD-111",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Reason stored, letter queued",
+      "day": 3,
+      "expected": "Reason stolen stored on the card"
+     },
+     {
+      "id": "UAT-07",
+      "title": "Phone block outside office hours",
+      "feature": "Block card by phone",
+      "req": "CARD-111",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "",
+      "evidence": "23:10 call, block applied",
+      "day": 4,
+      "expected": "24/7 line blocks the card"
+     },
+     {
+      "id": "UAT-08",
+      "title": "Lost card listed on the Exception File within 5 min",
+      "feature": "Exception File listing",
+      "req": "CARD-112",
+      "tester": "Lena",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Listed after 3 min 40 s",
+      "day": 4,
+      "expected": "Listing confirmed in ≤ 5 min"
+     },
+     {
+      "id": "UAT-09",
+      "title": "Stolen card declined in stand-in after the block",
+      "feature": "Exception File listing",
+      "req": "CARD-112",
+      "tester": "Lena",
+      "status": "fail",
+      "defect": "CARD-301",
+      "evidence": "Stolen card approved in stand-in (Exception File listing took 160 min)",
+      "day": 5,
+      "expected": "Authorisation in stand-in is declined"
+     },
+     {
+      "id": "UAT-10",
+      "title": "Listing retried after a host time-out",
+      "feature": "Exception File listing",
+      "req": "CARD-112",
+      "tester": "Lena",
+      "status": "blocked",
+      "defect": "CARD-301",
+      "evidence": "Blocked by CARD-301",
+      "day": 6,
+      "expected": "Listing retried until confirmed"
+     },
+     {
+      "id": "UAT-11",
+      "title": "Exception File action code for a stolen card",
+      "feature": "Exception File listing",
+      "req": "CARD-112",
+      "tester": "Lena",
+      "status": "blocked",
+      "defect": "CARD-301",
+      "evidence": "Blocked by CARD-301",
+      "day": 6,
+      "expected": "Action code matches the block reason (*to confirm* with the Visa rules)"
+     },
+     {
+      "id": "UAT-12",
+      "title": "Delisting after the card is replaced",
+      "feature": "Exception File listing",
+      "req": "CARD-112",
+      "tester": "Lena",
+      "status": "notrun",
+      "defect": "",
+      "evidence": "",
+      "day": "",
+      "expected": "Old PAN stays listed, new PAN not listed"
+     },
+     {
+      "id": "UAT-13",
+      "title": "Fraud declaration from the app",
+      "feature": "Fraud declaration",
+      "req": "CARD-113",
+      "tester": "Tom",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Case FRD-2207 created",
+      "day": 4,
+      "expected": "Fraud case created with the payments chosen"
+     },
+     {
+      "id": "UAT-14",
+      "title": "Fraud date before the transaction date is refused",
+      "feature": "Fraud declaration",
+      "req": "CARD-113",
+      "tester": "Tom",
+      "status": "pass",
+      "defect": "CARD-304",
+      "evidence": "Fix delivered, re-test passed in the app; batch still to re-test",
+      "day": 8,
+      "expected": "Error message, declaration not sent"
+     },
+     {
+      "id": "UAT-15",
+      "title": "Fraud declaration sent once per transaction",
+      "feature": "Fraud declaration",
+      "req": "CARD-113",
+      "tester": "Tom",
+      "status": "fail",
+      "defect": "CARD-310",
+      "evidence": "Declaration sent twice for payment 88213",
+      "day": 7,
+      "expected": "One declaration per transaction"
+     },
+     {
+      "id": "UAT-16",
+      "title": "Fraud report export",
+      "feature": "Fraud declaration",
+      "req": "CARD-113",
+      "tester": "Tom",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Export matches the 12 cases",
+      "day": 5,
+      "expected": "Export lists every declared payment"
+     },
+     {
+      "id": "UAT-17",
+      "title": "Replacement card ordered after a stolen block",
+      "feature": "Replacement card",
+      "req": "CARD-114",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Order R-5531 created",
+      "day": 5,
+      "expected": "Replacement ordered automatically"
+     },
+     {
+      "id": "UAT-18",
+      "title": "Replacement card email wording",
+      "feature": "Replacement card",
+      "req": "CARD-114",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "CARD-305",
+      "evidence": "Typo logged as CARD-305 (minor)",
+      "day": 6,
+      "expected": "Email names the new card and the delivery date"
+     },
+     {
+      "id": "UAT-19",
+      "title": "New card pushed to wallet tokens",
+      "feature": "Replacement card",
+      "req": "CARD-114",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Token updated in the test wallet",
+      "day": 7,
+      "expected": "Wallet token moves to the new card"
+     },
+     {
+      "id": "UAT-20",
+      "title": "Old card declined after replacement",
+      "feature": "Replacement card",
+      "req": "CARD-114",
+      "tester": "Lena",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Response code 54 on the old card",
+      "day": 7,
+      "expected": "Old card declined"
+     },
+     {
+      "id": "UAT-21",
+      "title": "Block reason shown in the agent console",
+      "feature": "Block card in the app",
+      "req": "CARD-110",
+      "tester": "Priya",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Reason and channel shown",
+      "day": 6,
+      "expected": "Agent sees reason, channel and time"
+     },
+     {
+      "id": "UAT-22",
+      "title": "Push notification after the block",
+      "feature": "Block card in the app",
+      "req": "CARD-110",
+      "tester": "Priya",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Notification within 10 s",
+      "day": 7,
+      "expected": "Customer is notified"
+     },
+     {
+      "id": "UAT-23",
+      "title": "Block in the app in French",
+      "feature": "Block card in the app",
+      "req": "CARD-110",
+      "tester": "Priya",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Wording checked",
+      "day": 8,
+      "expected": "All screens translated"
+     },
+     {
+      "id": "UAT-24",
+      "title": "Change the delivery address of the replacement card",
+      "feature": "Replacement card",
+      "req": "CARD-114",
+      "tester": "Marc",
+      "status": "notrun",
+      "defect": "",
+      "evidence": "",
+      "day": "",
+      "expected": "New address used for the delivery"
+     }
+    ],
+    "defects": [
+     {
+      "key": "CARD-301",
+      "summary": "Stolen card approved in stand-in: Exception File listing took 160 min",
+      "severity": "blocking",
+      "status": "open",
+      "feature": "Exception File listing",
+      "created": 5,
+      "workaround": false
+     },
+     {
+      "key": "CARD-302",
+      "summary": "Block confirmation shows the wrong card when the customer has 2 cards",
+      "severity": "major",
+      "status": "open",
+      "feature": "Block card in the app",
+      "created": 2,
+      "workaround": true
+     },
+     {
+      "key": "CARD-303",
+      "summary": "Phone block not visible in the app for 15 minutes",
+      "severity": "major",
+      "status": "open",
+      "feature": "Block card by phone",
+      "created": 3,
+      "workaround": false
+     },
+     {
+      "key": "CARD-304",
+      "summary": "Fraud declaration accepted with a fraud date before the transaction date",
+      "severity": "major",
+      "status": "retest",
+      "feature": "Fraud declaration",
+      "created": 4,
+      "workaround": false
+     },
+     {
+      "key": "CARD-305",
+      "summary": "Typo in the replacement card email",
+      "severity": "minor",
+      "status": "open",
+      "feature": "Replacement card",
+      "created": 6,
+      "workaround": true
+     },
+     {
+      "key": "CARD-308",
+      "summary": "Customer wants to unblock a card declared stolen",
+      "severity": "enhancement",
+      "status": "open",
+      "feature": "Block card in the app",
+      "created": 6,
+      "workaround": false
+     },
+     {
+      "key": "CARD-310",
+      "summary": "Fraud declaration sent twice for the same transaction",
+      "severity": "major",
+      "status": "open",
+      "feature": "Fraud declaration",
+      "created": 7,
+      "workaround": false
+     }
+    ]
+   }
+  }
+ ],
+ "fr": [
+  {
+   "id": "lumiere-j8",
+   "title": "J8 sur 10 · release mise en opposition",
+   "client": "Banque Lumière (exemple)",
+   "state": {
+    "title": "Recette J8 · release mise en opposition",
+    "scope": "Release mise en opposition : appli et téléphone, inscription en liste d'opposition CB, déclaration de fraude, carte de remplacement",
+    "planned": 26,
+    "day": 8,
+    "days": 10,
+    "testers": "Inès, Marc, Léa, Tom",
+    "decisionMaker": "Anne (responsable métier)",
+    "criteria": {
+     "allRun": true,
+     "passRate": true,
+     "passRateMin": 95,
+     "reqCovered": true,
+     "noBlocking": true,
+     "noMajor": true
+    },
+    "cases": [
+     {
+      "id": "REC-01",
+      "title": "Opposition dans l'appli, une seule carte active",
+      "feature": "Opposition dans l'appli",
+      "req": "CARTE-110",
+      "tester": "Inès",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Statut En opposition après 4 s (carte de test 4970 10** **** 0001)",
+      "day": 1,
+      "expected": "Statut En opposition, la confirmation nomme la carte"
+     },
+     {
+      "id": "REC-02",
+      "title": "Opposition dans l'appli avec deux cartes : choisir la carte finissant par 1177",
+      "feature": "Opposition dans l'appli",
+      "req": "CARTE-110",
+      "tester": "Inès",
+      "status": "fail",
+      "defect": "CARTE-302",
+      "evidence": "La confirmation affiche la carte 4821 ; l'opposition est bien sur 1177",
+      "day": 2,
+      "expected": "La confirmation affiche la carte 1177"
+     },
+     {
+      "id": "REC-03",
+      "title": "Opposition sur une carte virtuelle",
+      "feature": "Opposition dans l'appli",
+      "req": "CARTE-110",
+      "tester": "Inès",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Bouton présent, statut En opposition",
+      "day": 2,
+      "expected": "La carte virtuelle peut être mise en opposition"
+     },
+     {
+      "id": "REC-04",
+      "title": "Lever un blocage temporaire",
+      "feature": "Opposition dans l'appli",
+      "req": "CARTE-110",
+      "tester": "Inès",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Débloquée, paiement accepté ensuite",
+      "day": 3,
+      "expected": "Le blocage temporaire se lève"
+     },
+     {
+      "id": "REC-05",
+      "title": "Opposition par téléphone (SVI) visible dans l'appli",
+      "feature": "Opposition par téléphone",
+      "req": "CARTE-111",
+      "tester": "Marc",
+      "status": "fail",
+      "defect": "CARTE-303",
+      "evidence": "Visible dans l'appli après 15 min",
+      "day": 3,
+      "expected": "Opposition visible dans l'appli en 1 min"
+     },
+     {
+      "id": "REC-06",
+      "title": "Opposition par un conseiller, motif « vol »",
+      "feature": "Opposition par téléphone",
+      "req": "CARTE-111",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Motif enregistré, courrier en file",
+      "day": 3,
+      "expected": "Motif vol enregistré"
+     },
+     {
+      "id": "REC-07",
+      "title": "Opposition téléphonique hors horaires",
+      "feature": "Opposition par téléphone",
+      "req": "CARTE-111",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Appel à 23 h 10, opposition faite",
+      "day": 4,
+      "expected": "Le serveur 24/7 met la carte en opposition"
+     },
+     {
+      "id": "REC-08",
+      "title": "Carte perdue inscrite en liste d'opposition en 5 min",
+      "feature": "Liste d'opposition CB",
+      "req": "CARTE-112",
+      "tester": "Léa",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Inscrite en 3 min 40 s",
+      "day": 4,
+      "expected": "Inscription confirmée en ≤ 5 min"
+     },
+     {
+      "id": "REC-09",
+      "title": "Carte volée refusée en autorisation de secours (stand-in)",
+      "feature": "Liste d'opposition CB",
+      "req": "CARTE-112",
+      "tester": "Léa",
+      "status": "fail",
+      "defect": "CARTE-301",
+      "evidence": "Carte volée acceptée en stand-in (inscription en liste d'opposition en 160 min)",
+      "day": 5,
+      "expected": "L'autorisation en stand-in est refusée"
+     },
+     {
+      "id": "REC-10",
+      "title": "Nouvel essai d'inscription après un time-out du serveur",
+      "feature": "Liste d'opposition CB",
+      "req": "CARTE-112",
+      "tester": "Léa",
+      "status": "blocked",
+      "defect": "CARTE-301",
+      "evidence": "Bloqué par CARTE-301",
+      "day": 6,
+      "expected": "Inscription relancée jusqu'à confirmation"
+     },
+     {
+      "id": "REC-11",
+      "title": "Code motif de la liste pour une carte volée",
+      "feature": "Liste d'opposition CB",
+      "req": "CARTE-112",
+      "tester": "Léa",
+      "status": "blocked",
+      "defect": "CARTE-301",
+      "evidence": "Bloqué par CARTE-301",
+      "day": 6,
+      "expected": "Code motif conforme au motif (*à confirmer* avec les règles CB)"
+     },
+     {
+      "id": "REC-12",
+      "title": "Sortie de liste après remplacement de la carte",
+      "feature": "Liste d'opposition CB",
+      "req": "CARTE-112",
+      "tester": "Léa",
+      "status": "notrun",
+      "defect": "",
+      "evidence": "",
+      "day": "",
+      "expected": "L'ancien PAN reste inscrit, le nouveau non"
+     },
+     {
+      "id": "REC-13",
+      "title": "Déclaration de fraude depuis l'appli",
+      "feature": "Déclaration de fraude",
+      "req": "CARTE-113",
+      "tester": "Tom",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Dossier FRD-2207 créé",
+      "day": 4,
+      "expected": "Dossier créé avec les opérations choisies"
+     },
+     {
+      "id": "REC-14",
+      "title": "Date de fraude antérieure à l'opération refusée",
+      "feature": "Déclaration de fraude",
+      "req": "CARTE-113",
+      "tester": "Tom",
+      "status": "pass",
+      "defect": "CARTE-304",
+      "evidence": "Correctif livré, retest OK dans l'appli ; batch à retester",
+      "day": 8,
+      "expected": "Message d’erreur, déclaration non envoyée"
+     },
+     {
+      "id": "REC-15",
+      "title": "Déclaration de fraude envoyée une seule fois par opération",
+      "feature": "Déclaration de fraude",
+      "req": "CARTE-113",
+      "tester": "Tom",
+      "status": "fail",
+      "defect": "CARTE-310",
+      "evidence": "Déclaration envoyée deux fois pour l'opération 88213",
+      "day": 7,
+      "expected": "Une déclaration par opération"
+     },
+     {
+      "id": "REC-16",
+      "title": "Export du rapport de fraude",
+      "feature": "Déclaration de fraude",
+      "req": "CARTE-113",
+      "tester": "Tom",
+      "status": "pass",
+      "defect": "",
+      "evidence": "L'export contient les 12 dossiers",
+      "day": 5,
+      "expected": "Toutes les opérations déclarées sont listées"
+     },
+     {
+      "id": "REC-17",
+      "title": "Carte de remplacement commandée après opposition pour vol",
+      "feature": "Carte de remplacement",
+      "req": "CARTE-114",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Commande R-5531 créée",
+      "day": 5,
+      "expected": "Remplacement commandé automatiquement"
+     },
+     {
+      "id": "REC-18",
+      "title": "Texte de l'e-mail de carte de remplacement",
+      "feature": "Carte de remplacement",
+      "req": "CARTE-114",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "CARTE-305",
+      "evidence": "Faute de frappe saisie en CARTE-305 (mineur)",
+      "day": 6,
+      "expected": "L'e-mail nomme la nouvelle carte et la date de livraison"
+     },
+     {
+      "id": "REC-19",
+      "title": "Nouvelle carte poussée aux tokens des wallets",
+      "feature": "Carte de remplacement",
+      "req": "CARTE-114",
+      "tester": "Marc",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Token mis à jour dans le wallet de test",
+      "day": 7,
+      "expected": "Le token suit la nouvelle carte"
+     },
+     {
+      "id": "REC-20",
+      "title": "Ancienne carte refusée après remplacement",
+      "feature": "Carte de remplacement",
+      "req": "CARTE-114",
+      "tester": "Léa",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Refus sur l’ancienne carte",
+      "day": 7,
+      "expected": "Ancienne carte refusée"
+     },
+     {
+      "id": "REC-21",
+      "title": "Motif affiché dans le poste conseiller",
+      "feature": "Opposition dans l'appli",
+      "req": "CARTE-110",
+      "tester": "Inès",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Motif et canal affichés",
+      "day": 6,
+      "expected": "Le conseiller voit motif, canal et heure"
+     },
+     {
+      "id": "REC-22",
+      "title": "Notification push après l'opposition",
+      "feature": "Opposition dans l'appli",
+      "req": "CARTE-110",
+      "tester": "Inès",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Notification en 10 s",
+      "day": 7,
+      "expected": "Le client est notifié"
+     },
+     {
+      "id": "REC-23",
+      "title": "Opposition dans l'appli en anglais",
+      "feature": "Opposition dans l'appli",
+      "req": "CARTE-110",
+      "tester": "Inès",
+      "status": "pass",
+      "defect": "",
+      "evidence": "Textes vérifiés",
+      "day": 8,
+      "expected": "Tous les écrans traduits"
+     },
+     {
+      "id": "REC-24",
+      "title": "Changer l'adresse de livraison de la carte de remplacement",
+      "feature": "Carte de remplacement",
+      "req": "CARTE-114",
+      "tester": "Marc",
+      "status": "notrun",
+      "defect": "",
+      "evidence": "",
+      "day": "",
+      "expected": "La nouvelle adresse est utilisée"
+     }
+    ],
+    "defects": [
+     {
+      "key": "CARTE-301",
+      "summary": "Carte volée acceptée en stand-in : inscription en liste d'opposition en 160 min",
+      "severity": "blocking",
+      "status": "open",
+      "feature": "Liste d'opposition CB",
+      "created": 5,
+      "workaround": false
+     },
+     {
+      "key": "CARTE-302",
+      "summary": "L'écran de confirmation affiche la mauvaise carte quand le client en a 2",
+      "severity": "major",
+      "status": "open",
+      "feature": "Opposition dans l'appli",
+      "created": 2,
+      "workaround": true
+     },
+     {
+      "key": "CARTE-303",
+      "summary": "Opposition téléphonique invisible dans l'appli pendant 15 minutes",
+      "severity": "major",
+      "status": "open",
+      "feature": "Opposition par téléphone",
+      "created": 3,
+      "workaround": false
+     },
+     {
+      "key": "CARTE-304",
+      "summary": "Déclaration de fraude acceptée avec une date antérieure à l'opération",
+      "severity": "major",
+      "status": "retest",
+      "feature": "Déclaration de fraude",
+      "created": 4,
+      "workaround": false
+     },
+     {
+      "key": "CARTE-305",
+      "summary": "Faute de frappe dans l'e-mail de carte de remplacement",
+      "severity": "minor",
+      "status": "open",
+      "feature": "Carte de remplacement",
+      "created": 6,
+      "workaround": true
+     },
+     {
+      "key": "CARTE-308",
+      "summary": "Le client veut lever une opposition pour vol",
+      "severity": "enhancement",
+      "status": "open",
+      "feature": "Opposition dans l'appli",
+      "created": 6,
+      "workaround": false
+     },
+     {
+      "key": "CARTE-310",
+      "summary": "Déclaration de fraude envoyée deux fois pour la même opération",
+      "severity": "major",
+      "status": "open",
+      "feature": "Déclaration de fraude",
+      "created": 7,
+      "workaround": false
+     }
+    ]
+   }
+  }
+ ]
+}
