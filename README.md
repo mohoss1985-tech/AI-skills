@@ -47,7 +47,7 @@ python3 app/server/server.py      # then open http://localhost:4317 (no installs
 
 ---
 
-I worked at a French card payment network. The work sits between **issuers** (émetteurs), **acquirers** (acquéreurs) and the network: card **authorisation**, **PAN declaration** (blocking a lost or stolen card, declaring fraud), **chargebacks** (impayés), interchange, clearing and settlement, and the APIs between them.
+I work in card payment networks. The work sits between **issuers** (émetteurs), **acquirers** (acquéreurs) and the network: card **authorisation**, **PAN declaration** (blocking a lost or stolen card, declaring fraud), **chargebacks** (impayés), interchange, clearing and settlement, and the APIs between them.
 
 The work is always the same loop: run a workshop, write the spec, test the API, plan the release, run the UAT, measure the impact of the next rule change. Each time it happens three times: **do it** in a tool, **document** it, then **automate** it for next time.
 
@@ -152,9 +152,7 @@ python3 app/server/server.py      # then open http://localhost:4317
 - **Guide and Xray assistant:** instant answers on the skills, the jargon (stand-in, Exception File, opposition, response codes, WSJF…) and the app.
 - **No API key:** requests wait in a local queue; Claude, in a Claude Code session, picks them up with [`app/server/kit.py`](app/server/kit.py), which lists the answers and the documents to read first.
 
-## What the market asks for
 
-The six delivery skills come from [an analysis of 740 freelance BA / PO contracts in Île-de-France](market/README.md) (Free-Work, Sept–Oct 2026). The report covers the most requested tasks (workshops 68%, acceptance testing 57%, functional specs 52%), the tools to master, and day rates.
 
 ## Repository layout
 
