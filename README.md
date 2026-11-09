@@ -1,12 +1,51 @@
-# Analyst Kit · AI skills for card payments & API product work
+# Analyst Kit V2 · working tools for payments BAs & POs
 
-**Eighteen AI skills that do the work of a Business Analyst / Product Owner in card payments, in a local app where every deliverable starts from a few precise questions and your own documents. Samples in English follow Visa rules; samples in French follow CB (Cartes Bancaires) rules.**
+**Twenty tools that do the job of a Business Analyst / Product Owner in card payments: test an API, run SQL, draw a BPMN, plan a PI, run a UAT, tokenise a card, follow a chargeback. Each one needs 3–4 inputs and about 60 seconds, works without AI, and Claude drafts, critiques and explains on top. English samples follow Visa rules (Harbor Bank); French samples follow CB rules (Banque Lumière).**
 
-[![Open the live demo](https://img.shields.io/badge/%E2%96%B6%20Open%20the%20live%20demo-5e6ad2?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
+[![Open the live demo](https://img.shields.io/badge/%E2%96%B6%20Open%20the%20live%20demo-2563eb?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
+[![V1](https://img.shields.io/badge/V1%20(frozen)-gray?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/v1/)
 
-**[Live demo](https://mohoss1985-tech.github.io/AI-skills/)**: browse every skill and finished sample in your browser, in English (Visa) or French (CB). Read-only: generating your own deliverables runs locally with Claude Code.
+🇫🇷 [Version française](README.fr.md) · [Changelog](CHANGELOG.md)
 
-🇫🇷 [Version française](README.fr.md)
+![API tester](screenshots/v2/final/api-tester-en-light.png)
+
+## Try it in 60 seconds
+
+| Demo | What you see |
+|---|---|
+| [**Test a card-blocking API**](https://mohoss1985-tech.github.io/AI-skills/#/tool/api-tester?sample=en:0) | Method + URL, auth, data, expected result. Send → 200, click a value to make a check, then pay with the blocked card → declined 41. Export curl, Postman, pytest. |
+| [**Notes → user stories → Jira**](https://mohoss1985-tech.github.io/AI-skills/#/tool/story-builder?sample=en:0) | Example mapping turns rules into stories and Gherkin, with an INVEST check per story and a Jira CSV. |
+| [**Top decline codes with SQL**](https://mohoss1985-tech.github.io/AI-skills/#/tool/sql-runner?sample=en:0) | Real SQL on a sample card database, right in the browser. One query finds the stolen card approved in stand-in. |
+
+## V1 → V2
+
+| | V1 (Nov 2, [frozen at /v1/](https://mohoss1985-tech.github.io/AI-skills/v1/)) | V2 |
+|---|---|---|
+| What a skill gives you | A document written by Claude from a form | A working tool + the document |
+| API testing | A test plan to read | A real API client: 4 inputs, no-code checks, curl / Postman / pytest export |
+| SQL | A query to copy | Runs on a sample card database, locally and in the browser |
+| Process maps | Generated `.bpmn` | Editable BPMN canvas (bpmn-js) |
+| Backlog, UAT, RAG eval | Reports | Live WSJF grid, go/no-go gauge, release gate |
+| Payments depth | Authorisation, card blocking, chargebacks | + **Tokenisation simulator** (card → Apple Pay token) and **payment lifecycle & chargeback simulator** |
+| Design | Single column | Design system, light/dark, ⌘K, EN/FR |
+| Security | Local server | + Origin/Host checks and a per-boot write token |
+
+## The twenty tools
+
+| Group | Tools |
+|---|---|
+| Specify | BPMN editor · PRD builder (goal → requirement → metric trace) · Story builder · SFD builder |
+| Test | API tester · UAT tracker · Xray builder |
+| Data | SQL runner · Mapping grid · Tokenisation simulator · Payment lifecycle & chargebacks |
+| Plan | WSJF & PI planner · Impact heatmap |
+| Facilitate | Workshop kit (agenda, timer, notes → report) · RACI & power grid · Journey builder |
+| AI governance | AI risk register (EU AI Act) · RAG eval scorer · KB audit · AI use-case scorer |
+
+```bash
+python3 app/server/server.py      # then open http://localhost:4317 (no installs, no API key)
+```
+
+---
 
 I worked at a French card payment network. The work sits between **issuers** (émetteurs), **acquirers** (acquéreurs) and the network: card **authorisation**, **PAN declaration** (blocking a lost or stolen card, declaring fraud), **chargebacks** (impayés), interchange, clearing and settlement, and the APIs between them.
 
@@ -120,7 +159,7 @@ The six delivery skills come from [an analysis of 740 freelance BA / PO contract
 ## Repository layout
 
 ```
-skills/     eighteen skills, one SKILL.md each (+ scripts/, templates/, examples/)
+skills/     twenty skills, one SKILL.md each (+ scripts/, templates/, examples/)
 app/        server/ (server.py, kit.py, catalog.py, db.py, router.py, routes/, tools/, seed/ samples: 1–21 English,
             101–121 French), web/ (index.html, css/, js/ ES modules, js/tools/<id>/), data/ (local database, not in git)
 examples/   conversational AI case study
@@ -132,5 +171,7 @@ market/     freelance market analysis and method
 | Project | What it is |
 |---|---|
 | [**Fitbit Air on Steroids (MRH1)**](https://github.com/mohoss1985-tech/fitbit-air-on-steroids) · [live demo](https://mohoss1985-tech.github.io/fitbit-air-on-steroids/demo/) | A custom iOS app (SwiftUI + HealthKit) for the Google Fitbit Air: Whoop-style scores, lab-style body panels and every health metric explained. Built with Claude. |
+
+All organisations, cards and figures are fictional (test card numbers only). Not affiliated with Visa or GIE CB. Code: MIT · samples, docs and screenshots: CC BY 4.0.
 
 All organisations and figures are fictional. Scheme rules are paraphrased for the samples; confirm codes and deadlines against the current Visa Core Rules or CB rules, and legal points with your legal and compliance teams.

@@ -1,5 +1,7 @@
 # Analyst Kit · Compétences IA pour la monétique et les API
 
+> **V2 · des outils qui travaillent.** Vingt outils pour BA / PO en monétique : testeur d'API (4 champs, contrôles sans code, export curl / Postman / pytest), SQL sur une base carte, BPMN modifiable, WSJF, recette avec go / no-go, **simulateur de tokenisation** (carte → jeton Apple Pay) et **cycle de vie du paiement et impayés**. [Démo en ligne](https://mohoss1985-tech.github.io/AI-skills/?lang=fr) · [V1 figée](https://mohoss1985-tech.github.io/AI-skills/v1/) · [Journal des versions](CHANGELOG.md)
+
 **Dix-huit compétences IA qui font le travail d'un Business Analyst / Product Owner en monétique, dans une application locale où chaque livrable part de quelques questions précises et de vos propres documents. Les exemples en français suivent les règles CB (Cartes Bancaires) ; les exemples en anglais suivent les règles Visa.**
 
 [![Ouvrir la démo en ligne](https://img.shields.io/badge/%E2%96%B6%20Ouvrir%20la%20d%C3%A9mo%20en%20ligne-5e6ad2?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
