@@ -10,6 +10,11 @@ const dicts = { en: { ...en }, fr: { ...fr } };
 const listeners = [];
 let current = 'en';
 try { current = localStorage.getItem('kit-lang') || (navigator.language || '').slice(0, 2) === 'fr' && 'fr' || 'en'; } catch {}
+// `?lang=fr` (in the query or the hash) wins, so a French demo link opens in French.
+try {
+  const urlLang = new URLSearchParams(location.search).get('lang') || ((location.hash.match(/[?&]lang=(en|fr)\b/) || [])[1]);
+  if (urlLang === 'en' || urlLang === 'fr') { current = urlLang; localStorage.setItem('kit-lang', current); }
+} catch {}
 
 export const LANGS = ['en', 'fr'];
 export const getLang = () => current;

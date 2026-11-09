@@ -14,7 +14,7 @@ export const ago = (t) => {
   if (s < 86400) return pre + Math.floor(s / 3600) + ' ' + L('h ago');
   return new Date(t * 1000).toLocaleDateString(locale(), { day: 'numeric', month: 'short' });
 };
-export const initials = (n) => (n || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'You';
+export const initials = (n) => (n || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || (getLang() === 'fr' ? 'Moi' : 'You');
 export const lower1 = (s) => (s ? s[0].toLowerCase() + s.slice(1) : '');
 export const fileName = (s) => (s || 'deliverable').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 60);
 export const greeting = () => { const h = new Date().getHours(); return L(h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'); };
