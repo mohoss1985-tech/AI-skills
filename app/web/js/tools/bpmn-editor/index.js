@@ -60,14 +60,25 @@ async function showXml(ctx, xml, { edited = false } = {}) {
   await sync(edited);
 }
 
-/** Fit the diagram; if that makes text too small, keep 65 % and start at the left (right of the palette): the user pans. */
+/** Fit the whole diagram. If that is too small to read (< 55 %), widen the canvas (hide the steps pane) and fit again. */
 function readableFit(m) {
   try {
     const c = m.get('canvas');
     c.zoom('fit-viewport', 'auto');
-    const vb = c.viewbox();
-    if (vb.scale < 0.65) { const s = 0.65; c.viewbox({ x: vb.inner.x - 96 / s, y: vb.inner.y - 24 / s, width: vb.outer.width / s, height: vb.outer.height / s }); }
+    if (c.viewbox().scale < MIN_READABLE && !isWide()) {
+      setWide(true);
+      c.resized(); c.zoom('fit-viewport', 'auto');
+    }
   } catch { /* empty diagram */ }
+}
+const MIN_READABLE = 0.55;
+const splitEl = () => (live.stage && live.stage.closest('.splitpane')) || null;
+const isWide = () => !!(splitEl() && splitEl().classList.contains('be-wide'));
+function setWide(on) {
+  const sp = splitEl(); if (!sp) return;
+  sp.classList.toggle('be-wide', on);
+  if (live.wideBtn) live.wideBtn.setLabel ? live.wideBtn.setLabel(T(on ? 'narrow' : 'wide')) : (live.wideBtn.querySelector('span') ? live.wideBtn.querySelector('span').textContent = T(on ? 'narrow' : 'wide') : 0);
+  try { if (live.modeler) { const c = live.modeler.get('canvas'); c.resized(); } } catch {}
 }
 
 /** Diagram → XML in state, step table, checks, status pill. */
@@ -143,10 +154,12 @@ function buildStage(ctx) {
     if (f) await importFile(ctx, f);
   });
   const imp = ui.button({ label: T('import'), icon: 'upload', size: 'sm', onClick: () => file.click() });
-  const fit = ui.button({ label: T('fit'), icon: 'maximize', size: 'sm', variant: 'ghost', onClick: () => { try { live.modeler.get('canvas').zoom('fit-viewport', 'auto'); } catch {} } });
+  const fit = ui.button({ label: T('fit'), icon: 'maximize', size: 'sm', variant: 'ghost', onClick: () => { try { readableFit(live.modeler); } catch {} } });
+  const wideBtn = ui.button({ label: T('wide'), icon: 'panel-left', size: 'sm', variant: 'ghost', onClick: () => { setWide(!isWide()); try { live.modeler.get('canvas').zoom('fit-viewport', 'auto'); } catch {} } });
+  live.wideBtn = wideBtn;
   const badge = document.createElement('span'); badge.className = 'be-src muted';
   const note = document.createElement('div'); note.className = 'be-note'; note.hidden = true; note.setAttribute('role', 'status');
-  bar.append(imp, fit, file, badge, note);
+  bar.append(imp, fit, wideBtn, file, badge, note);
   const wrap = document.createElement('div'); wrap.className = 'be-canvas-wrap'; wrap.setAttribute('aria-live', 'off');
   const canvas = document.createElement('div'); canvas.className = 'be-canvas'; canvas.setAttribute('role', 'application'); canvas.setAttribute('aria-label', T('canvasLabel')); canvas.hidden = true;
   const loading = document.createElement('div'); loading.className = 'be-loading muted'; loading.textContent = T('loading'); loading.hidden = true;
@@ -357,6 +370,7 @@ export default {
     paintDraft(ctx);
 
     frame.output.replaceChildren(buildStage(ctx));
+    try { const k = 'kit-split:bpmn-editor', f = 'sp-default:bpmn-editor'; if (!localStorage.getItem(f)) { localStorage.setItem(f, '1'); localStorage.setItem(k, '0.3'); } const sp = el.closest('.splitpane'); const r = parseFloat(localStorage.getItem(k)); if (sp && r > 0.15 && r < 0.85) sp.style.setProperty('--split', `${r * 100}%`); } catch { /* default ratio */ }
     paintChecks(ctx);
     if (s.xml) {
       showXml(ctx, s.xml, { edited: false }).then(() => ctx.setState({ edited: s.edited }, { silent: true }), (e) => { ctx.frame.setStatus({ tone: 'bad', text: e.message }); showNote(ctx, e.message); });

@@ -12,7 +12,7 @@ const T = register('sql-runner', strings);
 const fmt = (key, vars = {}) => T(key).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ''));
 
 // Samples: tag each with its language + id so a run can be checked against the stored answer.
-for (const lang of ['en', 'fr']) for (const s of SAMPLES[lang]) { s.autorun = true; s.state.sample = `${lang}:${s.id}`; }
+for (const lang of ['en', 'fr']) for (const s of SAMPLES[lang]) { s.state.sample = `${lang}:${s.id}`; }
 const sampleOf = (state) => {
   const [lang, id] = String(state.sample || '').split(':');
   const s = (SAMPLES[lang] || []).find((x) => x.id === id);
@@ -206,8 +206,14 @@ function paintSchema(ctx) {
 // ---------------------------------------------------------------------------------------------- run + results
 async function run(state, ctx) {
   const ta = view && view.editor && view.editor.textarea;
-  const text = state.sql || '';
-  const sql = L.pickStatement(text, ta ? ta.selectionStart : 0, ta ? ta.selectionEnd : 0);
+  let text = state.sql || '';
+  // Offline "Question": no SQL yet (or the SQL is still our own last template) → build it from the question.
+  if (state.question && state.question.trim() && (!text.trim() || (state.auto && state.auto === text))) {
+    const g = L.questionToSql(state.question);
+    if (g) { text = g.sql; ctx.setState({ sql: text, auto: text, sample: null }); if (view && view.editor) view.editor.value = text; }
+    else if (!text.trim()) throw Object.assign(new Error(T('errNeedClaude')), { hint: T('errNeedClaudeHint') });
+  }
+  const sql = L.pickStatement(text, ta && text === state.sql ? ta.selectionStart : 0, ta && text === state.sql ? ta.selectionEnd : 0);
   if (!sql.trim()) throw runError('sql.empty');
   if (L.splitStatements(sql).length > 1) throw runError('sql.one_statement');
   if (!L.isReadOnly(sql)) throw runError('sql.read_only');
@@ -277,10 +283,10 @@ function renderResult(r, ctx) {
   body.className = 'sr-result-body';
   const chart = spec ? chartEl(spec) : null;
   const showView = (v) => { body.replaceChildren(v === 'chart' && chart ? chart : tbl); };
-  showView(spec && r.columns.length === 2 ? 'chart' : 'table');
+  showView(spec ? 'chart' : 'table');
 
   const extra = [ui.badge({ text: T(r.where === 'local' ? 'engineLocalBadge' : 'engineBrowserBadge'), tone: 'neutral', icon: r.where === 'local' ? 'terminal' : 'layers' })];
-  if (chart) extra.push(ui.segmented({ label: T('viewChart'), value: r.columns.length === 2 ? 'chart' : 'table', options: [{ value: 'table', label: T('viewTable') }, { value: 'chart', label: T('viewChart') }], onChange: showView }));
+  if (chart) extra.push(ui.segmented({ label: T('viewChart'), value: 'chart', options: [{ value: 'table', label: T('viewTable') }, { value: 'chart', label: T('viewChart') }], onChange: showView }));
   extra.push(ui.copyButton({ text: () => L.toTsv(r.columns, r.rows), label: T('copyTsv') }),
     ui.button({ label: T('csv'), icon: 'file-down', size: 'sm', variant: 'ghost', onClick: () => ctx.download(`${L.slug(ctx.state.question)}.csv`, 'text/csv', L.toCsv(r.columns, r.rows)) }));
   frame.setStatusExtra(...extra);
@@ -344,7 +350,7 @@ export default {
   mount,
   update(state) { paintInputs(state); },
   validate(state) {
-    return (state.sql || '').trim() ? [] : [{ field: 'sql', message: T('errEmpty') }];
+    return (state.sql || '').trim() || (state.question || '').trim() ? [] : [{ field: 'sql', message: T('errEmpty') }];
   },
   run,
   renderResult,

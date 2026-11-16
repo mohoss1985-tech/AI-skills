@@ -182,7 +182,8 @@ function mount(el, ctx) {
 
   ctx._sbRepaint = paintBoard;
   paintBoard();
-  paintResults(ctx);
+  // The frame sets ctx.guided right AFTER mount: first paint of results waits one macrotask (rule 8).
+  setTimeout(() => { ctx._sbReady = true; paintResults(ctx); }, 0);
 }
 
 const short = (t) => { const s = String(t || '…'); return s.length > 28 ? s.slice(0, 27) + '…' : s; };
@@ -204,6 +205,7 @@ function mergeStories(cur, incoming) {
 function paintResults(ctx) {
   const { ui, frame } = ctx;
   const s = ctx.state;
+  if (!ctx._sbReady || ctx.guided) { if (ctx.guided) frame.setStatus(null); return; } // guided: the frame shows the invitation
   if (!s.stories || !s.stories.length) { frame.setStatus(null); frame.output.replaceChildren(ui.emptyState({ icon: 'list-checks', title: T('empty.title'), text: T('empty.body') })); return; }
   const sum = summary(s);
   frame.setStatus(statusOf(sum));

@@ -49,6 +49,19 @@ export function pickCol(header, aliases) {
   return null;
 }
 
+/** SFD builder rules CSV ("ID, Rule, Example, Source, Message, Stories, Test idea") → [{id, text, example, source, msg, stories}].
+    This is the file the SFD builder's "Rules CSV" export writes; the UAT tracker and the Xray builder both import it.
+    → {error: 'notSfd'} when the header does not look like it (needs ID + Rule and one of Example / Source / Message / Stories). */
+export function sfdRulesFromCsv(text) {
+  const { header, rows } = parseCsv(text);
+  const id = pickCol(header, ['ID', 'Identifiant']), rule = pickCol(header, ['Rule', 'Règle', 'Regle']);
+  const ex = pickCol(header, ['Example', 'Exemple']), src = pickCol(header, ['Source']), msg = pickCol(header, ['Message', 'Messages']);
+  const st = pickCol(header, ['Stories', 'Story', 'Histoires', 'Histoire']);
+  if (!id || !rule || !(ex || src || msg || st)) return { error: 'notSfd', rules: [] };
+  const rules = rows.filter((r) => r[id] && r[rule]).map((r) => ({ id: r[id], text: r[rule], example: ex ? r[ex] : '', source: src ? r[src] : '', msg: msg ? r[msg] : '', stories: st ? r[st] : '' }));
+  return { rules };
+}
+
 export function toCsv(rows, { delim = ',', eol = '\r\n' } = {}) {
   const q = (v) => {
     const s = v == null ? '' : String(v);

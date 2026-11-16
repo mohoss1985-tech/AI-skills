@@ -5,7 +5,7 @@
    Case:   {id, title, feature, req, tester, status: notrun|pass|fail|blocked, defect, evidence, day, expected}
    Defect: {key, summary, severity: blocking|major|minor|enhancement, status: open|retest|closed|rejected, feature, created (day), workaround}
    Criteria: {allRun, passRate (bool), passRateMin (number), reqCovered, noBlocking, noMajor} */
-import { parseCsv, pickCol, toCsv } from './csv.js';
+import { parseCsv, pickCol, toCsv, sfdRulesFromCsv } from './csv.js';
 
 export const STATUSES = ['notrun', 'pass', 'fail', 'blocked'];
 export const SEVERITIES = ['blocking', 'major', 'minor', 'enhancement'];
@@ -55,7 +55,19 @@ export function compute(state) {
   // requirements
   const reqs = new Map();
   for (const c of cases) for (const q of reqsOf(c.req)) { if (!reqs.has(q)) reqs.set(q, new Set()); reqs.get(q).add(c.status); }
-  res.requirements = { total: reqs.size, coveredPassed: [...reqs.values()].filter((v) => v.has('pass')).length,
+  // V3: a requirement is COVERED only when ALL its tests passed; AT RISK when one failed or is blocked; NOT COVERED
+  // otherwise (nothing failed, but not every test has passed yet). `coveredPassed` / `notPassed` keep the old
+  // "at least one passed" count only for parity with uat_report.py (not used for the exit criterion any more).
+  const perReq = new Map();
+  for (const c of cases) for (const q of reqsOf(c.req)) {
+    if (!perReq.has(q)) perReq.set(q, { req: q, tests: 0, pass: 0, fail: 0, blocked: 0, notrun: 0 });
+    const o = perReq.get(q); o.tests++; o[STATUSES.includes(c.status) ? c.status : 'notrun']++;
+  }
+  const list = [...perReq.values()].sort((a, b) => a.req.localeCompare(b.req, undefined, { numeric: true })).map((o) => ({ ...o,
+    state: o.fail || o.blocked ? 'atRisk' : o.pass === o.tests ? 'covered' : 'notCovered' }));
+  const ids = (st) => list.filter((o) => o.state === st).map((o) => o.req);
+  res.requirements = { total: reqs.size, list, covered: ids('covered'), atRisk: ids('atRisk'), notCovered: ids('notCovered'),
+    coveredPassed: [...reqs.values()].filter((v) => v.has('pass')).length,
     notPassed: [...reqs.keys()].filter((q) => !reqs.get(q).has('pass')).sort() };
 
   // defects
@@ -92,7 +104,8 @@ export function compute(state) {
   const all = [
     { id: 'allRun', met: notRun === 0 && s.blocked === 0, vars: { run: executed, planned, blocked: s.blocked, notRun } },
     { id: 'passRate', met: res.passedPct >= +crit.passRateMin, vars: { pct: res.passedPct, min: +crit.passRateMin } },
-    { id: 'reqCovered', met: !res.requirements.notPassed.length, vars: { ok: res.requirements.coveredPassed, total: res.requirements.total, list: res.requirements.notPassed.join(', ') } },
+    { id: 'reqCovered', met: res.requirements.covered.length === res.requirements.total, vars: { ok: res.requirements.covered.length, total: res.requirements.total,
+      risk: res.requirements.atRisk.length, nc: res.requirements.notCovered.length, list: [...res.requirements.atRisk, ...res.requirements.notCovered].join(', ') } },
     { id: 'noBlocking', met: res.defects.blocking.length === 0, vars: { n: res.defects.blocking.length, list: res.defects.blocking.map((d) => d.key).join(', ') } },
     { id: 'noMajor', met: res.defects.majorNoWa.length === 0, vars: { n: res.defects.majorNoWa.length, list: res.defects.majorNoWa.map((d) => d.key).join(', ') } },
   ];
@@ -138,7 +151,10 @@ const YES = ['yes', 'y', 'oui', 'true', '1', 'accepted', 'accepté', 'accepte'];
 export function casesFromCsv(text) {
   const { header, rows } = parseCsv(text);
   const c = Object.fromEntries(Object.entries(COLS).map(([k, a]) => [k, pickCol(header, a)]));
-  if (!c.status) return { error: 'noStatus', cases: [] };
+  if (!c.status) {
+    const sfd = casesFromSfdCsv(text);
+    return sfd.error ? { error: 'noStatus', cases: [] } : sfd;
+  }
   const unknown = {};
   const cases = rows.map((r, i) => {
     const raw = (r[c.status] || '').trim().toUpperCase();
@@ -149,6 +165,18 @@ export function casesFromCsv(text) {
       status: st, defect: (c.defect && r[c.defect]) || '', evidence: (c.evidence && r[c.evidence]) || '', day: c.day && r[c.day] ? +r[c.day] || '' : '', expected: '' };
   });
   return { cases, unknown };
+}
+
+/** SFD builder rules CSV → one case per rule (status = not run): requirement = the rule id (RG-05), expected result =
+    the rule's worked example, title = the rule text. Ids continue after `existing` (UAT-01, UAT-02, …). */
+export function casesFromSfdCsv(text, existing = []) {
+  const { rules, error } = sfdRulesFromCsv(text);
+  if (error || !rules.length) return { error: error || 'notSfd', cases: [] };
+  let n = 0;
+  for (const c of existing) { const m = /(\d+)$/.exec(String(c.id)); if (m) n = Math.max(n, +m[1]); }
+  const cases = rules.map((r) => ({ id: `UAT-${String(++n).padStart(2, '0')}`, title: r.text, feature: '', req: r.id, tester: '', status: 'notrun',
+    defect: '', evidence: '', day: '', expected: r.example || '' }));
+  return { cases, unknown: {}, fromSfd: true };
 }
 
 export function defectsFromCsv(text, today) {

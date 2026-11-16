@@ -4,7 +4,7 @@
 import { register, getLang } from '../../core/i18n.js';
 import strings from './i18n.js';
 import { SAMPLES } from './samples.js';
-import { compute, cycle, DIMS, GAP_TYPES, SIZES, heatmapCsv, gapsCsv, pruneScores, parseAreas } from './logic.js';
+import { compute, cycle, DIMS, GAP_TYPES, SIZES, heatmapCsv, gapsCsv, pruneScores, parseAreas, renameAreas } from './logic.js';
 import { fill, mdTable } from '../mapping-grid/csv.js';
 
 const T = register('impact-heatmap', strings);
@@ -73,6 +73,9 @@ function mount(el, ctx) {
   const S = () => ctx.state;
   const set = (patch) => ctx.setState(patch, { silent: true });
   let timer = null;
+  let prevAreas = S().areas || '';   // last committed Areas text, to detect renames
+  let ready = false;                 // first paint of the result panels waits one macrotask: the frame sets ctx.guided after mount
+  const showResults = () => ready && !ctx.guided;
   const later = (fn) => { clearTimeout(timer); timer = setTimeout(fn, 250); };
 
   // ---- command bar
@@ -135,10 +138,10 @@ function mount(el, ctx) {
     tbl.append(thead, tbody, tfoot);
     const legend = h('div', { class: 'ih-legend' }, ...[0, 1, 2, 3].map((v) => h('span', { class: 'ih-key' }, h('i', { class: `lv-${v}`, 'aria-hidden': 'true' }, String(v)), lvL(scale, v))));
     const extra = scale === 'effort' ? h('p', { class: 'ih-hint num', text: F('effortLine', { lo: r.days[0], hi: r.days[1] }) }) : null;
-    heatBox.replaceChildren(h('div', { class: 'ih-head' }, h('h2', { text: T('heatmap') }), legend), h('p', { class: 'ih-hint', text: T('heatHint') }), h('div', { class: 'ih-scroll' }, tbl), extra);
+    heatBox.replaceChildren(h('div', { class: 'ih-head' }, h('h2', { text: T('heatmap') }), legend), h('p', { class: 'ih-hint', text: T('heatHint') }), h('div', { class: 'ih-scroll' }, tbl), ...(extra ? [extra] : []));
     if (keepFocus) { const nb = tbl.querySelector(`[data-r="${focus[0]}"][data-c="${focus[1]}"]`); if (nb) nb.focus(); }
     const text = F('meta', { grand: r.grand, max: r.max, hot: r.counts[3], gaps: r.gaps.length });
-    ctx.frame.setStatus({ tone: r.flags.length ? 'warn' : 'ok', text });
+    if (showResults()) ctx.frame.setStatus({ tone: r.flags.length ? 'warn' : 'ok', text });
     return r;
   }
 
@@ -150,7 +153,11 @@ function mount(el, ctx) {
     set({ gaps }); buildGrid(); paintSide();
     gridEl.focusCell(gaps.length - 1, 2);
   }
+  const invite = h('p', { class: 'ih-hint ih-invite', text: T('invite') });
   function paintSide() {
+    side.classList.toggle('is-guided', !showResults());
+    invite.hidden = showResults();
+    flagBox.hidden = topBox.hidden = !showResults();
     const r = compute(S());
     const ol = h('ol', { class: 'ih-top' });
     if (!r.top.length) ol.append(h('li', { class: 'ih-none', text: T('noTop') }));
@@ -195,7 +202,7 @@ function mount(el, ctx) {
     gridBox.replaceChildren(gridEl);
   }
 
-  const side = h('div', { class: 'ih-side' }, flagBox, topBox);
+  const side = h('div', { class: 'ih-side' }, invite, flagBox, topBox);
   const upper = h('div', { class: 'ih-upper' }, heatBox, side);
   const gapSec = h('section', { class: 'ih-gaps' }, gapHead, gapHint, gridBox);
   const empty = ui.emptyState({ icon: 'grid-3x3', title: T('emptyTitle'), text: T('emptyBody'),
@@ -204,12 +211,18 @@ function mount(el, ctx) {
   function rebuild() {
     const has = parseAreas(S().areas).length > 0;
     empty.hidden = has; upper.hidden = !has; gapSec.hidden = !has;
-    if (has) { set({ scores: pruneScores(S()) }); paintHeat(); paintSide(); buildGrid(); }
+    if (has) {
+      const rn = renameAreas(prevAreas, S().areas, S());   // rename keeps scores + gap links; no pruning, so retyping a name restores its scores
+      if (rn.renamed.length) set({ scores: rn.scores, gaps: rn.gaps });
+      prevAreas = S().areas || '';
+      paintHeat(); paintSide(); buildGrid();
+    }
     else ctx.frame.setStatus(null);
   }
   el.append(adv, empty, upper, gapSec);
-  ctx.__ihRefresh = () => { rebuild(); return compute(S()); };
+  ctx.__ihRefresh = () => { ready = true; rebuild(); return compute(S()); };
   rebuild();
+  setTimeout(() => { ready = true; paintHeat(true); paintSide(); }, 0);
 }
 
 /* ------------------------------------------------------------------------------------------- module */

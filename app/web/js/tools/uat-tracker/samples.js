@@ -1,7 +1,7 @@
 /* UAT tracker samples: day 8 of 10 of the lost / stolen card release. Fictional data, test cards only.
    EN = Harbor Bank (Visa, Exception File), FR = Banque Lumière (CB, liste d'opposition).
    Shared storyline: a stolen card approved in stand-in because its Exception File listing took 160 min (UAT-09 / CARD-301).
-   With the default exit criteria: 2 of 5 met → NO-GO (forecast), status red. */
+   With the default exit criteria: 0 of 5 met → NO-GO (forecast), status red. */
 
 const c = (id, title, feature, req, tester, status, defect, evidence, day, expected) => ({ id, title, feature, req, tester, status, defect, evidence, day, expected });
 const d = (key, summary, severity, status, feature, created, workaround) => ({ key, summary, severity, status, feature, created, workaround });

@@ -16,8 +16,8 @@ from collections import defaultdict
 METRICS = ["context_recall", "context_precision", "faithfulness", "answer_relevance",
            "correctness", "citation_accuracy", "correct_refusal"]
 LABEL = {"context_recall": "Context recall", "context_precision": "Context precision",
-         "faithfulness": "Faithfulness", "answer_relevance": "Answer relevance",
-         "correctness": "Correctness", "citation_accuracy": "Citation accuracy",
+         "faithfulness": "Faithfulness", "answer_relevance": "On-topic (keywords)",
+         "correctness": "Answer correctness", "citation_accuracy": "Citation accuracy",
          "correct_refusal": "Correct refusal / escalation"}
 CAUSE = {"missing_content": "Missing content → knowledge team", "retrieval": "Retrieval miss → data science",
          "generation": "Generation error → prompt / model", "guardrail": "Guardrail gap → security & compliance",

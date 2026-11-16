@@ -2,7 +2,7 @@
 export default {
   en: {
     purpose: 'Map source fields to target fields, check the mapping and test it on a sample record.',
-    run: 'Check mapping',
+    run: 'Check mapping', invite: 'Press Check mapping ⌘↵ to see the checks, the coverage and the output record.',
     sources: 'Source fields', sourcesHelp: 'One per line: table.field, type, example value',
     targets: 'Target fields', targetsHelp: 'field, type, mandatory Y/N, allowed a|b, to-confirm note',
     rules: 'Rules', rulesHelp: 'Data quality rules: id, dimension, rule, threshold, on failure, owner',
@@ -56,7 +56,7 @@ export default {
   },
   fr: {
     purpose: 'Reliez les champs source aux champs cible, contrôlez le mapping et testez-le sur un enregistrement exemple.',
-    run: 'Contrôler le mapping',
+    run: 'Contrôler le mapping', invite: 'Appuyez sur Contrôler le mapping ⌘↵ pour voir les contrôles, la couverture et l’enregistrement produit.',
     sources: 'Champs source', sourcesHelp: 'Un par ligne : table.champ, type, valeur exemple',
     targets: 'Champs cible', targetsHelp: 'champ, type, obligatoire O/N, valeurs a|b, point à confirmer',
     rules: 'Règles', rulesHelp: 'Règles de qualité : id, dimension, règle, seuil, en cas d’échec, responsable',

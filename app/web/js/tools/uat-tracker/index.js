@@ -5,7 +5,7 @@
 import { register, getLang } from '../../core/i18n.js';
 import strings from './i18n.js';
 import { SAMPLES } from './samples.js';
-import { compute, casesFromCsv, defectsFromCsv, runsCsv, defectsCsv, DEFAULT_CRITERIA, CRITERIA, STATUSES, SEVERITIES, DSTATES } from './logic.js';
+import { compute, casesFromCsv, casesFromSfdCsv, defectsFromCsv, runsCsv, defectsCsv, DEFAULT_CRITERIA, CRITERIA, STATUSES, SEVERITIES, DSTATES } from './logic.js';
 import { mdCell, fmtVars } from './csv.js';
 
 const T = register('uat-tracker', strings);
@@ -147,6 +147,7 @@ function burnup(r) {
 
 /* ---------------------------------------------------------------- view */
 function mount(el, ctx) {
+  let ready = false; // first reveal of results waits for the frame's guided flag (see end of mount)
   const { ui } = ctx;
   const S = () => ctx.state;
   if (!Array.isArray(S().cases)) ctx.setState({ cases: [], defects: [] }, { silent: true });
@@ -182,6 +183,13 @@ function mount(el, ctx) {
       ctx.setState({ cases }, { silent: true }); runsGrid.setRows(cases); refresh();
       const u = Object.entries(unknown || {}).map(([k, n]) => `${k || '∅'} ×${n}`).join(', ');
       return { ok: fmt('pasteDone', { n: cases.length }) + (u ? ' · ' + fmt('pasteUnknown', { list: u }) : '') };
+    }),
+    pasteBlock('pasteSfd', 'pasteSfdHint', 'addSfd', (text) => {
+      const { cases, error } = casesFromSfdCsv(text, S().cases || []);
+      if (error || !cases.length) return { error: T('pasteNoSfd') };
+      const all = [...(S().cases || []), ...cases];
+      ctx.setState({ cases: all }, { silent: true }); runsGrid.setRows(all); refresh();
+      return { ok: fmt('pasteDone', { n: cases.length }) };
     }),
     pasteBlock('pasteDefects', 'pasteDefectsHint', 'replaceDefects', (text) => {
       const { defects, error } = defectsFromCsv(text, S().day);
@@ -324,7 +332,18 @@ function mount(el, ctx) {
       for (const d of r.reservations) ul2.append(h('li', null, fmt(d.severity === 'major' ? 'res_line' : 'res_minor', { key: d.key, summary: d.summary, sev: sevName(d.severity).toLowerCase() })));
       why.append(ul2);
     }
-    pGauge.append(head, g, list, why);
+    const rq = r.requirements;
+    const cov = h('div', 'uat-reqcov');
+    if (rq.total) {
+      cov.append(h('h3', null, T('reqCov')));
+      const row = h('div', 'uat-reqcov-row');
+      for (const [k, tone] of [['covered', 'ok'], ['atRisk', 'bad'], ['notCovered', 'warn']]) row.append(ui.badge({ text: `${T('rq_' + k)} ${rq[k].length} / ${rq.total}`, tone: rq[k].length ? tone : 'neutral' }));
+      cov.append(row, h('p', 'uat-hint', T('rq_hint')));
+      const ul3 = h('ul');
+      for (const o of rq.list.filter((x) => x.state !== 'covered')) ul3.append(h('li', null, fmt('rq_line', o)));
+      if (ul3.childElementCount) cov.append(ul3);
+    }
+    pGauge.append(head, g, list, cov, why);
   }
   function paintProgress(r) {
     pProg.replaceChildren();
@@ -370,18 +389,18 @@ function mount(el, ctx) {
     cache = null;
     const r = current();
     const has = (S().cases || []).length > 0;
-    empty.hidden = has; dash.hidden = !has;
+    empty.hidden = has; dash.hidden = !has || !ready || !!ctx.guided; // guided: inputs only until Run
     tabs.setCount && (tabs.setCount('runs', (S().cases || []).length), tabs.setCount('defects', (S().defects || []).length), tabs.setCount('criteria', r.criteria.length));
     for (const id of CRITERIA) {
       const c = r.criteria.find((x) => x.id === id) || { id, vars: { min: crit.passRateMin, pct: r.passedPct }, met: null };
       critRows[id].txt.textContent = critLabel({ ...c, vars: { ...c.vars, min: crit.passRateMin } });
       critRows[id].state.replaceChildren(c.met == null ? '' : ui.badge({ text: critValue(c), tone: c.met ? 'ok' : 'bad' }));
     }
-    if (has) { paintGauge(r); paintProgress(r); paintDefects(r); }
+    if (has && ready && !ctx.guided) { paintGauge(r); paintProgress(r); paintDefects(r); }
     // recompute flag / cases columns without repainting inputs
     runsGrid.querySelectorAll('[data-cell]').length && refreshComputed(runsGrid, 9, (i) => flagCell((S().cases || [])[i] || {}));
     refreshComputed(defectsGrid, 7, (i) => { const k = ((S().defects || [])[i] || {}).key; const d = r.defects.list.find((x) => x.key === k); return d ? d.cases.join(', ') : ''; });
-    ctx.frame.setStatus({ tone: VTONE[r.verdict], text: fmt('statusText', { verdict: T('v_' + r.verdict), met: r.met, total: r.criteria.length, run: dec(r.executedPct) }) });
+    ctx.frame.setStatus(ready && !ctx.guided ? { tone: VTONE[r.verdict], text: fmt('statusText', { verdict: T('v_' + r.verdict), met: r.met, total: r.criteria.length, run: dec(r.executedPct) }) } : null);
     return r;
   }
   function refreshComputed(gridEl, ci, fn) {
@@ -389,11 +408,13 @@ function mount(el, ctx) {
   }
   el.append(advanced, empty, dash, tabs);
   ctx.__uatRefresh = refresh;
+  // The frame sets ctx.guided right AFTER mount: first reveal of the verdict waits one macrotask (rule 8).
   refresh();
+  setTimeout(() => { ready = true; refresh(); }, 0);
 }
 
 /* ---------------------------------------------------------------- module */
-const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state, autorun: true }));
+const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state }));
 
 export default {
   id: 'uat-tracker',

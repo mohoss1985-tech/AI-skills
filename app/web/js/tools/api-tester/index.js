@@ -621,7 +621,7 @@ async function run(st, ctx) {
     if (!(await confirmDialog(T('prodTitle'), F('prodConfirm', { method: built.method, host: new URL(built.url).host }), T('sendAnyway')))) throw fail(T('cancelled'), T('prodHint'));
     confirmProduction = true;
   }
-  if (st.resetFirst && L.isMock(built.url)) { await resetMockFor(built.url, transportOpts()); ctx.setState({ resetFirst: false }, { silent: true }); }
+  if (L.needsMockReset(st) && L.isMock(built.url)) { await resetMockFor(built.url, transportOpts()); ctx.setState({ resetFirst: false }, { silent: true }); }
   let res = await sendRequest(built, transportOpts({ confirmProduction }));
   if (!res.ok && res.code === 'http.production_confirm' && !confirmProduction && await confirmDialog(T('prodTitle'), res.error, T('sendAnyway'))) {
     res = await sendRequest(built, transportOpts({ confirmProduction: true }));

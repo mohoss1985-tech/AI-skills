@@ -1,4 +1,4 @@
-/* Design tokens, Analyst Kit V2 (DESIGN_SPEC §1–§2, research/04 §4 with §1 overrides).
+/* Design tokens, Skills Portal (DESIGN_SPEC §1–§2, research/04 §4 with §1 overrides).
    Neutrals: Radix slate (contrast checked). Accent: blue #2563eb light / #4f8cff dark; accent TEXT uses the darker step.
    Radii 4/6/10/full. Type 11/12/13/14/16/20/24, weights 400/500/600. Spacing 4-pt. Motion 100/160/240 ms.
    Contrast (WCAG 2.x, computed): white on accent 5.17 · accent-text 6.70 (6.08 on accent-soft) · fg-2 5.94 (5.22 on hover) ·

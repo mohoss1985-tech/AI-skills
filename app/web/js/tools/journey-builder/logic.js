@@ -257,3 +257,29 @@ export function fromJson(text) {
   const edges = d.edges.filter((e) => e && ids.has(String(e.from)) && ids.has(String(e.to))).map((e, i) => ({ id: String(e.id || 'e' + (i + 1)), from: String(e.from), to: String(e.to), label: String(e.label || '') }));
   return { meta: { intent: d.intent || '', channel: ['chat', 'voice', 'app'].includes(d.channel) ? d.channel : 'chat', solved: d.solved || '', handoff: d.handoffRule || '', utterances: (d.utterances || []).join('\n') }, graph: { nodes, edges } };
 }
+
+/* ------------------------------------------------------------------ batch test of utterances */
+/** Run each test phrase (one per line; optional `phrase => expected branch`) at every question of the flow.
+ *  status: 'pass' (a real branch matched, and the expected one if given) | 'fallback' (only the catch-all fits) |
+ *  'unhandled' (no branch at all) | 'fail' (matched a branch other than the expected one). */
+export function runUtterances(g, text) {
+  const questions = g.nodes.filter((x) => x.type === 'question');
+  const rows = [];
+  for (const raw of String(text || '').split('\n').map((x) => x.trim()).filter(Boolean)) {
+    const [utt, exp] = raw.split(/\s*(?:=>|→)\s*/);
+    let hit = null, fb = null;
+    for (const q of questions) {
+      const r = matchReply(g, q.id, utt);
+      if (r.edge && !r.fallback) { hit = { q, edge: r.edge }; break; }
+      if (r.edge && r.fallback && !fb) fb = { q, edge: r.edge };
+    }
+    const expected = (exp || '').trim();
+    let status, branch = '';
+    if (hit) { branch = hit.edge.label || ''; status = expected && !norm(branch).includes(norm(expected)) && !alts(branch).includes(norm(expected)) ? 'fail' : 'pass'; }
+    else if (fb) { branch = fb.edge.label || ''; status = expected && isFallback(expected) ? 'pass' : expected ? 'fail' : 'fallback'; }
+    else status = 'unhandled';
+    rows.push({ utterance: utt, expected, branch, status, at: (hit || fb || {}).q ? (hit || fb).q.text : '' });
+  }
+  const handled = rows.filter((r) => r.status === 'pass').length;
+  return { rows, handled, total: rows.length };
+}

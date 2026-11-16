@@ -3,6 +3,10 @@ export default {
   en: {
     purpose: 'Plan a timed agenda, run the session with a block timer, capture decisions and actions, send the report the same day.',
     run: 'Check agenda',
+    invite: 'Press Check agenda ⌘↵ to see the checks and the report.',
+    fitMoved: 'Fitted to {n} min. Moved to the next workshop: {topics}',
+    resetConfirm: 'Click Reset again within 4 s to erase all times',
+    finish: 'Finish workshop',
     goal: 'Goal', goalPh: 'Agree how a lost or stolen card is declared and blocked',
     attendees: 'Attendees', attendeesHelp: 'Name (role), comma-separated. Add "sponsor" or "decider" to the decision-maker’s role, "absent" if invited but missing.',
     attendeesPh: 'Ana (Head of cards, sponsor), Tom (Card IT)',
@@ -58,6 +62,10 @@ export default {
   fr: {
     purpose: "Planifier un ordre du jour minuté, animer avec un minuteur par séquence, noter décisions et actions, envoyer le compte-rendu le jour même.",
     run: "Vérifier l'ordre du jour",
+    invite: "Appuyez sur Vérifier l'ordre du jour ⌘↵ pour voir les contrôles et le compte-rendu.",
+    fitMoved: 'Ajusté à {n} min. Reporté au prochain atelier : {topics}',
+    resetConfirm: 'Cliquez de nouveau sur Remettre à zéro (4 s) pour effacer tous les temps',
+    finish: "Terminer l'atelier",
     goal: 'Objectif', goalPh: 'Définir comment une carte perdue ou volée est mise en opposition',
     attendees: 'Participants', attendeesHelp: 'Nom (rôle), séparés par des virgules. Ajoutez « sponsor » ou « décideur » au rôle du décideur, « absent » si invité mais absent.',
     attendeesPh: 'Anne (responsable monétique, sponsor), Thomas (IT monétique)',

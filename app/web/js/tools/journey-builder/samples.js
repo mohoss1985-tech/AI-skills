@@ -92,7 +92,7 @@ je veux parler à un conseiller`;
 export const SAMPLES = {
   en: [
     {
-      id: 'lost-chat', autorun: true,
+      id: 'lost-chat',
       label: { en: '"I lost my card" support chat', fr: 'Chat « I lost my card »' },
       hint: { en: 'Harbor Bank · block, replace, report fraud', fr: 'Harbor Bank · bloquer, remplacer, fraude' },
       state: {
@@ -103,7 +103,7 @@ export const SAMPLES = {
       },
     },
     {
-      id: 'lost-voice', autorun: true,
+      id: 'lost-voice',
       label: { en: '"I lost my card" voice line', fr: 'Serveur vocal « I lost my card »' },
       hint: { en: 'Same need on a phone line: 3 options at most', fr: 'Même besoin au téléphone : 3 options au plus' },
       state: {
@@ -114,7 +114,7 @@ export const SAMPLES = {
   ],
   fr: [
     {
-      id: 'perte-chat', autorun: true,
+      id: 'perte-chat',
       label: { en: '"J\'ai perdu ma carte" support chat', fr: 'Chat « J\'ai perdu ma carte »' },
       hint: { en: 'Banque Lumière · opposition, new card, fraud', fr: 'Banque Lumière · opposition, nouvelle carte, fraude' },
       state: {

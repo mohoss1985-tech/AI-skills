@@ -80,8 +80,7 @@
     ],
     "record": {},
     "notes": "Storyline: crd_hb_009 was blocked as stolen at 09:00 on 18 Oct but listed on the Exception File only at 11:40; E008 (€64.90, e-commerce) was approved in stand-in at 10:15. This is the fraud report for E008."
-   },
-   "autorun": true
+   }
   },
   {
    "id": "iso8583-json",
@@ -163,8 +162,7 @@
     ],
     "record": {},
     "notes": "Defects on purpose: txn_time mapped twice, entry_mode (mandatory) not mapped, merchant name 40 → 25 characters, rule DQ-04 unknown. Try mapping de2 straight to pan_masked: the preview blocks the clear PAN."
-   },
-   "autorun": true
+   }
   }
  ],
  "fr": [
@@ -248,8 +246,7 @@
     ],
     "record": {},
     "notes": "Fil rouge : crd_bl_002 mise en opposition le 12 oct. (usage frauduleux), inscrite sur la liste d'opposition en 1 min ; l'opération E010 (59,99 €, VAD) est déclarée au GIE CB."
-   },
-   "autorun": true
+   }
   },
   {
    "id": "iso8583-json",
@@ -331,8 +328,7 @@
     ],
     "record": {},
     "notes": "Défauts volontaires : txn_time mappé deux fois, entry_mode (obligatoire) non mappé, nom du commerçant 40 → 25 caractères, règle DQ-04 inconnue. Mappez de2 directement sur pan_masked : l'aperçu bloque le PAN en clair."
-   },
-   "autorun": true
+   }
   }
  ]
 }

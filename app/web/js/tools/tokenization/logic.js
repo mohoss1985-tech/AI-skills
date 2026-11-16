@@ -91,21 +91,33 @@ export function simulate(input) {
   let step = 'request';
   let main = null;     // the token the screen follows (the last one provisioned)
 
-  const say = (from, to, text, st, kind = 'ok', i) => { messages.push({ from, to, text, step: st, kind, op: i }); step = st; };
+  let ctxCard = null;  // card of the current action (known before the token exists)
+  let curC = null;     // cryptogram of the current payment
+  const snaps = [];    // per action: token status / decision / PAN before and after (for the step-by-step view)
+  const snapNow = () => ({ status: main?.status || null, decision: main?.decision || null, pan_masked: main?.pan_masked || null });
+  const say = (from, to, text, st, kind = 'ok', i) => {
+    const card = main && main.card_id ? cardOf(w, main.card_id) : ctxCard;
+    messages.push({ from, to, text, step: st, kind, op: i, fields: fieldsFor(text.k, text.p || {}, { s, card, tok: main, c: curC }) });
+    step = st;
+  };
   const done = (i, op, ok, status, title, detail = null, rule = null) => log.push({ i, op, ok, status, title, detail, rule, at: now(w), api: apiCall(op, s, main) });
 
   const actions = [{ op: 'provision' }, ...(s.actions || [])];
   actions.forEach((a, i) => {
     const op = a.op;
-    if (op === 'provision') return provision(i, a);
-    if (!main) return done(i, a, false, 404, m('err.noToken'), null, null);
-    ({ idv, pay, replay, suspend, resume, remove, block, replace }[op === 'delete' ? 'remove' : op] || (() => done(i, a, false, 400, m('err.unknownOp', { op }))))(i, a);
+    const before = snapNow();
+    curC = null;
+    if (op === 'provision') provision(i, a);
+    else if (!main) done(i, a, false, 404, m('err.noToken'), null, null);
+    else ({ idv, pay, replay, suspend, resume, remove, block, replace, renew }[op === 'delete' ? 'remove' : op] || (() => done(i, a, false, 400, m('err.unknownOp', { op }))))(i, a);
+    snaps[i] = { before, after: snapNow() };
   });
 
   function provision(i, a) {
     const pan = (s.pan || '').replace(/\s/g, '');
     const card = pan ? findCardByPan(pan) && cardOf(w, findCardByPan(pan).card_id) : cardOf(w, s.cardId);
     const tsp = tspOf(card);
+    ctxCard = card || null;
     say('cardholder', 'wallet', m('msg.addCard', { wallet: s.wallet }), 'request', 'ok', i);
     say('wallet', 'tsp', m('msg.provisionReq', { tsp }), 'request', 'ok', i);
     // T1: unknown PAN (same safety rule as A1)
@@ -219,6 +231,7 @@ export function simulate(input) {
     }
     tok.atc += 1;
     const c = { token_ref: tok.token_ref, cryptogram: demoCryptogram(tok.token_ref, tok.atc, amountMinor), atc: tok.atc, eci: eciFor(channel), single_use: true, demo_only: true, amount_minor: amountMinor, channel };
+    curC = c;
     say('device', 'device', m('msg.cryptogram', { atc: c.atc }), 'pay', 'ok', i);
     return c;
   }
@@ -251,6 +264,7 @@ export function simulate(input) {
   function replay(i, a) {
     const c = w.lastCryptogram;
     if (!c) return done(i, a, false, 409, m('res.noCryptogram'), null, 'T18');
+    curC = c;
     say('merchant', 'merchant', m('msg.reuse'), 'pay', 'warn', i);
     authorise(i, a, main, c);
   }
@@ -292,7 +306,7 @@ export function simulate(input) {
     tok.status = 'active'; hist(tok, 'pan_updated', 'issuer', 'card_replaced');
     say('tsp', 'device', m('msg.panUpdated'), 'lifecycle', 'ok', i);
     say('wallet', 'cardholder', m('msg.keepPaying'), 'lifecycle', 'ok', i);
-    done(i, a, true, 200, m('res.panUpdate'), m('det.panUpdate', { card: rep.card_id, par: tok.par }), 'T13');
+    done(i, { op: 'pan_update', new_card_id: rep.card_id }, true, 200, m('res.panUpdate'), m('det.panUpdate', { card: rep.card_id, par: tok.par }), 'T13');
   }
   function remove(i, a) {
     const tok = main;
@@ -325,12 +339,24 @@ export function simulate(input) {
     rep.status = 'active';
     say('issuer', 'cardholder', m('msg.newCard', { pan: maskPan(rep.pan) }), 'lifecycle', 'ok', i);
     done(i, a, true, 200, m('res.replaced', { card: rep.card_id }), null, 'B3');
-    if (main.status === 'suspended' && lastReason(main) !== 'fraud_on_token' && main.card_id === old.card_id) panUpdate(i, { op: 'resume', new_card_id: rep.card_id }, main, rep);
+    if (main.status === 'suspended' && lastReason(main) !== 'fraud_on_token' && main.card_id === old.card_id) panUpdate(i, a, main, rep);
+  }
+  /** Card replaced with no block (renewal / reissue): new PAN behind the same token, the token stays active. */
+  function renew(i, a) {
+    const tok = main;
+    if (!canAct(tok, i, a, ['active'], 'T13')) return;
+    const card = cardOf(w, tok.card_id);
+    if (card.status !== 'active' || card.replaces) return done(i, a, false, 409, m('res.alreadyReplaced'), null, 'T13');
+    const rep = { ...replacementOf(CARDS.find((c) => c.card_id === card.card_id) || card), status: 'active' };
+    w.cards.push(rep);
+    card.status = 'replaced';
+    say('issuer', 'issuer', m('msg.reissue', { from: maskPan(card.pan), to: maskPan(rep.pan) }), 'lifecycle', 'ok', i);
+    panUpdate(i, a, tok, rep);
   }
 
   const token = main;
   const lastOk = log.filter((l) => l.ok).pop();
-  return { input: s, world: w, log, messages, step: messages.length ? messages[messages.length - 1].step : 'request', token, payments: w.payments, lastCryptogram: w.lastCryptogram || null, card: token ? cardOf(w, token.card_id) : null, views: views(token, w), allowed: allowed(token, w), lastOk };
+  return { input: s, actions, snaps, tsp: tspOf(ctxCard), world: w, log, messages, step: messages.length ? messages[messages.length - 1].step : 'request', token, payments: w.payments, lastCryptogram: w.lastCryptogram || null, card: token ? cardOf(w, token.card_id) : null, views: views(token, w), allowed: allowed(token, w), lastOk };
 }
 
 /** Which lifecycle actions are allowed now, with the rule that forbids the others (buttons + tooltips). */
@@ -341,7 +367,7 @@ export function allowed(tok, w) {
   const fraud = tok && [...(tok.history || [])].reverse().find((h) => h.reason)?.reason === 'fraud_on_token';
   const no = (rule, k) => ({ ok: false, rule, k });
   const yes = { ok: true };
-  if (!tok || !tok.token_ref) return Object.fromEntries(['idv', 'pay', 'replay', 'suspend', 'resume', 'delete', 'block', 'replace'].map((k) => [k, no('T16', 'why.noToken')]));
+  if (!tok || !tok.token_ref) return Object.fromEntries(['idv', 'pay', 'replay', 'suspend', 'resume', 'delete', 'block', 'replace', 'renew'].map((k) => [k, no('T16', 'why.noToken')]));
   return {
     idv: st === 'pending_idv' ? yes : no('T8', 'why.notPending'),
     pay: st === 'active' ? yes : no(st === 'deleted' ? 'T15' : 'T16', 'why.notActive'),
@@ -351,6 +377,7 @@ export function allowed(tok, w) {
     delete: st === 'deleted' ? no('T15', 'why.deleted') : yes,
     block: card && card.status !== 'blocked' ? yes : no('B2', 'why.alreadyBlocked'),
     replace: rep && rep.status === 'ordered' ? yes : no('T13', rep ? 'why.alreadyReplaced' : 'why.blockFirst'),
+    renew: st !== 'active' ? no('T13', 'why.notActive') : card?.replaces ? no('T13', 'why.alreadyReplaced') : card?.status === 'active' ? yes : no('T13', 'why.cardBlocked'),
   };
 }
 
@@ -389,7 +416,9 @@ export function apiCall(a, s, tok) {
     case 'resume': return { method: 'POST', path: `/tokens/${ref}/resume`, body: { reason: a.reason || 'device_found', ...(a.new_card_id ? { new_card_id: a.new_card_id, requested_by: 'issuer' } : {}) } };
     case 'delete': return { method: 'POST', path: `/tokens/${ref}/delete`, body: { reason: a.reason || 'cardholder_request' } };
     case 'block': return { method: 'POST', path: `/cards/${tok?.card_id || s.cardId}/block`, body: { reason: a.reason || 'stolen', channel: 'app' } };
-    case 'replace': return { method: 'POST', path: `/tokens/${ref}/resume`, body: { reason: 'card_replaced', requested_by: 'issuer', new_card_id: `${(tok?.card_id || s.cardId).replace(/_r1$/, '')}_r1` } };
+    // Activating the replacement card / reissuing is an issuer back-office event: the token call is the PAN update.
+    case 'replace': case 'renew': return null;
+    case 'pan_update': return { method: 'POST', path: `/tokens/${ref}/resume`, body: { reason: 'card_replaced', requested_by: 'issuer', new_card_id: a.new_card_id } };
     default: return null;
   }
 }
@@ -409,4 +438,185 @@ export function toMermaid(res, tr, actorLabel) {
   });
   if (open) lines.push('  end');
   return lines.join('\n');
+}
+
+/* ================= V3: payload fields per message, chapters and the step engine (owner R3) =================
+   The guided view shows ONE message at a time. Each engine message carries the fields it would hold on the wire
+   (PAN always masked 6+4). Scheme field names are indicative: confirm them against the VTS / MDES specification;
+   the CB column uses neutral EMVCo-style names (*to confirm*). Values are the same DEMO values as everywhere else. */
+const DEC = {
+  VTS: { green: '00', yellow: '85', red: '05' },
+  MDES: { green: 'APPROVED', yellow: 'REQUIRE_ADDITIONAL_AUTHENTICATION', red: 'DECLINED' },
+  CB: { green: 'approved', yellow: 'step_up', red: 'declined' },
+};
+const IDV = {
+  VTS: { sms_otp: 'OTPSMS', issuer_app: 'APP_TO_APP', call_centre: 'CUSTOMERCARE' },
+  MDES: { sms_otp: 'TEXT_TO_CARDHOLDER_NUMBER', issuer_app: 'CARDHOLDER_TO_USE_MOBILE_APP', call_centre: 'CARDHOLDER_TO_CALL_MANNED_NUMBER' },
+  CB: { sms_otp: 'sms_otp', issuer_app: 'issuer_app', call_centre: 'call_centre' },
+};
+const SCORE = { low: '5', medium: '3', high: '1' };
+const WIRE_STATUS = { active: 'ACTIVE', pending_idv: 'INACTIVE', suspended: 'SUSPENDED', deleted: 'DEACTIVATED' };
+const TSP_COL = { VTS: 0, MDES: 1, CB: 2 };
+/** id → [VTS, MDES, CB] name, or one name for all. Ids not listed here have no scheme name (plain label only). */
+export const FIELD_NAMES = {
+  pan: ['primaryAccountNumber', 'accountNumber', 'pan'],
+  oldPan: ['primaryAccountNumber (old)', 'accountNumber (old)', 'pan (old)'],
+  newPan: ['primaryAccountNumber (new)', 'accountNumber (new)', 'pan (new)'],
+  encPan: ['encPaymentInstrument', 'fundingAccountInfo.encryptedPayload', 'encryptedCardData'],
+  expiry: ['expirationDate', 'expiryMonth / expiryYear', 'expiryDate'],
+  trid: ['tokenRequestorID', 'tokenRequestorId', 'tokenRequestorId'],
+  deviceType: ['deviceInfo.deviceType', 'deviceInfo.formFactor', 'deviceType'],
+  deviceScore: ['walletProviderDeviceScore', 'deviceScore', 'deviceScore'],
+  accountScore: ['walletProviderAccountScore', 'accountScore', 'accountScore'],
+  decision: ['actionCode', 'decision', 'decision'],
+  idvMethods: ['stepUpRequest[].method', 'activationMethods[].type', 'idvMethods'],
+  idvMethod: ['stepUpRequest.method', 'activationMethod.type', 'idvMethod'],
+  otp: ['otpValue', 'activationCode', 'otp'],
+  token: ['token (DPAN)', 'token (DPAN)', 'token (DPAN)'],
+  tokenRef: ['vProvisionedTokenID', 'tokenUniqueReference', 'tokenReference'],
+  par: 'paymentAccountReference',
+  tokenStatus: ['tokenInfo.tokenStatus', 'status', 'tokenStatus'],
+  tokenExpiry: ['tokenInfo.expirationDate', 'tokenInfo.tokenExpiry', 'tokenExpiry'],
+  tavv: ['TAVV', 'UCAF (DSRP cryptogram)', 'token cryptogram'],
+  arqc: 'ARQC (tag 9F26)',
+  atc: 'ATC (tag 9F36)',
+  eci: 'ECI',
+  responseCode: 'response code (DE 39)',
+  reason: ['updateReason', 'reasonCode', 'reasonCode'],
+};
+export const fieldName = (id, tsp) => { const n = FIELD_NAMES[id]; return !n ? '' : Array.isArray(n) ? n[TSP_COL[tsp] ?? 0] : n; };
+
+function fieldsFor(k, p, { s, card, tok, c }) {
+  const tsp = tspOf(card);
+  const rawPan = card ? card.pan : (s.pan || '').replace(/\s/g, '');
+  const pan = maskPan(rawPan);
+  const V = {
+    pan, encPan: pan && `encrypted(${pan})`, expiry: card?.expiry, wallet: s.wallet, trid: s.trid, deviceType: deviceType(s.device),
+    deviceScore: SCORE[s.deviceRisk], accountScore: +s.accountAgeDays < 30 ? '2' : '5',
+    binRange: rawPan && `${rawPan.slice(0, 6)} · ${card ? card.network : '?'}`,
+    domain: (tok?.domain_restrictions?.channels || domainFor(s.wallet, s.device).channels).join(', '),
+    idvMethods: IDV_METHODS.map((x) => IDV[tsp][x]).join(', '), idvMethod: IDV[tsp][p.method || s.idvMethod],
+    otp: '••••••', token: tok?.token_masked, tokenLast4: tok?.token_number && `•••• ${tok.token_number.slice(-4)}`, tokenRef: tok?.token_ref, par: tok?.par,
+    tokenStatus: WIRE_STATUS[tok?.status], tokenExpiry: tok?.token_expiry,
+    atc: c && String(c.atc), eci: c?.eci, amount: c && `${(c.amount_minor / 100).toFixed(2)} EUR`, channel: c?.channel || p.channel, merchant: s.merchant,
+    reason: p.reason || p.why, responseCode: p.code, triesLeft: p.left != null ? String(p.left) : null, count: p.n != null ? String(p.n) : null,
+    oldPan: p.from, newPan: p.to || p.pan,
+  };
+  const D = (x) => ['decision', DEC[tsp][x]];
+  const CG = c ? [c.channel === 'contactless' ? 'arqc' : 'tavv', c.cryptogram] : null;
+  const NO_PAN = ['pan', 'not_sent'];
+  const SETS = {
+    addCard: ['pan', 'expiry', 'wallet'],
+    provisionReq: ['encPan', 'trid', 'deviceType', 'deviceScore', 'accountScore'],
+    unknownPan: ['pan', ['eligibility', 'not_eligible']],
+    unknownTrid: ['trid', ['eligibility', 'not_eligible']],
+    tspChecks: ['binRange', 'trid', 'domain', ['eligibility', 'eligible']],
+    checkCard: ['pan', 'expiry', 'deviceScore', 'accountScore'],
+    exists: ['pan', 'deviceType', ['eligibility', 'not_eligible']],
+    yellow: [D('yellow'), 'reason', 'idvMethods'],
+    idvNeeded: [D('yellow'), 'tokenRef', 'tokenStatus', 'idvMethods'],
+    chooseIdv: ['idvMethods'],
+    green: [D('green'), ['eligibility', 'eligible']],
+    red: [D('red'), 'reason'],
+    declined: [D('red'), ['tokenStatus', 'no_token']],
+    cantAdd: [D('red')],
+    createToken: ['token', 'tokenRef', 'par', 'pan', 'tokenStatus'],
+    personalise: ['token', 'tokenExpiry', 'tokenStatus', ['keys', 'encrypted_demo']],
+    ready: ['tokenLast4', 'tokenStatus'],
+    idvEnter: ['idvMethod', 'otp'], idvSend: ['tokenRef', 'idvMethod', 'otp'], notPending: ['tokenRef', 'tokenStatus'], idvCheck: ['tokenRef', 'otp'],
+    idvFail: [['otpResult', 'wrong'], 'triesLeft', 'tokenStatus'], idvFail3: [['otpResult', 'wrong'], 'tokenStatus'], idvOk: [['otpResult', 'match'], D('green')],
+    authenticate: [['cdcvm', 'device_biometric']], notActive: ['tokenRef', 'tokenStatus'], domain: ['channel', 'domain'],
+    cryptogram: ['token', CG, 'atc', 'amount'],
+    sendToMerchant: ['token', 'tokenExpiry', CG, 'eci', NO_PAN],
+    authReq: ['token', CG, 'amount', 'merchant'],
+    replay: [CG, 'atc', ['cryptogramCheck', 'already_used']],
+    verify: [['cryptogramCheck', 'valid'], 'token', 'pan'],
+    detokenise: ['pan', 'token', 'amount', 'par'],
+    approved: ['responseCode'], declinedCode: ['responseCode'],
+    retoken: ['responseCode', 'token', 'par', NO_PAN],
+    reuse: [CG, 'atc'],
+    suspendAsk: ['tokenRef', 'reason'], suspendOne: ['tokenRef', ['operation', 'SUSPEND']], suspended: ['tokenRef', 'tokenStatus'],
+    compromised: ['tokenRef', 'tokenStatus'], resumeRefused: ['tokenRef', 'tokenStatus', ['cardStatus', 'blocked']],
+    resumeAsk: ['tokenRef', ['operation', 'RESUME']], resumed: ['tokenRef', 'tokenStatus'],
+    panUpdate: ['tokenRef', 'oldPan', 'newPan', 'par'], panUpdated: ['token', 'par', 'tokenStatus'], keepPaying: ['tokenLast4'],
+    deleteAsk: ['tokenRef', ['operation', 'DELETE'], 'reason'], deleted: ['tokenRef', 'tokenStatus'],
+    declare: ['pan', 'reason'], blocked: ['pan', ['cardStatus', 'blocked'], 'reason'], suspendAll: ['pan', ['operation', 'SUSPEND'], 'count'],
+    noReplacement: ['pan'], newCard: ['newPan', ['cardStatus', 'active']], reissue: ['oldPan', 'newPan'],
+  };
+  return (SETS[String(k).replace(/^msg\./, '')] || []).filter(Boolean)
+    .map((x) => (Array.isArray(x) ? { id: x[0], value: x[1] } : { id: x, value: V[x] }))
+    .filter((f) => f.value != null && f.value !== '');
+}
+
+/** Lanes of the on-screen sequence diagram. The merchant lane only appears in payment steps. */
+export const LANES = ['device', 'requestor', 'merchant', 'tsp', 'issuer'];
+const LANE = { cardholder: 'device', device: 'device', wallet: 'requestor', tsp: 'tsp', issuer: 'issuer', merchant: 'merchant' };
+const DECIDES = new Set(['msg.green', 'msg.yellow', 'msg.red', 'msg.unknownPan', 'msg.unknownTrid', 'msg.exists', 'msg.idvOk', 'msg.idvFail3']);
+
+/** One chapter per action (add card, each code try, each lifecycle step); frames = its messages, in order. */
+export function chapters(res) {
+  const out = [];
+  (res.actions || []).forEach((a, i) => {
+    const logs = res.log.filter((l) => l.i === i);
+    if (!logs.length) return;
+    const last = logs[logs.length - 1];
+    let frames = res.messages.filter((x) => x.op === i).map((x) => ({
+      from: LANE[x.from], to: LANE[x.to], actorFrom: x.from, actorTo: x.to, text: x.text,
+      cap: { k: x.text.k.replace(/^msg\./, 'cap.'), p: x.text.p }, kind: x.kind, step: x.step, fields: x.fields || [], decides: DECIDES.has(x.text.k),
+    }));
+    // A refusal with no message (wrong state, nothing to replay) still gets one visible step.
+    if (!frames.length) frames = [{ from: 'tsp', to: 'tsp', actorFrom: 'tsp', actorTo: 'tsp', text: last.title, cap: last.detail || last.title, kind: 'bad', step: 'lifecycle', fields: last.rule ? [{ id: 'rule', value: last.rule }] : [], decides: false }];
+    const snap = (res.snaps && res.snaps[i]) || { before: {}, after: {} };
+    const prov = a.op === 'provision' || a.op === 'idv';
+    out.push({
+      i, op: a.op, ok: logs.every((l) => l.ok), rule: last.rule, title: last.title, detail: last.detail, frames,
+      lanes: LANES.filter((l) => l !== 'merchant' || frames.some((f) => f.from === 'merchant' || f.to === 'merchant')),
+      path: prov ? snap.after.decision || 'red' : null, pathAt: prov ? frames.findIndex((f) => f.decides) : -1,
+      before: snap.before, after: snap.after, gate: snap.after.status === 'pending_idv' ? 'otp' : null,
+    });
+  });
+  return out;
+}
+
+/** Step engine. pos = {c: chapter index, n: messages shown in it (1..len)}. cmd: 'next' | 'back' | 'all' | 'first' |
+    'last' (first message of the newest chapter) | 'end' (newest chapter, all shown) | {c, n} | undefined (clamp only).
+    Returns the new position with what the screen needs: overall index/total, the current frame, the path once the
+    decision message is visible, the token status at this point, and gate = 'otp' when the flow waits for the code. */
+export function stepMove(chs, pos, cmd) {
+  if (!chs || !chs.length) return { c: 0, n: 0, index: 0, total: 0, atStart: true, atEnd: true, chapterEnd: true, frame: null, pathShown: null, status: null, gate: null };
+  const clamp = (v, lo, hi) => Math.min(Math.max(Number.isFinite(+v) ? Math.trunc(+v) : lo, lo), hi);
+  const len = (k) => chs[k].frames.length;
+  const lastC = chs.length - 1;
+  let c = clamp(pos ? pos.c : 0, 0, lastC);
+  let n = clamp(pos ? pos.n : 1, 1, len(c));
+  if (cmd === 'next') { if (n < len(c)) n += 1; else if (c < lastC) { c += 1; n = 1; } }
+  else if (cmd === 'back') { if (n > 1) n -= 1; else if (c > 0) { c -= 1; n = len(c); } }
+  else if (cmd === 'all') n = len(c);
+  else if (cmd === 'first') { c = 0; n = 1; }
+  else if (cmd === 'last') { c = lastC; n = 1; }
+  else if (cmd === 'end') { c = lastC; n = len(c); }
+  else if (cmd && typeof cmd === 'object') { c = clamp(cmd.c ?? c, 0, lastC); n = clamp(cmd.n ?? 1, 1, len(c)); }
+  const ch = chs[c];
+  const chapterEnd = n === len(c);
+  return {
+    c, n, index: chs.slice(0, c).reduce((t, x) => t + x.frames.length, 0) + n, total: chs.reduce((t, x) => t + x.frames.length, 0),
+    atStart: c === 0 && n === 1, atEnd: c === lastC && chapterEnd, chapterEnd, frame: ch.frames[n - 1],
+    pathShown: ch.path && ch.pathAt >= 0 && n > ch.pathAt ? ch.path : null,
+    status: (chapterEnd ? ch.after.status : ch.before.status) || null,
+    gate: chapterEnd && c === lastC ? ch.gate : null,
+  };
+}
+
+/** The lifecycle step to try next (lights one button): pay → suspend → resume → card replaced → pay → delete. */
+export function suggestNext(res) {
+  const tok = res && res.token;
+  if (!tok || !tok.token_ref || tok.status === 'deleted') return null;
+  if (tok.status === 'pending_idv') return 'idv';
+  const al = res.allowed;
+  if (tok.status === 'suspended') return al.resume.ok ? 'resume' : al.replace.ok ? 'replace' : 'delete';
+  const ev = tok.history.map((x) => x.event);
+  if (!res.payments.length) return 'pay';
+  if (!ev.includes('suspended')) return 'suspend';
+  if (!ev.includes('pan_updated')) return al.renew.ok ? 'renew' : 'delete';
+  return ['replace', 'renew'].includes(res.actions[res.actions.length - 1].op) ? 'pay' : 'delete';
 }

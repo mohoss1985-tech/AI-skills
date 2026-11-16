@@ -46,12 +46,18 @@ export function emptyState(lang = 'en') {
   };
 }
 
-const lines = (s) => String(s || '').split(/\r?\n|;(?=\s)/).map((l) => l.replace(/^\s*[-*•\d.)]+\s*/, '').trim()).filter(Boolean);
+/** Strip a list marker (`-`, `*`, `•`, `1.`, `2)`) but never a number that belongs to the text ("3DS", "24/7"). */
+export const stripMarker = (l) => String(l).replace(/^\s*(?:[*•]\s*|-\s+|\d{1,3}[.)]\s+)/, '').trim();
+const lines = (s) => String(s || '').split(/\r?\n|;(?=\s)/).map(stripMarker).filter(Boolean);
 
 /** Parse "Share of blocks in the app: 38% → 70%" into {name, baseline, target}. */
 export function parseMetric(text) {
   const s = String(text || '').trim();
-  const m = s.match(/^(.*?)(?:[:=]\s*|\s+from\s+|\s+de\s+)([^→>]+?)\s*(?:→|->|>|\bto\b|\bà\b)\s*(.+)$/i);
+  const ARROW = '\\s*(?:→|->|>|\\bto\\b|\\sà\\s)\\s*(.+)$';
+  // 1) a colon or "=" ends the name ("Taux de blocage dans l'appli: 38 % → 70 %"); 2) otherwise "from"/"de" only
+  // counts when a number follows it ("Taux de blocage de 38 % à 70 %"), and the LAST such split wins.
+  const m = s.match(new RegExp('^([^:=]+?)\\s*[:=]\\s*([^→>]+?)' + ARROW, 'i'))
+    || s.match(new RegExp('^(.*)\\s+(?:from|de|du)\\s+(\\d[^→>]*?)' + ARROW, 'i'));
   if (m) return { name: m[1].trim(), baseline: m[2].trim(), target: m[3].trim() };
   return { name: s, baseline: '', target: '' };
 }
@@ -72,7 +78,8 @@ export function buildDraft(state) {
     });
   }
   if (!s.reqs.length) {
-    const g1 = s.goals[0] ? s.goals[0].id : '';
+    // one goal: every requirement serves it; several goals: leave the link empty (an honest orphan the trace meter shows)
+    const g1 = s.goals.length === 1 ? s.goals[0].id : '';
     s.reqs = lines(s.scope).map((text, i) => ({ id: P.req + (i + 1), text, priority: 'Must', goal: g1, notes: '' }));
   }
   s.built = true;

@@ -40,6 +40,20 @@ export function gates(u, rules = DEFAULT_RULES) {
   return out;
 }
 
+/** Next free id: UC-(max numeric suffix + 1, at least 2 digits); never collides with an existing id (also after deletes). */
+export function nextId(rows) {
+  const used = new Set((rows || []).map((r) => String(r.id)));
+  let n = (rows || []).reduce((m, r) => { const x = /(\d+)\s*$/.exec(String(r.id || '')); return x ? Math.max(m, +x[1]) : m; }, 0) + 1;
+  while (used.has(`UC-${String(n).padStart(2, '0')}`)) n++;
+  return `UC-${String(n).padStart(2, '0')}`;
+}
+
+let uidSeq = 0;
+/** Give every row a stable hidden `_uid` (rows are keyed by it, never by the editable id, so duplicate ids cannot cross-wire). */
+export function ensureUids(rows) {
+  return (rows || []).map((r) => (r._uid ? r : { ...r, _uid: `r${Date.now().toString(36)}${(uidSeq++).toString(36)}` }));
+}
+
 export function compute(useCases, weights = DEFAULT_WEIGHTS, rules = DEFAULT_RULES) {
   const r = { ...DEFAULT_RULES, ...rules };
   const rows = useCases.map((u, i) => ({

@@ -18,7 +18,7 @@ const KIND_ALIAS = { system: 'system', systems: 'system', 'système': 'system', 
 export function parseAreas(text) {
   const seen = new Set();
   return parseList(text, ['area', 'name', 'zone', 'domaine']).map((r) => ({
-    name: r[0] || '', kind: KIND_ALIAS[(r[1] || '').toLowerCase()] || 'system', owner: r.slice(2).join(', '),
+    name: r[0] || '', kind: KIND_ALIAS[(r[1] || '').toLowerCase()] || 'system', kindGuessed: !KIND_ALIAS[(r[1] || '').toLowerCase()], owner: r.slice(2).join(', '),
   })).filter((a) => a.name && !seen.has(a.name) && seen.add(a.name));
 }
 
@@ -48,6 +48,7 @@ export function compute(state) {
     if (!(g.owner || '').trim() && g.type !== 'ok') flags.push({ code: 'flagNoOwner', vars: { n: i + 1, area: g.area || '?' }, dim: g.dim });
     if (!g.size && g.type !== 'ok') flags.push({ code: 'flagNoSize', vars: { n: i + 1, area: g.area || '?' }, dim: g.dim });
   });
+  for (const r of rows) if (r.kindGuessed) flags.push({ code: 'flagNoKind', vars: { area: r.name } });
   for (const r of rows) if (r.total > 0 && !r.owner) flags.push({ code: 'flagAreaNoOwner', vars: { area: r.name } });
   const days = rows.reduce((s, r) => { for (const d of DIMS) { s[0] += EFFORT_DAYS[r.scores[d]][0]; s[1] += EFFORT_DAYS[r.scores[d]][1]; } return s; }, [0, 0]);
   const byKind = Object.fromEntries(KINDS.map((k) => [k, rows.filter((r) => r.kind === k).reduce((s, r) => s + r.total, 0)]));
@@ -60,6 +61,20 @@ export function compute(state) {
 export function pruneScores(state) {
   const names = new Set(parseAreas(state.areas).map((a) => a.name));
   return Object.fromEntries(Object.entries(state.scores || {}).filter(([k]) => names.has(k)));
+}
+
+/** Rename detection when the Areas text changes: names that vanished are paired, in order, with names that appeared
+    (same count only). Their scores and the gaps' `area` follow the new name instead of being dropped. */
+export function renameAreas(oldText, newText, state) {
+  const o = parseAreas(oldText).map((a) => a.name), n = parseAreas(newText).map((a) => a.name);
+  const gone = o.filter((x) => !n.includes(x)), came = n.filter((x) => !o.includes(x));
+  const scores = { ...(state.scores || {}) };
+  let gaps = state.gaps || [];
+  if (!gone.length || gone.length !== came.length) return { scores, gaps, renamed: [] };
+  const map = Object.fromEntries(gone.map((g, i) => [g, came[i]]));
+  for (const [from, to] of Object.entries(map)) if (scores[from] && !scores[to]) { scores[to] = scores[from]; delete scores[from]; }
+  gaps = gaps.map((g) => (map[g.area] ? { ...g, area: map[g.area] } : g));
+  return { scores, gaps, renamed: Object.entries(map) };
 }
 
 export function heatmapCsv(r, labels = {}) {

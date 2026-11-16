@@ -1,4 +1,4 @@
-/* Tokenization simulator: styles scoped under .tool-tokenization (owner K). Tokens only. */
+/* Tokenization simulator: styles scoped under .tool-tokenization (owner K; V3 guided view owner R3). Tokens only. */
 .tool-tokenization .tk-actions { display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-4); }
 .tool-tokenization .tk-actions-head { display: flex; flex-direction: column; gap: var(--s-1); }
 .tool-tokenization .tk-h { font-size: var(--fs-16); font-weight: 600; line-height: 24px; margin: 0; }
@@ -8,33 +8,97 @@
 .tool-tokenization .tk-small { font-size: var(--fs-12); line-height: 16px; }
 .tool-tokenization .advanced { margin-top: var(--s-4); }
 
-/* step rail */
-.tool-tokenization .tk-rail { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: var(--s-1); }
-.tool-tokenization .tk-step { display: flex; align-items: center; gap: var(--s-2); min-height: var(--h-md); padding: var(--s-1) var(--s-2); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--fg-2); font-size: var(--fs-12); line-height: 16px; }
-.tool-tokenization .tk-step-n { flex: none; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: var(--r-full); background: var(--hover); color: var(--fg-2); font-weight: 600; font-size: var(--fs-11); }
-.tool-tokenization .tk-step.is-done { color: var(--fg); }
-.tool-tokenization .tk-step.is-done .tk-step-n { background: var(--ok-soft); color: var(--ok); }
-.tool-tokenization .tk-step.is-current { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); font-weight: 500; }
-.tool-tokenization .tk-step.is-current .tk-step-n { background: var(--accent); color: var(--accent-fg); }
-.tool-tokenization .tk-step.is-refused { border-color: var(--bad-solid); background: var(--bad-soft); color: var(--bad); }
-.tool-tokenization .tk-step.is-refused .tk-step-n { background: var(--bad-solid); color: var(--accent-fg); }
+/* ---- V3 guided view (owner R3) ---- */
+.tool-tokenization .tk-guide { min-width: 0; }
+/* story strip: one chip per action */
+.tool-tokenization .tk-chapters { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s-1); }
+.tool-tokenization .tk-chap { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--h-xs, 28px); padding: var(--s-1) var(--s-2); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--fg-2); font: inherit; font-size: var(--fs-12); line-height: 16px; cursor: pointer; }
+.tool-tokenization .tk-step-n, .tool-tokenization .tk-msg-n { flex: none; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: var(--r-full); background: var(--hover); color: var(--fg-2); font-weight: 600; font-size: var(--fs-11); line-height: 1; }
+.tool-tokenization .tk-chap.is-done { color: var(--fg); }
+.tool-tokenization .tk-chap.is-done .tk-step-n { background: var(--ok-soft); color: var(--ok); }
+.tool-tokenization .tk-chap.is-current { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.tool-tokenization .tk-chap.is-current .tk-step-n { background: var(--accent); color: var(--accent-fg); }
+.tool-tokenization .tk-chap.is-refused { border-color: var(--bad-solid); color: var(--bad); }
+.tool-tokenization .tk-chap.is-refused .tk-step-n { background: var(--bad-soft); color: var(--bad); }
+.tool-tokenization .tk-chap:focus-visible, .tool-tokenization .tk-msg:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* current step */
-.tool-tokenization .tk-current { padding: var(--s-3) var(--s-4); display: flex; flex-direction: column; gap: var(--s-2); }
-.tool-tokenization .tk-detail { margin: 0; color: var(--fg-2); }
-.tool-tokenization .tk-crypto { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); padding-top: var(--s-2); border-top: 1px solid var(--line); }
-.tool-tokenization .tk-crypto code { font-size: var(--fs-13); color: var(--fg); background: var(--hover); padding: 0 var(--s-1); border-radius: var(--r-sm); }
+/* Back / Next step / Play all */
+.tool-tokenization .tk-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+.tool-tokenization .tk-next { min-width: 148px; justify-content: center; }
+.tool-tokenization .tk-pos { font-weight: 600; }
+.tool-tokenization .tk-keys { margin-left: auto; }
 
-/* sequence */
-.tool-tokenization .tk-seq { overflow-x: auto; padding: var(--s-2) 0; min-height: 120px; }
-.tool-tokenization .tk-seq svg { max-width: none; height: auto; }
-.tool-tokenization .tk-pre { white-space: pre; overflow-x: auto; font-size: var(--fs-12); background: var(--bg-subtle); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-3); }
+/* caption + payload of the current message */
+.tool-tokenization .tk-stepcard { padding: var(--s-3) var(--s-4); display: flex; flex-direction: column; gap: var(--s-2); }
+.tool-tokenization .tk-cap-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); font-size: var(--fs-13); }
+.tool-tokenization .tk-route { color: var(--fg-2); }
+.tool-tokenization .tk-cap { margin: 0; font-size: var(--fs-16); line-height: 24px; color: var(--fg); }
+.tool-tokenization .tk-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--s-2) var(--s-4); margin: 0; padding-top: var(--s-2); border-top: 1px solid var(--line); }
+.tool-tokenization .tk-f { min-width: 0; }
+.tool-tokenization .tk-f dt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-2); font-size: var(--fs-12); line-height: 16px; color: var(--fg-2); }
+.tool-tokenization .tk-f dt code { font-size: var(--fs-11); color: var(--fg-2); background: var(--hover); padding: 0 var(--s-1); border-radius: var(--r-sm); overflow-wrap: anywhere; }
+.tool-tokenization .tk-f dd { margin: 0; font-size: var(--fs-13); line-height: 20px; color: var(--fg); overflow-wrap: anywhere; }
+.tool-tokenization .tk-names { margin: 0; }
+.tool-tokenization .tk-gate { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3); border: 1px solid var(--warn-solid); border-radius: var(--r-md); background: var(--warn-soft); color: var(--fg); }
+.tool-tokenization .tk-gate .input { width: 128px; flex: none; }
+
+/* sequence diagram: CSS grid, always as wide as the pane (no horizontal scroll) */
+.tool-tokenization .tk-dg { --n: 4; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); padding: var(--s-3) var(--s-1); }
+.tool-tokenization .tk-dg-head, .tool-tokenization .tk-dg-body, .tool-tokenization .tk-lifelines { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
+.tool-tokenization .tk-lane { min-width: 0; margin: 0 var(--s-1); padding: var(--s-1) var(--s-2); display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid var(--line-strong); border-radius: var(--r-md); background: var(--bg-subtle); font-size: var(--fs-13); line-height: 18px; overflow-wrap: anywhere; }
+.tool-tokenization .tk-dg-body { position: relative; row-gap: var(--s-3); padding: var(--s-4) 0 var(--s-3); min-height: 64px; align-items: end; }
+.tool-tokenization .tk-lifelines { position: absolute; inset: 0; pointer-events: none; }
+.tool-tokenization .tk-lifelines span { justify-self: center; width: 0; border-left: 1px dashed var(--line-strong); }
+.tool-tokenization .tk-msg { position: relative; z-index: 1; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; align-items: stretch; gap: 3px; margin: 0; padding: 0; border: 0; background: none; font: inherit; color: var(--fg-2); text-align: center; cursor: pointer; }
+.tool-tokenization .tk-msg-label { align-self: center; display: inline-flex; align-items: flex-start; gap: var(--s-1); max-width: 100%; padding: 0 var(--s-1); background: var(--surface); font-size: var(--fs-12); line-height: 18px; text-align: left; overflow-wrap: anywhere; }
+.tool-tokenization .tk-msg-n { width: 18px; height: 18px; }
+.tool-tokenization .tk-msg-line { display: block; position: relative; height: 2px; margin: 0 var(--mr, 0%) 0 var(--ml, 0%); background: currentColor; }
+.tool-tokenization .tk-msg-line::after { content: ''; position: absolute; top: -4px; border: 5px solid transparent; }
+.tool-tokenization .tk-msg.dir-r .tk-msg-line::after { right: 0; border-right-width: 0; border-left: 8px solid currentColor; }
+.tool-tokenization .tk-msg.dir-l .tk-msg-line::after { left: 0; border-left-width: 0; border-right: 8px solid currentColor; }
+.tool-tokenization .tk-msg.is-self { padding: 0 var(--mr, 0%) 0 var(--ml, 0%); }
+.tool-tokenization .tk-msg.is-self .tk-msg-label { padding: var(--s-1) var(--s-2); border: 1px solid currentColor; border-radius: var(--r-md); background: var(--bg-subtle); }
+.tool-tokenization .tk-msg.k-warn { color: var(--warn); }
+.tool-tokenization .tk-msg.k-bad { color: var(--bad); }
+.tool-tokenization .tk-msg.k-bad .tk-msg-line { background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 10px); }
+.tool-tokenization .tk-msg.k-ok.is-cur { color: var(--accent-text); }
+.tool-tokenization .tk-msg.is-cur .tk-msg-label { font-weight: 600; color: var(--fg); }
+.tool-tokenization .tk-msg.is-cur .tk-msg-line { height: 3px; }
+.tool-tokenization .tk-msg.is-cur .tk-msg-n, .tool-tokenization .tk-cap-head .tk-msg-n { background: var(--accent); color: var(--accent-fg); }
+.tool-tokenization .tk-msg.k-bad.is-cur .tk-msg-n, .tool-tokenization .tk-cap-head .tk-msg-n.k-bad { background: var(--bad-solid); color: var(--accent-fg); }
+@keyframes tk-draw-r { from { clip-path: inset(-6px 100% -6px 0); } to { clip-path: inset(-6px 0 -6px 0); } }
+@keyframes tk-draw-l { from { clip-path: inset(-6px 0 -6px 100%); } to { clip-path: inset(-6px 0 -6px 0); } }
+@keyframes tk-fade { from { opacity: 0; } to { opacity: 1; } }
+.tool-tokenization .tk-msg.is-new .tk-msg-label { animation: tk-fade 240ms ease-out; }
+.tool-tokenization .tk-msg.is-new.dir-r .tk-msg-line { animation: tk-draw-r 360ms ease-out; }
+.tool-tokenization .tk-msg.is-new.dir-l .tk-msg-line { animation: tk-draw-l 360ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .tool-tokenization .tk-msg.is-new .tk-msg-label, .tool-tokenization .tk-msg.is-new .tk-msg-line { animation: none; } }
+
+/* lifecycle panel */
+.tool-tokenization .tk-life { padding: var(--s-3) var(--s-4); display: flex; flex-direction: column; gap: var(--s-3); }
+.tool-tokenization .tk-life-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-1) var(--s-3); }
+.tool-tokenization .tk-life p { margin: 0; }
+.tool-tokenization .tk-states { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s-2) 28px; }
+.tool-tokenization .tk-state { position: relative; padding: 2px var(--s-3); border: 1px solid var(--line); border-radius: var(--r-full); font-size: var(--fs-12); line-height: 18px; color: var(--fg-2); }
+.tool-tokenization .tk-state + .tk-state::before { content: '→'; position: absolute; left: -28px; width: 28px; text-align: center; color: var(--fg-2); font-weight: 400; }
+.tool-tokenization .tk-state.is-on { font-weight: 600; border-color: currentColor; }
+.tool-tokenization .tk-state.is-on.s-active { background: var(--ok-soft); color: var(--ok); }
+.tool-tokenization .tk-state.is-on.s-pending_idv, .tool-tokenization .tk-state.is-on.s-suspended { background: var(--warn-soft); color: var(--warn); }
+.tool-tokenization .tk-state.is-on.s-deleted { background: var(--bad-soft); color: var(--bad); }
+.tool-tokenization .tk-tokencard { border-top: 0; padding-top: 0; }
+.tool-tokenization .tk-life-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s-2); }
+.tool-tokenization .tk-life-step { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-1); padding: var(--s-2); border: 1px solid var(--line); border-radius: var(--r-md); }
+.tool-tokenization .tk-life-step.is-suggested { border-color: var(--accent); background: var(--accent-soft); }
+.tool-tokenization .tk-sug { color: var(--accent-text); font-weight: 600; }
+
+.tool-tokenization .tk-call summary { cursor: pointer; list-style-position: outside; }
+.tool-tokenization .tk-pre { white-space: pre; overflow-x: auto; font-size: var(--fs-12); background: var(--bg-subtle); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-3); margin: var(--s-1) 0 0; }
 
 /* who sees what */
 .tool-tokenization .tk-cell { display: inline-flex; flex-direction: column; gap: 0; }
 .tool-tokenization .tk-cell .mono { font-size: var(--fs-12); }
 .tool-tokenization .tk-level { font-size: var(--fs-11); line-height: 16px; color: var(--fg-2); }
-.tool-tokenization .tk-none { display: inline-flex; align-items: center; color: var(--fg-2); }
+.tool-tokenization .tk-none { position: relative; display: inline-flex; align-items: center; color: var(--fg-2); }
 .tool-tokenization .tk-note { display: flex; align-items: flex-start; gap: var(--s-1); margin: 0; }
 
 @media (max-width: 640px) {

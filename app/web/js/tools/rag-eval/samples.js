@@ -1,4 +1,6 @@
 /* RAG eval scorer samples: a card-dispute support bot. Fictional data.
+   Samples load INPUTS ONLY (V3 guided demo): nothing is scored until the presenter presses "Score answers".
+   EN DSP-06 says "four months" where the source says 120 days: the unit check accepts it (4 months ≈ 122 days, within 5 %).
    EN = Harbor Bank (Visa): DSP-02 invents a "180-day" dispute window (sources say 120 days; Visa time limits
    *to confirm* in the Visa rules) → faithfulness fails on a high-risk item → release BLOCKED although the overall score
    (96.7 %) is above the 90 % threshold.
@@ -48,7 +50,7 @@ const EN_ANS = [
   ['DSP-03', 'For goods not received, the 120 days start from the expected delivery date, so you can still dispute the payment. [FAQ-DSP-02]', 'FAQ-DSP-02'],
   ['DSP-04', 'While we review a dispute, we may give a provisional credit within 10 business days. If the dispute is rejected, the provisional credit is reversed. [FAQ-DSP-03]', 'FAQ-DSP-03'],
   ['DSP-05', 'You can follow the dispute status in the app under Payments > Disputes. [FAQ-DSP-04]', 'FAQ-DSP-04'],
-  ['DSP-06', 'Yes. Open the payment in the app and tap Dispute this payment; you can dispute a Visa card payment up to 120 days after the transaction date. [FAQ-DSP-01] [FAQ-DSP-02]', 'FAQ-DSP-01;FAQ-DSP-02'],
+  ['DSP-06', 'Yes. Open the payment in the app and tap Dispute this payment; you can dispute a Visa card payment up to four months after the transaction date. [FAQ-DSP-01] [FAQ-DSP-02]', 'FAQ-DSP-01;FAQ-DSP-02'],
   ['RFD-01', 'A merchant refund usually appears on your account within 5 business days after the merchant processes it. [FAQ-RFD-01]', 'FAQ-RFD-01'],
   ['CRD-01', 'Block the stolen card in the app under Cards > Block. The block takes effect immediately and the card is listed on the Visa Exception File. [FAQ-CRD-01]', 'FAQ-CRD-01'],
   ['FRD-01', 'I am sorry. Please block your card in the app now; I am connecting you to the fraud team. [FAQ-FRD-01]', 'FAQ-FRD-01'],

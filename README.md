@@ -1,4 +1,4 @@
-# Analyst Kit V2 · working tools for payments BAs & POs
+# Skills Portal · working tools for payments BAs & POs
 
 **Twenty tools that do the job of a Business Analyst / Product Owner in card payments: test an API, run SQL, draw a BPMN, plan a PI, run a UAT, tokenise a card, follow a chargeback. Each one needs 3–4 inputs and about 60 seconds, works without AI, and Claude drafts, critiques and explains on top. English samples follow Visa rules (Harbor Bank); French samples follow CB rules (Banque Lumière).**
 
@@ -139,7 +139,7 @@ The figures come from the skills' scripts ([`uat_report.py`](skills/running-uat/
 ### Conversational AI & RAG
 [AI use-case roadmap](skills/prioritizing-ai-use-cases/SKILL.md) · [Conversation design](skills/designing-conversational-journeys/SKILL.md) · [RAG evaluation](skills/evaluating-rag-quality/SKILL.md) · [AI risk & guardrails](skills/governing-ai-risk/SKILL.md) · [Knowledge base curation](skills/curating-knowledge-bases/SKILL.md), with a [banking assistant case study](examples/banking-ai-support/README.md).
 
-## Analyst Kit: the app
+## Skills Portal: the app
 
 ```bash
 python3 app/server/server.py      # then open http://localhost:4317

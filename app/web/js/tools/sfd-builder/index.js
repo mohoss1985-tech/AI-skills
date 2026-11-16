@@ -103,7 +103,8 @@ function mount(el, ctx) {
   ctx._sfdShow = (where) => paint(where === 'trace' ? 'screens' : TABS.includes(where) ? where : 'rules');
   ctx._sfdPaint = () => paint();
   paint();
-  paintResults(ctx);
+  // The frame sets ctx.guided right AFTER mount: first paint of results waits one macrotask (rule 8).
+  setTimeout(() => { ctx._sfdReady = true; paintResults(ctx); }, 0);
 }
 
 /* ---------------------------------------------------------------------------------------------- results */
@@ -115,6 +116,7 @@ function paintResults(ctx) {
   const { ui, frame } = ctx;
   const s = ctx.state;
   if (!s.built && !s.rules.length) { frame.setStatus(null); frame.output.replaceChildren(ui.emptyState({ icon: 'list-ordered', title: T('empty.title'), text: T('empty.body') })); return; }
+  if (!ctx._sfdReady || ctx.guided) { if (ctx.guided) frame.setStatus(null); return; } // guided: the frame shows the invitation
   const rv = review(s);
   frame.setStatus(statusOf(rv));
 

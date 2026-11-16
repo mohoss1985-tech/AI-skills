@@ -26,7 +26,7 @@
 .tool-bpmn-editor .be-note { flex: 1 1 240px; display: flex; gap: var(--s-2); align-items: center; justify-content: flex-end; font-size: var(--fs-12); color: var(--fg-2); }
 .tool-bpmn-editor .be-note[hidden] { display: none; }
 .tool-bpmn-editor .be-canvas-wrap { position: relative; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden;
-  height: clamp(400px, calc(100vh - 460px), 960px); background: var(--bg-subtle); }
+  height: clamp(520px, calc(100vh - 300px), 1000px); background: var(--bg-subtle); }
 /* The diagram keeps a light "paper" in both themes so default-coloured shapes and labels stay readable. */
 .tool-bpmn-editor .be-canvas { position: absolute; inset: 0; color-scheme: light; background: Canvas; color: CanvasText; }
 .tool-bpmn-editor .be-canvas[hidden] { display: none; }
@@ -35,3 +35,6 @@
 .tool-bpmn-editor .be-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--s-6); }
 .tool-bpmn-editor .be-canvas .djs-container:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 @media (max-width: 760px) { .tool-bpmn-editor .be-canvas-wrap { height: 420px; } }
+
+.tool-bpmn-editor .splitpane.be-wide { grid-template-columns: minmax(0, 1fr); }
+.tool-bpmn-editor .splitpane.be-wide > .pane-a, .tool-bpmn-editor .splitpane.be-wide > .split-gutter { display: none; }

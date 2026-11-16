@@ -32,3 +32,15 @@ assert.ok(codes.includes('noFallback') && codes.includes('noHandoff') && codes.i
 assert.equal(matchReply(bad, bad.nodes[2].id, 'banana').edge, null);
 assert.ok(checkGraph(stepsToGraph({ intent: 'x', steps: 'Say: I am an AI\nAsk: What is your card number?\n  * → Handoff: a' }).graph).some((x) => x.code === 'sensitive'));
 console.log('ok · journey logic');
+
+// batch utterances
+import { runUtterances } from './logic.js';
+{
+  const gg = stepsToGraph(SAMPLES.en[0].state).graph;
+  const r = runUtterances(gg, 'yes\nzxqv wlmp\nyes => Yes\nyes => No');
+  assert.equal(r.total, 4);
+  assert.equal(r.rows[0].status, 'pass');
+  assert.notEqual(r.rows[1].status, 'pass');
+  assert.equal(r.rows[2].status, 'pass');
+  assert.equal(r.rows[3].status, 'fail');
+}

@@ -48,3 +48,5 @@
   .tool-payment-lifecycle .pl-tracks, .tool-payment-lifecycle .pl-dates, .tool-payment-lifecycle .pl-evidence { grid-template-columns: 1fr; }
   .tool-payment-lifecycle .pl-positions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.tool-payment-lifecycle .pl-pos .pl-flow { font-size: var(--fs-11, 11px); white-space: nowrap; }

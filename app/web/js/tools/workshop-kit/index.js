@@ -9,7 +9,7 @@ import { SAMPLES } from './samples.js';
 import { fmtT, h, mdTable, fileBase, wordDoc, uid } from './jshared.js';
 import {
   KINDS, NOTE_TYPES, parseAttendees, checks, schedule, totalMinutes, fitToDuration, elapsed, timerStart, timerPause,
-  timerNext, timerReset, timerDefaults, mmss, parseNote, addNote, byType, agendaFromCsv, actionsCsv,
+  timerNext, timerReset, timerDefaults, mmss, parseNote, addNote, byType, agendaFromCsv, actionsCsv, fitAndMove, timerFinish,
 } from './logic.js';
 
 const T = register('workshop-kit', strings);
@@ -90,7 +90,12 @@ function mount(el, ctx) {
   if (!Array.isArray(st().agenda)) ctx.setState({ agenda: [] }, { silent: true });
   if (!Array.isArray(st().notes)) ctx.setState({ notes: [] }, { silent: true });
   if (!st().timer) ctx.setState({ timer: timerDefaults() }, { silent: true });
-  const set = (patch) => { ctx.setState(patch, { silent: true }); refresh(); };
+  // A "?sample=" link would reload the sample over a live session: drop it from the hash at the first user change,
+  // so a reload restores the saved session (frame: no ?sample= -> last workspace).
+  const unsample = () => { try { if (/[?&]sample=/.test(location.hash)) history.replaceState(null, '', location.hash.replace(/([?&])sample=[^&]*&?/, '$1').replace(/[?&]$/, '')); } catch { /* ignore */ } };
+  let ready = false;   // frame sets ctx.guided right AFTER mount: result panels wait one macrotask
+  const showResults = () => ready && !ctx.guided;
+  const set = (patch) => { unsample(); ctx.setState(patch, { silent: true }); refresh(); };
 
   // ---- command bar
   const goal = ui.input({ value: st().goal || '', placeholder: T('goalPh'), onInput: (v) => set({ goal: v }) });
@@ -107,10 +112,12 @@ function mount(el, ctx) {
   const advKeys = ['date', 'start', 'location', 'preReads', 'nextWorkshop'];
   const advCount = () => advKeys.filter((k) => String(st()[k] || '').trim()).length;
   const advGrid = h('div', { class: 'wk-adv' });
+  const advInputs = {};
   for (const k of advKeys) {
     const inp = k === 'nextWorkshop' || k === 'preReads'
       ? ui.textarea({ value: st()[k] || '', rows: 2, onInput: (v) => { set({ [k]: v }); adv.setCount(advCount()); } })
       : ui.input({ value: st()[k] || '', type: k === 'date' ? 'date' : k === 'start' ? 'time' : 'text', onInput: (v) => { set({ [k]: v }); adv.setCount(advCount()); } });
+    advInputs[k] = inp;
     advGrid.append(ui.field({ label: T(k), input: inp }));
   }
   const pasteArea = ui.textarea({ rows: 3, mono: true, placeholder: 'title,kind,minutes,technique,questions' });
@@ -146,8 +153,11 @@ function mount(el, ctx) {
   });
   gridEl.classList.add('wk-grid');
   const fitBtn = ui.button({ label: T('fit'), size: 'sm', variant: 'secondary', icon: 'maximize', onClick: () => {
-    const a = fitToDuration(curAgenda(), st().duration, T('readbackTitle'));
-    set({ agenda: a }); gridEl.setRows(a); refresh(); ui.toast(fmt('fitDone', { n: st().duration }));
+    const { agenda: a, moved } = fitAndMove(curAgenda(), st().duration, T('readbackTitle'));
+    const patch = { agenda: a };
+    if (moved.length) { const nw = [st().nextWorkshop, ...moved].filter(Boolean).join('\n'); patch.nextWorkshop = nw; if (advInputs.nextWorkshop) advInputs.nextWorkshop.value = nw; }
+    set(patch); gridEl.setRows(a); refresh();
+    ui.toast(moved.length ? fmt('fitMoved', { n: st().duration, topics: moved.join(', ') }) : fmt('fitDone', { n: st().duration }));
   } });
   const peopleBox = h('div', { class: 'wk-people' });
   const checksBox = h('ul', { class: 'wk-checks', 'aria-live': 'polite' });
@@ -155,7 +165,9 @@ function mount(el, ctx) {
     action: { label: T('addBlock'), onClick: () => gridEl.addRow(true) },
     sample: { label: T('load'), onClick: () => ctx.loadSample(getLang() === 'fr' ? 'fr' : 'en', 0) } });
   const planMain = h('section', { class: 'wk-plan-main' }, h('div', { class: 'wk-sec-head' }, h('h2', { text: T('agenda') }), fitBtn), emptyPlan, gridEl);
-  const planSide = h('aside', { class: 'wk-side' }, h('h2', { text: T('checks') }), checksBox, h('h2', { text: T('people') }), peopleBox);
+  const invite = h('p', { class: 'wk-hint wk-invite', text: T('invite') });
+  const planSide = h('aside', { class: 'wk-side' }, h('h2', { text: T('checks') }), invite, checksBox, h('h2', { text: T('people') }), peopleBox);
+  const side = planSide;
   const planPanel = h('div', { class: 'wk-plan' }, planMain, planSide);
 
   // ---- LIVE: timer + capture + notes
@@ -166,8 +178,15 @@ function mount(el, ctx) {
   const tBar = h('div', { class: 'wk-t-bar' }, h('i'));
   const btnPrev = ui.button({ icon: 'chevron-left', ariaLabel: T('prev'), variant: 'ghost', onClick: () => timerDo((t) => timerNext(t, curAgenda(), Date.now(), -1)) });
   const btnRun = ui.button({ label: T('startT'), icon: 'play', variant: 'primary', onClick: () => timerDo((t) => (t.startedAt ? timerPause(t) : timerStart(t))) });
-  const btnNext = ui.button({ label: T('next'), iconRight: 'chevron-right', variant: 'secondary', onClick: () => timerDo((t) => timerNext(t, curAgenda())) });
-  const btnReset = ui.button({ icon: 'rotate-ccw', ariaLabel: T('resetTimer'), title: T('resetTimer'), variant: 'ghost', onClick: () => timerDo(() => timerReset()) });
+  const btnNext = ui.button({ label: T('next'), iconRight: 'chevron-right', variant: 'secondary', onClick: () => {
+    const a = curAgenda(); const last = ((st().timer || {}).i || 0) >= a.length - 1;
+    timerDo((t) => (last ? timerFinish(t, a) : timerNext(t, a)));
+  } });
+  let armed = 0;   // two clicks within 4 s: a stray click must not erase every actual time
+  const btnReset = ui.button({ icon: 'rotate-ccw', ariaLabel: T('resetTimer'), title: T('resetTimer'), variant: 'ghost', onClick: () => {
+    if (Date.now() - armed < 4000) { armed = 0; timerDo(() => timerReset()); return; }
+    armed = Date.now(); ui.toast(T('resetConfirm'));
+  } });
   const timerBox = h('section', { class: 'wk-timer panel' }, tBlock, tTitle, tClock, tSub, tBar, h('div', { class: 'wk-t-btns' }, btnPrev, btnRun, btnNext, btnReset));
   const blockList = h('ol', { class: 'wk-blocks' });
   function timerDo(fn) { set({ timer: fn({ ...timerDefaults(), ...st().timer }) }); paintTimer(); paintBlocks(); }
@@ -178,7 +197,7 @@ function mount(el, ctx) {
   const capOwner = ui.input({ placeholder: T('owner'), ariaLabel: T('owner'), size: 'sm' });
   const capDue = ui.input({ type: 'date', ariaLabel: T('due'), size: 'sm' });
   const capAdd = () => {
-    const p = parseNote(capInput.value, capType);
+    const p = parseNote(capInput.value, capType, parseAttendees(st().attendees).map((x) => x.name));
     if (!p.text) { capInput.focus(); return; }
     if (!p.owner) p.owner = capOwner.value.trim();
     if (!p.due) p.due = capDue.value;
@@ -207,6 +226,8 @@ function mount(el, ctx) {
   el.append(h('div', { class: 'jk-top' }, adv, pill), tabs);
 
   /* painters */
+  let beeped = null;
+  function beep() { try { const A = window.AudioContext || window.webkitAudioContext; const c = new A(); const o = c.createOscillator(); o.frequency.value = 880; o.connect(c.destination); o.start(); setTimeout(() => { o.stop(); c.close(); }, 350); } catch { /* no audio */ } }
   function paintTimer() {
     const a = curAgenda(); const t = { ...timerDefaults(), ...st().timer };
     if (!a.length) { tBlock.textContent = ''; tTitle.textContent = T('noAgenda'); tClock.textContent = '00:00'; tSub.textContent = ''; tBar.firstChild.style.width = '0'; btnRun.disabled = btnNext.disabled = btnPrev.disabled = true; return; }
@@ -220,7 +241,10 @@ function mount(el, ctx) {
     timerBox.classList.toggle('is-over', left < 0);
     tBar.firstChild.style.width = Math.min(100, plan ? (100 * ms) / plan : 0) + '%';
     btnRun.setLabel(t.startedAt ? T('pause') : ms ? T('resume') : T('startT'));
-    btnPrev.disabled = i === 0; btnNext.disabled = i >= a.length - 1;
+    const isLast = i >= a.length - 1;
+    btnPrev.disabled = i === 0; btnNext.disabled = false; btnNext.setLabel(isLast ? T('finish') : T('next'));
+    if (left < 0 && t.startedAt && beeped !== b.id) { beeped = b.id; beep(); }   // overrun alert, once per block
+    if (left >= 0) beeped = null;
   }
   function paintBlocks() {
     const a = curAgenda(); const t = { ...timerDefaults(), ...st().timer }; const sch = schedule(a, st().start);
@@ -245,7 +269,7 @@ function mount(el, ctx) {
       const ul = h('ul', { class: 'wk-note-list' });
       for (const n of ns) {
         const tone = { D: 'accent', A: 'info', Q: 'warn', REQ: 'neutral' }[n.type];
-        const li = h('li', {}, h('code', { text: n.id }), ui.badge({ text: T('noteType_' + n.type), tone }), h('span', { class: 'wk-n-text', text: n.text }));
+        const li = h('li', {}, h('code', { text: n.id }), ui.badge({ text: T('noteType_' + n.type), tone }), ui.input({ value: n.text, ariaLabel: `${T('capture')} ${n.id}`, size: 'sm', onInput: (v) => updNote(n.id, { text: v }) }));
         if (n.type === 'A' || n.type === 'Q') {
           const o = ui.input({ value: n.owner, placeholder: T('owner'), ariaLabel: `${T('owner')} ${n.id}`, size: 'sm', onInput: (v) => updNote(n.id, { owner: v }) });
           const d = ui.input({ value: n.due, type: 'date', ariaLabel: `${T('due')} ${n.id}`, size: 'sm', onInput: (v) => updNote(n.id, { due: v }) });
@@ -261,11 +285,14 @@ function mount(el, ctx) {
   }
   function updNote(id, patch) { set({ notes: (st().notes || []).map((n) => (n.id === id ? { ...n, ...patch } : n)) }); }
   async function paintReport() {
+    if (!showResults()) { reportBody.replaceChildren(h('p', { class: 'wk-hint wk-invite', text: T('invite') })); return; }
     try { const { renderMarkdown } = await import('../../core/markdown.js'); await renderMarkdown(reportBody, toMarkdown(st())); }
     catch { reportBody.replaceChildren(h('pre', { text: toMarkdown(st()) })); }
   }
   function refresh() {
     const s = st(); const cs = checks(s); const a = s.agenda || [];
+    const show = showResults();
+    side.hidden = false; checksBox.hidden = !show; invite.hidden = show;
     emptyPlan.hidden = a.length > 0; gridEl.hidden = !a.length;
     checksBox.replaceChildren(...cs.map((c) => h('li', {}, ui.badge({ text: fmt(c.key, c.vars), tone: TONE[c.level], icon: ICON[c.level] }))));
     const ppl = parseAttendees(s.attendees);
@@ -276,21 +303,23 @@ function mount(el, ctx) {
     const n = issues(cs); const vars = { total: totalMinutes(a), duration: s.duration || 0, blocks: a.length, issues: n };
     const text = n ? fmt('meta', vars) : fmt('metaOk', vars);
     const tone = cs.some((c) => c.level === 'bad') ? 'bad' : n ? 'warn' : 'ok';
-    pill.update({ tone, text }); frame.setStatus({ tone, text });
-    tabs.setCount('plan', n || undefined);
+    pill.hidden = !show;
+    if (show) { pill.update({ tone, text }); frame.setStatus({ tone, text }); }
+    tabs.setCount('plan', show ? n || undefined : undefined);
     adv.setCount(advCount());
     if (tabs.active === 'live') { paintTimer(); paintBlocks(); }
     if (tabs.active === 'report') paintReport();
     return cs;
   }
-  ctx.__wkRefresh = refresh;
+  ctx.__wkRefresh = () => { ready = true; return refresh(); };
   refresh(); paintTimer(); paintBlocks(); paintNotes();
+  setTimeout(() => { ready = true; refresh(); }, 0);
   // the timer ticks from the wall clock; it stops when the tool leaves the screen
   const iv = setInterval(() => { if (!el.isConnected) { clearInterval(iv); return; } if (st().timer && st().timer.startedAt && tabs.active === 'live') { paintTimer(); paintBlocks(); } }, 500);
 }
 
 /* ------------------------------------------------------------------------------------------- module */
-const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.label, hint: s.hint, state: s.state, autorun: true }));
+const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.label, hint: s.hint, state: s.state }));
 
 export default {
   id: 'workshop-kit',

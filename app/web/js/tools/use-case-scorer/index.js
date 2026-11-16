@@ -4,7 +4,7 @@
 import { register, getLang } from '../../core/i18n.js';
 import strings from './i18n.js';
 import { SAMPLES } from './samples.js';
-import { bubbles, compute, DEFAULT_RULES, DEFAULT_WEIGHTS, scoresCsv, useCasesFromCsv } from './logic.js';
+import { bubbles, compute, ensureUids, nextId, DEFAULT_RULES, DEFAULT_WEIGHTS, scoresCsv, useCasesFromCsv } from './logic.js';
 
 const T = register('use-case-scorer', strings);
 const fmt = (key, vars = {}) => T(key).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ''));
@@ -121,6 +121,11 @@ function chart(r) {
 function mount(el, ctx) {
   const { ui } = ctx;
   if (!Array.isArray(ctx.state.useCases)) ctx.setState({ useCases: [] }, { silent: true });
+  else ctx.setState({ useCases: ensureUids(ctx.state.useCases) }, { silent: true });
+  // The frame sets ctx.guided right AFTER mount (guided demo): first paint of results is deferred one macrotask.
+  let ready = false;
+  const showResults = () => ready && !ctx.guided;
+  const lastRank = new Map();
   const weights = { ...DEFAULT_WEIGHTS, ...(ctx.state.weights || {}) };
   const rules = { ...DEFAULT_RULES, ...(ctx.state.rules || {}) };
 
@@ -129,7 +134,7 @@ function mount(el, ctx) {
   for (const [k, lab] of [['value', 'wValue'], ['feasibility', 'wFeasibility'], ['risk', 'wRisk']]) {
     const i = ui.input({ type: 'number', value: weights[k], mono: true, size: 'sm' });
     i.min = '0'; i.max = '100'; i.step = '5';
-    i.addEventListener('input', () => { weights[k] = Math.max(0, +i.value || 0); ctx.setState({ weights: { ...weights } }, { silent: true }); refresh(); });
+    i.addEventListener('input', () => { weights[k] = Math.max(0, +i.value || 0); ctx.setState({ weights: { ...weights } }, { silent: true }); refresh({ grid: true, delta: true }); });
     ctx.frame.command.append(ctx.frame.bindField('w-' + k, ui.field({ label: T(lab), input: i, required: true })));
   }
 
@@ -139,18 +144,18 @@ function mount(el, ctx) {
   for (const [k, lab, step, max] of [['nowMin', 'nowMin', 0.1, 5], ['nextMin', 'nextMin', 0.1, 5], ['nowSlots', 'nowSlots', 1, 20], ['riskGate', 'riskGate', 1, 5], ['knowledgeGate', 'knowledgeGate', 1, 5]]) {
     const i = ui.input({ type: 'number', value: rules[k], mono: true, size: 'sm' });
     i.min = '0'; i.max = String(max); i.step = String(step);
-    i.addEventListener('input', () => { rules[k] = +i.value || 0; ctx.setState({ rules: { ...rules } }, { silent: true }); refresh(); });
+    i.addEventListener('input', () => { rules[k] = +i.value || 0; ctx.setState({ rules: { ...rules } }, { silent: true }); refresh({ grid: true, delta: true }); });
     rulesRow.append(ui.field({ label: T(lab), input: i }));
   }
   const rulesHint = document.createElement('p'); rulesHint.className = 'ucs-hint'; rulesHint.textContent = T('rulesHint');
   const pasteArea = ui.textarea({ rows: 4, mono: true, placeholder: 'id,name,value,feasibility,risk,knowledge,volume,guardrail,regulated,note' });
   const pasteField = ui.field({ label: T('pasteTitle'), help: T('pasteHint'), input: pasteArea });
   const pasteBtn = ui.button({ label: T('pasteApply'), size: 'sm', icon: 'clipboard-paste', onClick: () => {
-    const list = useCasesFromCsv(pasteArea.value);
+    const list = ensureUids(useCasesFromCsv(pasteArea.value));
     if (!list.length) { pasteField.setError(T('pasteBad')); return; }
     pasteField.setError(''); pasteArea.value = '';
     ctx.setState({ useCases: list }, { silent: true });
-    gridEl.setRows(list); refresh();
+    gridEl.setRows(list); refresh({ grid: true });
   } });
   advBody.append(rulesRow, rulesHint, pasteField, pasteBtn);
   const adv = ui.advanced({ label: T('advanced'), body: advBody });
@@ -158,8 +163,8 @@ function mount(el, ctx) {
   // ---- grid
   const scale = ['1', '2', '3', '4', '5'];
   let gridEl = null;
-  const current = () => compute(gridEl ? gridEl.getRows() : ctx.state.useCases, weights, rules);
-  const find = (id) => current().ranked.find((u) => u.id === id);
+  let cache = null; // one compute() per paint instead of one per cell
+  const find = (row) => { if (!showResults()) return null; const rows = gridEl.getRows(); const key = JSON.stringify([rows, weights, rules]); if (!cache || cache.key !== key) cache = { key, res: compute(rows, weights, rules) }; return cache.res.ranked.find((u) => u._uid === row._uid) || null; };
   const columns = [
     { key: 'id', label: T('colId'), mono: true, width: 72 },
     { key: 'name', label: T('colName') },
@@ -170,8 +175,8 @@ function mount(el, ctx) {
     { key: 'volume', label: T('colVolume'), type: 'number', width: 96 },
     { key: 'guardrail', label: T('colGuard'), type: 'check', width: 72 },
     { key: 'regulated', label: T('colReg'), type: 'check', width: 72 },
-    { key: '_score', label: T('colScore'), num: true, width: 56, compute: (row) => { const u = find(row.id); if (!u) return ''; const b = document.createElement('b'); b.className = 'ucs-score'; b.textContent = dec(u.score); return b; } },
-    { key: '_lane', label: T('colLane'), width: 112, compute: (row) => { const u = find(row.id); return u ? laneBadge(u) : ''; } },
+    { key: '_score', label: T('colScore'), num: true, width: 56, compute: (row) => { const u = find(row); if (!u) return ''; const b = document.createElement('b'); b.className = 'ucs-score'; b.textContent = dec(u.score); return b; } },
+    { key: '_lane', label: T('colLane'), width: 112, compute: (row) => { const u = find(row); return u ? laneBadge(u) : ''; } },
   ];
   function laneBadge(u) {
     const tone = { now: 'accent', next: 'info', later: 'neutral', excluded: 'neutral' }[u.lane];
@@ -180,10 +185,9 @@ function mount(el, ctx) {
     b.title = whyText(u);
     return b;
   }
-  const nextId = (rows) => `UC-${String(rows.length + 1).padStart(2, '0')}`;
   gridEl = ui.grid({
     columns, rows: ctx.state.useCases, removable: true, addLabel: T('addUseCase'),
-    newRow: (rows) => ({ id: nextId(rows), name: '', value: 3, feasibility: 3, risk: 3, knowledge: '', volume: '', guardrail: false, regulated: false, note: '' }),
+    newRow: (rows) => ({ _uid: ensureUids([{}])[0]._uid, id: nextId(rows), name: '', value: 3, feasibility: 3, risk: 3, knowledge: '', volume: '', guardrail: false, regulated: false, note: '' }),
     onChange: (rows) => { ctx.setState({ useCases: rows.map(clean) }, { silent: true }); refresh(); },
   });
   gridEl.classList.add('ucs-grid');
@@ -221,7 +225,7 @@ function mount(el, ctx) {
     legend.append(size);
     chartBox.append(h, legend, chart(r));
   }
-  function paintLanes(r) {
+  function paintLanes(r, d = new Map()) {
     lanesBox.replaceChildren();
     const h = document.createElement('h2'); h.textContent = T('lanes');
     const wrap = document.createElement('div'); wrap.className = 'ucs-lanes';
@@ -239,12 +243,14 @@ function mount(el, ctx) {
         const top = document.createElement('div'); top.className = 'ucs-li-top';
         const id = document.createElement('code'); id.textContent = u.id;
         const sc = document.createElement('b'); sc.className = 'num'; sc.textContent = dec(u.score);
-        top.append(id, sc);
+        const mv = d.get(u._uid);
+        if (mv) { const a = document.createElement('span'); a.className = `ucs-move ${mv > 0 ? 'up' : 'down'}`; a.textContent = `${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}`; a.title = T('rankMoved'); top.append(id, a, sc); } else top.append(id, sc);
         const nm = document.createElement('div'); nm.className = 'ucs-li-name'; nm.textContent = u.name;
         const why = document.createElement('div'); why.className = 'ucs-li-why';
         if (u.why === 'gate') why.append(ui.badge({ text: whyText(u), tone: 'warn' }));
         else why.textContent = whyText(u);
         li.append(top, nm, why);
+        if (u.note) { const nt = document.createElement('div'); nt.className = 'ucs-li-note'; nt.textContent = u.note; li.append(nt); }
         ul.append(li);
       }
       col.append(lh, sub, ul);
@@ -253,10 +259,12 @@ function mount(el, ctx) {
     lanesBox.append(h, wrap);
   }
 
-  function refresh() {
+  function refresh({ grid = false, delta = false } = {}) {
     const r = result(ctx.state);
+    const show = showResults();
     const has = (ctx.state.useCases || []).length > 0;
-    empty.hidden = has; gridEl.hidden = !has; lower.hidden = !has;
+    empty.hidden = has; gridEl.hidden = !has; lower.hidden = !has || !show; invite.hidden = !has || show;
+    if (grid) gridEl.setRows(gridEl.getRows());
     const p = pct(weights);
     wHint.textContent = fmt('weightsSum', p);
     const text = fmt('meta', { n: r.ranked.length, now: r.lanes.now.length, next: r.lanes.next.length, later: r.lanes.later.length });
@@ -265,16 +273,23 @@ function mount(el, ctx) {
     let n = 0;
     for (const k of Object.keys(DEFAULT_RULES)) if (rules[k] !== DEFAULT_RULES[k]) n++;
     adv.setCount(n);
-    if (has) { paintChart(r); paintLanes(r); }
+    if (has && show) {
+      const d = new Map();
+      if (delta) for (const u of r.ranked) if (lastRank.has(u._uid)) d.set(u._uid, lastRank.get(u._uid) - u.rank);
+      paintChart(r); paintLanes(r, d);
+    }
+    lastRank.clear(); for (const u of r.ranked) lastRank.set(u._uid, u.rank);
     return r;
   }
-  el.append(adv, head, hint, empty, gridEl, lower);
-  ctx.__ucsRefresh = refresh;
+  const invite = document.createElement('p'); invite.className = 'ucs-hint ucs-invite'; invite.textContent = T('invite');
+  el.append(adv, head, hint, empty, gridEl, invite, lower);
+  ctx.__ucsRefresh = () => { ready = true; return refresh({ grid: true }); };
   refresh();
+  setTimeout(() => { ready = true; refresh({ grid: true }); }, 0);
 }
 
 /* ---------------------------------------------------------------------------------------------- module */
-const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state, autorun: true }));
+const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state }));
 
 export default {
   id: 'use-case-scorer',

@@ -136,7 +136,7 @@ export const KIT_GUIDE_FR = {
     [['questions', 'questions rapides'], 'Questions rapides', 'Chaque livrable commence par quelques **questions courtes et précises** (schéma, périmètre, phase…). Les obligatoires sont marquées *. Avec vos documents, elles donnent à Claude ce qu\'il faut pour un excellent livrable.'],
   ],
   app: [
-    [['comment ca marche', 'comment demarrer', 'commencer', 'aide'], 'Comment fonctionne Analyst Kit',
+    [['comment ca marche', 'comment demarrer', 'commencer', 'aide'], 'Comment fonctionne Skills Portal',
       "1. **Choisissez un livrable** dans la barre latérale ou appuyez sur **N**.\n2. **Répondez aux questions rapides**, déposez vos documents, collez vos notes (ou déposez un fichier .txt, .md, .csv), ou cliquez sur un **scénario**.\n3. **Créez** : Claude rédige le document et vous êtes notifié.\n4. **Demandez des modifications** dans la conversation à côté. Chaque version est conservée.\n5. **Livrez-le** : Word, PDF ou copie, puis *Marquer comme envoyé*.", [{ label: 'Nouveau livrable', href: '#/new' }]],
     [['document', 'deposer', 'televerser', 'pdf', 'word', 'excel', 'image', 'source', 'preuve', 'justificatif', 'base documentaire', 'joindre'], 'Documents et base documentaire',
       "Déposez des **PDF, Word, Excel, PowerPoint, CSV ou images** dans le formulaire : Claude les utilise comme **source principale** et cite le fichier d'où vient chaque information. Sur un livrable terminé, ajoutez un document dans *Documents de ce livrable*, puis envoyez le message proposé pour le mettre à jour. Sur chaque page de compétence, la **base documentaire** contient les documents réutilisés pour tous les livrables de ce type (règles du schéma, procédures, modèles)."],

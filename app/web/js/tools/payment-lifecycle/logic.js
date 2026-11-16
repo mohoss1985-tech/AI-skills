@@ -110,7 +110,18 @@ export function simulate(input) {
   for (const a of all) {
     if (a.at && a.at > today) today = a.at;
     ({ authorise, capture, reversal, refund, chargeback, represent, accept, prearb, advance }[a.op] || ((x) => done(x, false, 400, m('err.unknownOp', { op: x.op }))))(a);
+    expire(a);
     n += 1;
+  }
+  /** The clock has consequences: an open dispute whose window has closed is lost by default (no button needed). */
+  function expire(a) {
+    if (!dispute || !dispute.respond_by || today <= dispute.respond_by) return;
+    if (dispute.status === 'chargeback') dispute.status = 'merchant_accepted';
+    else if (dispute.status === 'pre_arbitration') dispute.status = 'lost';
+    else return;
+    dispute.liability = 'merchant';
+    dispute.history.push({ at: today, event: 'expired', rule: 'D12' });
+    done({ op: 'expire', at: today }, false, 200, m('res.autoLost'), m('det.autoLost', { by: dispute.respond_by }), 'D12', dispute.status === 'lost' ? 'pre_arbitration' : 'representment');
   }
 
   function authorise(a) {
@@ -241,8 +252,14 @@ export function simulate(input) {
     if (l.debit) positions[l.debit] -= l.amount_minor;
     if (l.credit) positions[l.credit] += l.amount_minor;
   });
+  const flows = Object.fromEntries([...PARTIES, 'scheme'].map((p) => [p, { in: 0, out: 0 }]));
+  ledger.forEach((l) => {
+    if (l.kind === 'hold' || l.amount_minor == null || (l.currency && l.currency !== s.currency)) return;
+    if (l.debit) flows[l.debit].out += l.amount_minor;
+    if (l.credit) flows[l.credit].in += l.amount_minor;
+  });
   const hold = pay.captured_at ? 0 : pay.authorised_minor - pay.reversed_minor;
-  const res = { input: s, pay, dispute, log, ledger, positions, hold: Math.max(0, hold), today, scheme: s.scheme };
+  const res = { input: s, pay, dispute, log, ledger, positions, flows, hold: Math.max(0, hold), today, scheme: s.scheme };
   res.stages = stages(res);
   res.allowed = allowedActions(res);
   res.liability = whoPays(res);

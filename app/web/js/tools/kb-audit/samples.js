@@ -60,6 +60,6 @@ Puis-je avoir une carte pour mon enfant ?, 800, , N`,
 };
 
 export const SAMPLES = {
-  en: [{ id: 'harbor-card-support', label: 'Card-support knowledge base', hint: 'Harbor Bank (sample)', state: EN, autorun: true }],
-  fr: [{ id: 'lumiere-support-carte', label: 'Base de connaissances carte', hint: 'Banque Lumière (exemple)', state: FR, autorun: true }],
+  en: [{ id: 'harbor-card-support', label: 'Card-support knowledge base', hint: 'Harbor Bank (sample)', state: EN }],
+  fr: [{ id: 'lumiere-support-carte', label: 'Base de connaissances carte', hint: 'Banque Lumière (exemple)', state: FR }],
 };

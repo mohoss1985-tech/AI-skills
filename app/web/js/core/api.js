@@ -5,7 +5,7 @@
 import { L, t } from './i18n.js';
 
 export const DEMO = window.KIT_DEMO;
-export const DEMO_MSG = 'This demo is read-only. To create your own deliverables, run Analyst Kit on your computer with Claude Code (see the README on GitHub).';
+export const DEMO_MSG = 'This demo is read-only. To create your own deliverables, run Skills Portal on your computer with Claude Code (see the README on GitHub).';
 
 const demoGet = (path) => {
   if (path === '/api/state') return 'data/state.json';

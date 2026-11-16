@@ -24,6 +24,11 @@
      migrate(oldState, oldSchema) → state   when a saved workspace has an older schema (else it is ignored)
      tick(ctx)                  3 s refresh hook (local app)
 
+   V3 guided demo: loading a sample fills the INPUTS ONLY (`autorun` is ignored) and sets ctx.guided = true until the
+   presenter presses the primary button once (or ⌘↵ / Ctrl+↵, which works everywhere, textareas included). While
+   ctx.guided is true a tool must NOT compute results from its own update()/input handlers: just paint inputs.
+   frame.runNow() calls made while a sample is settling (mount microtasks) are ignored; button/key runs always work.
+
    ctx = {tool, state, setState(patch, {silent, replace}), lastRun, run(), ai(id, run), store, i18n, ui, server,
           frame, T(key), lang, toast, save(), publish(), workspace, loadSample(lang, index), download(name, mime, text)} */
 import { DEMO, post, server } from '../core/api.js';
@@ -32,6 +37,7 @@ import { getLang, pick, register, t } from '../core/i18n.js';
 import { store } from '../core/store.js';
 import * as ui from '../ui/index.js';
 import { toolMeta, GROUP_LABEL } from '../tools/registry.js';
+import { TALKING_POINTS } from '../tools/talking-points.js';
 
 const cssLoaded = new Set();
 /** Last state per tool in this tab: a language switch or back/forward remounts without losing the last keystrokes. */
@@ -67,6 +73,8 @@ export function makeCtx(tool) {
     lastRun: null,
     lastRunId: null,
     workspace: null,
+    /** true after a sample was loaded and before the first Run press (guided demo). */
+    guided: false,
     async run() {
       if (!tool.run) return null;
       const t0 = performance.now();
@@ -153,6 +161,8 @@ export async function mountTool(el, tool) {
   head.innerHTML = `<div class="tf-titles"><div class="tf-eyebrow">${ui.iconSvg(tool.icon || meta.icon || 'wrench', 14)}<span>${esc(t(GROUP_LABEL[meta.group] || 'Tools'))}</span>${tool.skill ? `<span aria-hidden="true">·</span><a href="#/type/${esc(tool.skill)}">${esc(t('Skill page'))}</a>` : ''}</div>
     <h1 tabindex="-1">${esc(title)}</h1>${tool.purpose ? `<p class="purpose">${esc(label(tool.purpose))}</p>` : ''}</div><div class="tf-head-actions"></div>`;
   const headActions = head.querySelector('.tf-head-actions');
+  const tpCard = talkingPointsCard(tool.id);
+  if (tpCard) head.querySelector('.tf-titles').append(tpCard);
 
   // ---- command bar
   const commandWrap = document.createElement('div');
@@ -161,10 +171,11 @@ export async function mountTool(el, tool) {
   commandWrap.setAttribute('aria-label', t('Required inputs'));
   const command = document.createElement('div');
   command.className = 'tf-command-inputs';
-  const primary = ui.button({ label: label(tool.primary && tool.primary.label) || t('Run'), variant: 'primary', icon: (tool.primary && tool.primary.icon) || 'play', kbd: ui.kbdLabel('mod+enter'), onClick: () => runNow() });
+  const primary = ui.button({ label: label(tool.primary && tool.primary.label) || t('Run'), variant: 'primary', icon: (tool.primary && tool.primary.icon) || 'play', kbd: ui.kbdLabel('mod+enter'), onClick: () => runNow(true) });
   primary.classList.add('tf-primary');
+  const runHint = document.createElement('span'); runHint.className = 'tf-run-hint'; runHint.hidden = true; runHint.setAttribute('aria-live', 'polite');
   commandWrap.append(command);
-  if (tool.run) commandWrap.append(primary);
+  if (tool.run) commandWrap.append(primary, runHint);
   const errors = document.createElement('div');
   errors.className = 'tf-errors'; errors.hidden = true; errors.setAttribute('role', 'alert'); errors.tabIndex = -1;
 
@@ -228,6 +239,10 @@ export async function mountTool(el, tool) {
     '-', { label: t('Start empty'), icon: 'eraser', onClick: () => reset() },
   ]);
   const seg = ui.segmented({ label: t('Sample set'), value: sampleLang, options: [{ value: 'en', label: 'Visa EN' }, { value: 'fr', label: 'CB FR' }], onChange: (v) => { sampleLang = v; paintSamples(); } });
+  // "New": start empty, visible in the page head (the menu entry stays too).
+  const newBtn = ui.button({ label: t('New'), icon: 'file-plus', size: 'sm', variant: 'secondary', title: t('Start empty'), onClick: () => reset() });
+  newBtn.classList.add('tf-new');
+  headActions.append(newBtn);
   if ((samples.en || []).length || (samples.fr || []).length) headActions.append(seg, sampleMenu);
   paintSamples();
 
@@ -272,13 +287,29 @@ export async function mountTool(el, tool) {
       output.replaceChildren(box);
     },
     setPrimary({ label: l, disabled } = {}) { if (l != null) primary.setLabel(label(l)); if (disabled != null) primary.disabled = !!disabled; },
-    runNow: () => runNow(),
+    runNow: () => runNow(false),
     remount: () => remount(),
     refreshMenus: paintMenus,
   };
 
-  async function runNow() {
+  let settling = false;
+  const endGuide = () => { ctx.guided = false; primary.classList.remove('tf-pulse'); runHint.hidden = true; output.querySelector('.tf-invite')?.remove(); };
+  function startGuide() {
+    ctx.guided = true;
+    primary.classList.add('tf-pulse');
+    runHint.replaceChildren(document.createTextNode(`${t('Press')} ${primary.querySelector('.btn-label') ? primary.querySelector('.btn-label').textContent : t('Run')} `));
+    const k = document.createElement('kbd'); k.textContent = ui.kbdLabel('mod+enter'); runHint.append(k);
+    runHint.hidden = false;
+    if (!output.childElementCount) {
+      const inv = document.createElement('p'); inv.className = 'tf-invite';
+      inv.textContent = `${t('Inputs loaded.')} ${t('Press')} ${primary.querySelector('.btn-label') ? primary.querySelector('.btn-label').textContent : t('Run')} ${t('to see the result.')}`;
+      output.append(inv);
+    }
+  }
+  async function runNow(user) {
     if (!tool.run || primary.disabled) return;
+    if (!user && settling) return; // a tool tried to auto-run while a sample was loading
+    if (ctx.guided) endGuide();
     const errs = tool.validate ? tool.validate(ctx.state) || [] : [];
     frame.showErrors(errs);
     if (errs.length) return;
@@ -311,18 +342,21 @@ export async function mountTool(el, tool) {
     commandWrap.hidden = !command.childElementCount && !tool.run;
     paintMenus();
   }
-  async function applyState(s, { autorun = false } = {}) {
+  async function applyState(s, { guide = false } = {}) {
+    settling = guide;
+    endGuide();
     ctx.setState(s, { silent: true, replace: true });
     ctx.lastRun = null;
     frame.showErrors([]);
     if (tool.load) { await tool.load(ctx.state, ctx); frame.setStatus(null); output.replaceChildren(); }
     else await remount();
-    if (autorun) runNow();
+    if (guide && tool.run) startGuide();
+    if (guide) setTimeout(() => { settling = false; }, 150); else settling = false;
   }
   async function loadSample(lang, i) {
     const s = (samples[lang] || [])[i];
     if (!s) return;
-    await applyState({ ...(tool.defaults ? tool.defaults() : {}), ...structuredClone(s.state || {}) }, { autorun: !!s.autorun });
+    await applyState({ ...(tool.defaults ? tool.defaults() : {}), ...structuredClone(s.state || {}) }, { guide: true }); // `autorun` is ignored (SPEC-V3 §3)
     ui.toast(`${t('Sample loaded')}: ${label(s.label)}`);
   }
   async function reset() { ctx.workspace = null; await applyState(tool.defaults ? tool.defaults() : {}); }
@@ -330,17 +364,31 @@ export async function mountTool(el, tool) {
 
   // ---- keyboard: ⌘↵ run, ⌘S save (only while this frame is on screen)
   const onKey = (e) => {
-    if (!root.isConnected) { document.removeEventListener('keydown', onKey); return; }
+    if (!root.isConnected) { document.removeEventListener('keydown', onKey, true); return; }
     if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
-    if (e.key === 'Enter' && tool.run) { e.preventDefault(); runNow(); }
-    else if (e.key.toLowerCase() === 's' && !e.shiftKey) { e.preventDefault(); if (tool.onSave) tool.onSave(ctx); else if (tool.toMarkdown) publish(); }
+    if (e.key === 'Enter') {
+      if (tool.run) { e.preventDefault(); runNow(true); return; }
+      const b = body.querySelector('button.btn.primary:not([disabled])');
+      if (b) { e.preventDefault(); b.click(); }
+    }
+    if (e.key.toLowerCase() === 's' && !e.shiftKey) { e.preventDefault(); if (tool.onSave) tool.onSave(ctx); else if (tool.toMarkdown) publish(); }
   };
-  document.addEventListener('keydown', onKey);
+  document.addEventListener('keydown', onKey, true); // capture: works inside textareas and code editors
 
   root.append(head, commandWrap, errors, body, actions);
   el.replaceChildren(root);
 
   // Restore: ?sample=en:0 wins, then ?ws=<id> ("Open in tool" from a deliverable), then the last workspace, else defaults.
+  function sampleInOtherLang(st) {
+    const cur = getLang();
+    if (!st || !(samples[cur] || []).length) return null;
+    for (const lg of Object.keys(samples)) {
+      if (lg === cur) continue;
+      const i = (samples[lg] || []).findIndex((s) => s.state && Object.keys(s.state).length && Object.keys(s.state).every((k) => JSON.stringify(st[k]) === JSON.stringify(s.state[k])));
+      if (i >= 0 && samples[cur][i]) return samples[cur][i];
+    }
+    return null;
+  }
   const sq = sampleQuery(), wq = wsQuery();
   if (!sq) {
     try {
@@ -359,7 +407,34 @@ export async function mountTool(el, tool) {
       }
     } catch { /* no store yet: start from defaults */ }
   }
+  // A restored, untouched sample written in another language follows the current UI language (same sample, current language).
+  const follow = !sq ? sampleInOtherLang(ctx.state) : null;
   await remount();
   if (sq) await loadSample(sq.lang, sq.i);
+  else if (follow) await applyState({ ...(tool.defaults ? tool.defaults() : {}), ...structuredClone(follow.state || {}) }, { guide: true });
   return tool.tick ? { tick: () => tool.tick(ctx) } : null;
+}
+
+// ---- Talking points card (SPEC-V3 §2): replaces · what it does · how it works. Collapsible, open by default, remembered.
+const TP_KEY = 'skills-portal.talking-points-open';
+function talkingPointsCard(id) {
+  const d = TALKING_POINTS[id];
+  if (!d) return null;
+  let open = true;
+  try { open = localStorage.getItem(TP_KEY) !== '0'; } catch { /* storage blocked */ }
+  const card = document.createElement('section');
+  card.className = 'tf-tp';
+  card.setAttribute('aria-label', t('Talking points'));
+  const hd = document.createElement('button');
+  hd.type = 'button'; hd.className = 'tf-tp-head';
+  hd.innerHTML = `<span class="tf-tp-replaces">${esc(t('Replaces'))} <b>${esc(pick(d.replaces))}</b></span>`;
+  hd.append(ui.icon('chevron-down'));
+  const bodyEl = document.createElement('div');
+  bodyEl.className = 'tf-tp-body';
+  bodyEl.innerHTML = `<p><b>${esc(t('What it does'))}.</b> ${esc(pick(d.what))}</p><p class="tf-tp-how"><b>${esc(t('How it works'))}</b></p><ol>${d.how.map((x) => `<li>${esc(pick(x))}</li>`).join('')}</ol>`;
+  const paint = () => { card.classList.toggle('is-open', open); hd.setAttribute('aria-expanded', open ? 'true' : 'false'); bodyEl.hidden = !open; };
+  hd.onclick = () => { open = !open; try { localStorage.setItem(TP_KEY, open ? '1' : '0'); } catch { /* ignore */ } paint(); };
+  paint();
+  card.append(hd, bodyEl);
+  return card;
 }

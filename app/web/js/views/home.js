@@ -6,6 +6,7 @@ import { greeting } from '../core/format.js';
 import { L, pick, tx } from '../core/i18n.js';
 import { S } from '../core/store.js';
 import { DEMOS, GROUPS, GROUP_LABEL, TOOLS } from '../tools/registry.js';
+import { TALKING_POINTS } from '../tools/talking-points.js';
 import { iconSvg } from '../ui/icon.js';
 import { listHtml } from '../ui/list.js';
 import { demoNotice } from '../ui/notice.js';
@@ -30,7 +31,7 @@ export function viewHome() {
         <span class="demo-go">${L('Open with sample')} ${raw(iconSvg('arrow-right', 14))}</span></a>`)}</div></section>
     <section aria-labelledby="h-tools"><h2 class="section-title" id="h-tools">${L('All tools')} <span class="count">${TOOLS.length}</span></h2>
       ${GROUPS.map((g) => html`<div class="tool-group"><h3>${L(GROUP_LABEL[g])}</h3><div class="tool-cards">
-        ${TOOLS.filter((t) => t.group === g).map((t) => html`<a class="tool-card" href="${'#/tool/' + t.id}">${raw(iconSvg(t.icon))}<span class="tc-text"><b>${pick(t.title)}</b><span>${t.desc ? pick(t.desc) : gets(t.skill)}</span></span></a>`)}
+        ${TOOLS.filter((t) => t.group === g).map((t) => html`<a class="tool-card" href="${'#/tool/' + t.id}">${raw(iconSvg(t.icon))}<span class="tc-text"><b>${pick(t.title)}</b><span>${t.desc ? pick(t.desc) : gets(t.skill)}</span>${TALKING_POINTS[t.id] ? html`<span class="tc-replaces">${L('Replaces')} <b>${pick(TALKING_POINTS[t.id].replaces)}</b></span>` : ''}</span></a>`)}
       </div></div>`)}</section>
     <form class="ask" id="ask" ${DEMO ? 'hidden' : ''}>${raw(iconSvg('sparkles'))}<label class="sr-only" for="ask-input">${L('Ask Claude')}</label><input id="ask-input" placeholder="${L('Ask Claude anything: prepare a workshop, review a doc, draft a client email…')}" autocomplete="off"><button class="btn primary sm" type="submit">${L('Ask')}</button></form>
     <section aria-labelledby="h-recent"><h2 class="section-title" id="h-recent">${L('Recent deliverables')} <a class="section-link" href="#/deliverables">${L('See all')} ${raw(iconSvg('arrow-right', 14))}</a></h2>
@@ -48,4 +49,4 @@ export function viewHome() {
 
 /** Disclaimer (DESIGN_SPEC §5), on Home and in the page footers. */
 export const disclaimer = () => `<footer class="site-foot"><p>${esc(L('Fictional data. Not affiliated with Visa or GIE CB. No real card data.'))}</p>
-  <p>${esc(L('Analyst Kit V2 · code MIT · samples and docs CC BY 4.0'))}</p></footer>`;
+  <p>${esc(L('Skills Portal · code MIT · samples and docs CC BY 4.0'))}</p></footer>`;

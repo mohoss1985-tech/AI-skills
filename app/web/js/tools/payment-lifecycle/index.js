@@ -110,7 +110,6 @@ export default {
     this._btn = btn;
     this.paintActions(null);
     frame.output.append(ui.emptyState({ icon: 'repeat', text: T('empty'), sample: { label: T('loadSample'), onClick: () => ctx.loadSample(getLang() === 'fr' ? 'fr' : 'en', 2) } }));
-    queueMicrotask(() => frame.runNow());
   },
 
   update(state) { if (this._adv) this._adv.setCount(P.advancedSet(state)); },
@@ -152,8 +151,10 @@ export default {
         res.hold ? h('span', { class: 'muted pl-small', text: fill('holdNow', { amount: res.hold }) }) : null),
       h('div', { class: 'pl-positions', role: 'list', 'aria-label': T('positions') }, P.PARTIES.map((p) => {
         const v = res.positions[p];
+        const fl = res.flows[p] || { in: 0, out: 0 };
         return h('div', { class: 'pl-pos', role: 'listitem' }, h('span', { class: 'pl-small muted', text: T('party.' + p) }),
-          h('b', { class: `num ${v < 0 ? 'is-neg' : v > 0 ? 'is-pos' : ''}`, text: (v > 0 ? '+' : '') + money(v) }));
+          h('b', { class: `num ${v < 0 ? 'is-neg' : v > 0 ? 'is-pos' : ''}`, text: (v > 0 ? '+' : '') + money(v) }),
+          fl.in || fl.out ? h('span', { class: 'pl-small muted pl-flow', text: `${T('flowIn')} ${money(fl.in)} · ${T('flowOut')} ${money(fl.out)}` }) : null);
       }))));
 
     // FR: two tracks

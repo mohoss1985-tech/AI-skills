@@ -230,7 +230,9 @@ export function analyse(state) {
   const res = checkMapping(rows, { key: state.key || '', dialect: state.dialect || 'postgres', ruleIds: m.rules.length ? new Set(m.rules.map((r) => r.id)) : null, rulesName: 'Rules', file: `${m.table}-mapping.csv` });
   const extra = extraChecks(state);
   const issues = [...res.errors.map((x) => ({ level: 'error', ...x })), ...extra.filter((x) => x.level === 'error'),
-    ...res.warnings.map((x) => ({ level: 'warning', ...x })), ...extra.filter((x) => x.level === 'warning'), ...extra.filter((x) => x.level === 'info')];
+    // "mandatory, no default" is the intended behaviour of a regulatory mapping (empty -> held): a note, not a warning.
+    ...res.warnings.map((x) => ({ level: x.code === 'mandNoDefault' ? 'info' : 'warning', ...x })), ...extra.filter((x) => x.level === 'warning'), ...extra.filter((x) => x.level === 'info')];
+  issues.sort((a, b) => ['error', 'warning', 'info'].indexOf(a.level) - ['error', 'warning', 'info'].indexOf(b.level));
   const count = (l) => issues.filter((x) => x.level === l).length;
   // target coverage
   const byTarget = {};

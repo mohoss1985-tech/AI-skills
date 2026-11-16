@@ -1,6 +1,6 @@
 // node app/web/js/tools/impact-heatmap/logic.test.mjs [--write-json]
 import { writeFileSync } from 'fs';
-import { compute, cycle, parseAreas, heatmapCsv, gapsCsv, pruneScores } from './logic.js';
+import { compute, cycle, parseAreas, heatmapCsv, gapsCsv, pruneScores, renameAreas } from './logic.js';
 import { SAMPLES } from './samples.js';
 
 let fail = 0;
@@ -17,6 +17,14 @@ eq('cycle', [cycle(0), cycle(3), cycle(0, true), cycle(2, true)], [1, 0, 3, 1]);
 eq('csv head', heatmapCsv(en).split('\n')[0], 'area,kind,owner,people,process,data,tech,compliance,total');
 eq('gaps csv rows', gapsCsv(en).trim().split('\n').length, 8);
 eq('prune', Object.keys(pruneScores({ areas: 'A, team, x', scores: { A: {}, B: {} } })), ['A']);
+// regression: renaming an area keeps its scores and the gaps pointing at it
+const st = { areas: 'Call centre, team, Ops\nCards, system, IT', scores: { 'Call centre': { people: 2, process: 1 }, Cards: { tech: 3 } }, gaps: [{ area: 'Call centre', dim: 'people' }] };
+const rn = renameAreas(st.areas, 'Contact centre, team, Ops\nCards, system, IT', st);
+eq('rename keeps scores', [rn.scores['Contact centre'], rn.scores['Call centre'], rn.scores.Cards], [{ people: 2, process: 1 }, undefined, { tech: 3 }]);
+eq('rename moves gap link', rn.gaps[0].area, 'Contact centre');
+eq('delete a line is not a rename', renameAreas(st.areas, 'Cards, system, IT', st).renamed, []);
+eq('compute after rename', compute({ ...st, areas: 'Contact centre, team, Ops\nCards, system, IT', scores: rn.scores }).rows[0].total, 3);
+eq('missing kind is flagged', compute({ areas: 'Merchant support, , Ops', scores: {}, gaps: [] }).flags.map((f) => f.code), ['flagNoKind']);
 if (process.argv.includes('--write-json')) { writeFileSync(new URL('./samples.json', import.meta.url), JSON.stringify(SAMPLES, null, 1) + '\n'); console.log('samples.json written'); }
 console.log(fail ? `${fail} failing` : 'all impact-heatmap checks pass');
 process.exit(fail ? 1 : 0);

@@ -57,3 +57,9 @@
 .tool-use-case-scorer .ucs-li-name { font-weight: var(--fw-medium); overflow-wrap: anywhere; }
 .tool-use-case-scorer .ucs-li-why { font-size: var(--fs-12); color: var(--fg-2); margin-top: var(--s-1); }
 .tool-use-case-scorer .ucs-none { color: var(--fg-2); font-size: var(--fs-12); }
+
+.tool-use-case-scorer .ucs-li-note { font-size: var(--fs-12); color: var(--fg-2); margin-top: var(--s-1); font-style: italic; }
+.tool-use-case-scorer .ucs-move { font-size: var(--fs-12); font-weight: 600; margin-left: auto; margin-right: var(--s-2); }
+.tool-use-case-scorer .ucs-move.up { color: var(--ok, #1a7f4b); }
+.tool-use-case-scorer .ucs-move.down { color: var(--danger, #b3261e); }
+.tool-use-case-scorer .ucs-invite { padding: var(--s-4); border: 1px dashed var(--border, #ccc); border-radius: var(--r-2, 8px); }

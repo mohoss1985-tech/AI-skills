@@ -532,3 +532,10 @@ export function caseSummary(results) {
 export const fmtBytes = (n) => (n == null ? '' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? (n / 1024).toFixed(1) + ' KB' : n + ' B');
 export const pathOf = (url) => { try { const u = new URL(url.replace(/\{\{[^}]+\}\}/g, 'x')); return u.pathname; } catch (e) { return String(url).replace(/^\{\{base_url\}\}/, ''); } };
 export const shortUrl = (url) => String(url || '').replace(/^\{\{base_url\}\}/, '').replace(/^https?:\/\/issuer\.example\/(harbor|lumiere)\/v1/, '') || url;
+
+/* Step 1 of a `reset: true` case always starts from a clean mock (re-sending it must not 409). */
+export function needsMockReset(st) {
+  if (st.resetFirst) return true;
+  const ed = st.editing, c = ed && (st.cases || []).find((x) => x.id === ed.caseId);
+  return !!(c && c.reset && ed.step === 0);
+}

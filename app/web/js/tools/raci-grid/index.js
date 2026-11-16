@@ -71,6 +71,9 @@ function promptSteer(s) {
 
 /* ------------------------------------------------------------------------------------------- view */
 function mount(el, ctx) {
+  // The frame sets ctx.guided right AFTER mount: the first paint of results waits one macrotask (rule 8).
+  let ready = false;
+  const showResults = () => ready && !ctx.guided;
   const { ui, frame } = ctx;
   const st = () => ctx.state;
   for (const k of ['stakeholders', 'activities', 'options']) if (!Array.isArray(st()[k])) ctx.setState({ [k]: [] }, { silent: true });
@@ -119,7 +122,9 @@ function mount(el, ctx) {
   const stratBox = h('div', { class: 'rg-strats' });
   const empty = ui.emptyState({ icon: 'users', title: T('emptyTitle'), text: T('empty'), action: { label: T('addStakeholder'), onClick: () => peopleGrid.addRow(true) },
     sample: { label: T('load'), onClick: () => ctx.loadSample(getLang() === 'fr' ? 'fr' : 'en', 0) } });
+  const invite = h('p', { class: 'rg-hint rg-invite', text: T('invite') });
   const mapPanel = h('div', {}, empty, h('h2', { text: T('stakeholders') }), peopleGrid,
+    invite,
     h('div', { class: 'rg-map' }, h('section', {}, h('h2', { text: T('grid') }), h('p', { class: 'rg-hint', text: T('gridHint') }), chart),
       h('section', {}, h('h2', { text: T('strategies') }), stratBox)));
 
@@ -188,13 +193,14 @@ function mount(el, ctx) {
     const people = st().stakeholders || [], acts = st().activities || [];
     if (!people.length) { raciBox.replaceChildren(h('p', { class: 'rg-hint', text: T('noPeople') })); return; }
     const r = analyse(st());
+    const show = showResults();
     const table = h('table', { class: 'table rg-raci' });
     table.append(h('thead', {}, h('tr', {}, h('th', { scope: 'col', text: T('activity') }), ...people.map((p) => h('th', { scope: 'col', class: 'rg-c', title: p.role, text: p.name })), h('th', { scope: 'col', text: T('check') }), h('th', { scope: 'col' }, h('span', { class: 'sr-only', text: T('remove') })))));
     const tb = h('tbody');
     acts.forEach((a, ri) => {
       const c = rowCheck(a, people);
       const name = ui.input({ value: a.name, ariaLabel: `${T('activity')} ${a.id}`, size: 'sm', onChange: (v) => set({ activities: (st().activities || []).map((x) => (x.id === a.id ? { ...x, name: v } : x)) }) });
-      const tr = h('tr', { class: c.issues.length ? 'is-bad' : '' }, h('th', { scope: 'row', class: 'rg-act' }, h('code', { text: a.id }), name));
+      const tr = h('tr', { class: show && c.issues.length ? 'is-bad' : '' }, h('th', { scope: 'row', class: 'rg-act' }, h('code', { text: a.id }), name));
       people.forEach((p, ci) => {
         const v = (a.raci || {})[p.id] || '';
         const b = h('button', { type: 'button', class: 'rg-cell rg-v-' + (v || 'none'), 'data-r': ri, 'data-c': ci, 'aria-label': `${a.name} · ${p.name}: ${v || '—'}`, text: v || '·' });
@@ -207,13 +213,13 @@ function mount(el, ctx) {
         };
         tr.append(h('td', { class: 'rg-c' }, b));
       });
-      tr.append(h('td', {}, c.issues.length ? ui.badge({ text: issueText(c), tone: 'bad', icon: 'circle-x' }) : ui.badge({ text: T('rowOk'), tone: 'ok', icon: 'circle-check' })));
+      tr.append(h('td', {}, !show ? '' : c.issues.length ? ui.badge({ text: issueText(c), tone: 'bad', icon: 'circle-x' }) : ui.badge({ text: T('rowOk'), tone: 'ok', icon: 'circle-check' })));
       tr.append(h('td', {}, ui.button({ icon: 'trash-2', variant: 'ghost', size: 'sm', ariaLabel: `${T('remove')} ${a.id}`, onClick: () => { set({ activities: (st().activities || []).filter((x) => x.id !== a.id) }); paintRaci(); } })));
       tb.append(tr);
     });
     if (!acts.length) tb.append(h('tr', {}, h('td', { colspan: String(people.length + 3), class: 'rg-hint', text: T('noActs') })));
     table.append(tb);
-    table.append(h('tfoot', {}, h('tr', {}, h('th', { scope: 'row', text: T('loadCol') }), ...r.loads.map((l) => h('td', { class: 'rg-c num' },
+    if (show) table.append(h('tfoot', {}, h('tr', {}, h('th', { scope: 'row', text: T('loadCol') }), ...r.loads.map((l) => h('td', { class: 'rg-c num' },
       l.overloaded ? ui.badge({ text: `${l.load} · ${T('overloaded')}`, tone: 'warn', icon: 'triangle-alert' }) : h('span', { text: String(l.load) }))), h('td'), h('td'))));
     raciBox.replaceChildren(table);
   }
@@ -241,6 +247,11 @@ function mount(el, ctx) {
   function refresh(opts = {}) {
     const s = st(); const r = analyse(s); const people = s.stakeholders || [];
     empty.hidden = people.length > 0 || (s.activities || []).length > 0;
+    const show = showResults();
+    mapPanel.querySelector('.rg-map').hidden = !show;
+    invite.hidden = show || !(people.length || (s.activities || []).length);
+    if (!show) { pill.update({ tone: 'neutral', text: '' }); pill.hidden = true; tabs.setCount('raci', undefined); adv.setCount(advCount()); if (tabs.active === 'raci' && !opts.keepRaci) paintRaci(); return r; }
+    pill.hidden = false;
     if (!opts.keepChart && !drag) paintChart();
     paintStrats();
     const vars = { people: people.length, rows: (s.activities || []).length, bad: r.badRows, over: r.overloaded.length };
@@ -254,10 +265,11 @@ function mount(el, ctx) {
   }
   ctx.__rgRefresh = refresh;
   refresh(); paintRaci(); paintMemo();
+  setTimeout(() => { ready = true; refresh(); paintRaci(); }, 0);
 }
 
 /* ------------------------------------------------------------------------------------------- module */
-const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.label, hint: s.hint, state: s.state, autorun: true }));
+const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.label, hint: s.hint, state: s.state }));
 export default {
   id: 'raci-grid',
   skill: 'aligning-stakeholders',

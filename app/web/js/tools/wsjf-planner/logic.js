@@ -47,7 +47,7 @@ export function load(items) {
       const v = toInt(r[c]);
       if (Number.isNaN(v)) {
         errors.push({ code: 'nan', id: r.id || '?', field: c, line: n, text: `line ${n} (${r.id || '?'}): ${c} must be a number` });
-        r[c] = 1;
+        r[c] = null; r.invalid = true;   // V3: a blank/invalid score never ranks (was: silently 1)
       } else {
         r[c] = v;
         if (!FIB.includes(v)) errors.push({ code: 'scale', id: r.id, field: c, value: v, line: n, text: `line ${n} (${r.id}): ${c}=${v} is not on the scale 1,2,3,5,8,13,20` });
@@ -59,8 +59,9 @@ export function load(items) {
       r.points = 0;
     } else r.points = p;
     r.depends_on = depsOf(r.depends_on);
-    r.cod = r.business_value + r.time_criticality + r.risk_reduction;
-    r.wsjf = r.job_size > 0 ? round2(r.cod, r.job_size) : 0;
+    r.unestimated = !r.invalid && !(r.points > 0);   // V3: 0 / blank points = not estimated, never "in PI" for free
+    r.cod = r.invalid ? null : r.business_value + r.time_criticality + r.risk_reduction;
+    r.wsjf = r.invalid ? null : r.job_size > 0 ? round2(r.cod, r.job_size) : 0;
     rows.push(r);
   });
   const ids = new Set(rows.map((r) => r.id));
@@ -78,9 +79,10 @@ export function load(items) {
 /** wsjf.py plan(): rank, then fit items with their dependencies into the capacity.
     Unknown dependencies are ignored here (load() reports them), so the grid stays live while typing. */
 export function plan(rows, capacity) {
-  const cmp = (a, b) => (b.wsjf - a.wsjf)
+  const w = (x) => (x.wsjf == null ? -1 : x.wsjf);
+  const cmp = (a, b) => (w(b) - w(a))
     || ((a.deadline !== 'in-pi') - (b.deadline !== 'in-pi'))
-    || (a.job_size - b.job_size);
+    || ((a.job_size ?? 99) - (b.job_size ?? 99));
   const ranked = rows.slice().sort(cmp);  // stable, like Python's sorted()
   const byId = new Map(rows.map((r) => [r.id, r]));
   const planned = [];
@@ -91,7 +93,7 @@ export function plan(rows, capacity) {
     const out = [];
     for (const d of r.depends_on) {
       const dep = byId.get(d);
-      if (!dep) continue;
+      if (!dep || dep.invalid || dep.unestimated) continue;
       if (planned.includes(dep) || out.includes(dep)) continue;
       const sub = closure(dep, [...seen, r.id]);
       if (sub === null) return null;
@@ -101,7 +103,7 @@ export function plan(rows, capacity) {
   }
 
   for (const r of ranked) {
-    if (planned.includes(r)) continue;
+    if (planned.includes(r) || r.invalid || r.unestimated) continue;
     const group = closure(r);
     const need = group ? group.reduce((s, x) => s + x.points, 0) : null;
     if (group && used + need <= capacity) {
@@ -112,6 +114,8 @@ export function plan(rows, capacity) {
   const out = [];
   for (const r of ranked) {
     if (planned.includes(r)) continue;
+    if (r.invalid) { out.push({ item: r, reason: { code: 'invalid' }, why: 'score missing or not a number' }); continue; }
+    if (r.unestimated) { out.push({ item: r, reason: { code: 'unestimated' }, why: 'not estimated (points missing)' }); continue; }
     const group = closure(r);
     if (group === null) {
       out.push({ item: r, reason: { code: 'cycle' }, why: 'circular dependency' });
@@ -146,15 +150,23 @@ export function compute(items, capacity) {
     }
     const o = out.find((x) => x.item === r);
     if (o && o.reason.code === 'cycle') f.push({ code: 'cycle' });
+    if (o && o.reason.code === 'invalid') f.push({ code: 'invalid' });
+    if (o && o.reason.code === 'unestimated') f.push({ code: 'unestimated' });
     if (late.includes(r.id)) f.push({ code: 'deadline' });
     flags[r.id] = f;
   }
   // Cut line: index in the ranked list after which the first item that does not fit appears.
   const cut = ranked.findIndex((r) => !pids.has(r.id));
+  // V3: a smaller item below the first miss can still fit (greedy pass), so one cut line would lie. Items that did not
+  // fit but rank above a committed item are "skipped"; the UI labels them per row instead of drawing a line.
+  let lastIn = -1;
+  ranked.forEach((r, i) => { if (pids.has(r.id)) lastIn = i; });
+  const skipped = new Set(ranked.filter((r, i) => i < lastIn && !pids.has(r.id)
+    && (out.find((o) => o.item === r) || { reason: {} }).reason.code === 'capacity').map((r) => r.id));
   return {
     ranked, planned: planned.map((p) => p.id), pids, used, capacity: cap, out,
     notPlanned: Object.fromEntries(out.map((o) => [o.item.id, o.why])),
-    late, errors, flags, cut: cut === -1 ? ranked.length : cut,
+    late, errors, flags, cut: cut === -1 ? ranked.length : cut, skipped, cleanCut: skipped.size === 0,
     pct: cap > 0 ? Math.round((100 * used) / cap) : 0,
   };
 }
@@ -180,7 +192,7 @@ export const csvLine = (cells) => cells.map(csvCell).join(',');
 export function jiraCsv(res, project = 'PROJ') {
   const lines = [csvLine(['Summary', 'Issue Type', 'Description', 'Labels', 'Labels', 'Story Points'])];
   for (const r of res.ranked) {
-    let desc = `WSJF ${pyNum(r.wsjf)} (BV ${r.business_value} + TC ${r.time_criticality} + RR ${r.risk_reduction}) / size ${r.job_size}. Ref ${r.id}.`;
+    let desc = `WSJF ${r.wsjf == null ? '?' : pyNum(r.wsjf)} (BV ${r.business_value} + TC ${r.time_criticality} + RR ${r.risk_reduction}) / size ${r.job_size}. Ref ${r.id}.`;
     if (r.depends_on.length) desc += ' Depends on: ' + r.depends_on.join(', ') + '.';
     lines.push(csvLine([r.title, r.type || 'Story', desc,
       res.pids.has(r.id) ? 'PI-committed' : 'PI-candidate', `${project || 'PROJ'}-WSJF`, r.points || '']));
@@ -224,9 +236,9 @@ export function itemsFromCsv(text) {
   const keys = head.map((h) => h.trim().toLowerCase().replace(/[\s/-]+/g, '_'));
   const alias = { bv: 'business_value', tc: 'time_criticality', rr: 'risk_reduction', rr_oe: 'risk_reduction', size: 'job_size', needs: 'depends_on', feature: 'title', summary: 'title' };
   return body.map((cells) => {
-    const it = { id: '', title: '', type: '', business_value: 1, time_criticality: 1, risk_reduction: 1, job_size: 1, points: 0, depends_on: '', deadline: '' };
+    const it = { id: '', title: '', type: '', business_value: '', time_criticality: '', risk_reduction: '', job_size: '', points: 0, depends_on: '', deadline: '' };
     keys.forEach((k, i) => { const key = alias[k] || k; if (key in it) it[key] = (cells[i] ?? '').trim(); });
-    for (const c of SCORE_KEYS) it[c] = toInt(it[c]) || 1;
+    for (const c of SCORE_KEYS) { const v = toInt(it[c]); it[c] = Number.isNaN(v) ? '' : v; }   // V3: blank/0 stay visible (flagged by load()), no silent 1
     it.points = toInt(it.points) || 0;
     return it;
   });

@@ -49,7 +49,7 @@ eq('EN preview values', p0.map((r) => [r.target, r.value, r.status]), [
   ['transaction_date', '2026-10-18', 'ok'], ['fraud_reported_date', '2026-10-20', 'confirm'], ['amount_minor', '6490', 'ok'],
   ['currency', 'EUR', 'ok'], ['entry_mode', 'ECOM', 'ok'], ['case_id', 'CASE-0421', 'ok']]);
 const a1 = analyse(SAMPLES.en[1].state);
-eq('EN sample 1 issue codes', a1.issues.filter((x) => x.level !== 'info').map((x) => x.code), ['dup', 'unknownRule', 'mandNoSrc', 'mandNoDefault', 'mandNoDefault', 'mandNoDefault', 'mandNoDefault', 'mandNoDefault', 'mandNoDefault', 'mandNoDefault', 'allowedNoTr', 'allowedNoTr', 'notMapped', 'lengthMismatch']);
+eq('EN sample 1 issue codes', a1.issues.filter((x) => x.level !== 'info').map((x) => x.code), ['dup', 'unknownRule', 'mandNoSrc', 'allowedNoTr', 'allowedNoTr', 'notMapped', 'lengthMismatch']);
 const p1 = preview(SAMPLES.en[1].state);
 eq('EN ISO preview', p1.filter((r) => ['pan_masked', 'amount_minor', 'currency', 'entry_mode', 'merchant_name'].includes(r.target)).map((r) => [r.target, r.value, r.status]),
   [['pan_masked', '400000******1091', 'ok'], ['amount_minor', '6490', 'ok'], ['currency', 'EUR', 'ok'], ['entry_mode', null, 'held'], ['merchant_name', 'QUICKGIFT ONLINE STORE      LONDON    GB', 'bad']]);
@@ -61,4 +61,15 @@ eq('test PANs Luhn-valid', ['4000000000001091', '4000000000002024', '40000000000
 
 if (process.argv.includes('--write-json')) { writeFileSync(new URL('./samples.json', import.meta.url), JSON.stringify(SAMPLES, null, 1) + '\n'); console.log('samples.json written'); }
 console.log(fail ? `${fail} failing` : 'all mapping-grid checks pass');
+
+
+// V3: a correct mapping shows no warnings ("mandatory, no default" is an info note)
+for (const lang of ['en', 'fr']) for (const smp of SAMPLES[lang]) {
+  const a = analyse(smp.state);
+  if (smp.id === 'iso8583-json') continue; // this sample carries deliberate defects
+  eq(`${lang}/${smp.id} no false warnings`, a.counts.warning, a.issues.filter((x) => x.level === 'warning').length);
+  eq(`${lang}/${smp.id} no mandNoDefault warning`, a.issues.filter((x) => x.level === 'warning' && x.code === 'mandNoDefault').length, 0);
+  eq(`${lang}/${smp.id} zero warnings`, a.counts.warning, 0);
+}
+console.log(fail ? `${fail} FAILED` : 'ALL PASS');
 process.exit(fail ? 1 : 0);

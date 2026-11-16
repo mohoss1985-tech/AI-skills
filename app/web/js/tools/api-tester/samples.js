@@ -212,7 +212,7 @@ const S = (lang) => {
   const all = suiteCases(lang);
   return [
     { id: 'demo60', label: fr ? 'Démo 60 s · opposition puis paiement refusé (41)' : '60-second demo · block a lost card, then pay (41)',
-      hint: fr ? 'Envoyer, puis l\'étape 2 et l\'étape 3 · ou « Lancer le cas »' : 'Send, then step 2 and step 3 · or "Run case"', autorun: true,
+      hint: fr ? 'Envoyer, puis l\'étape 2 et l\'étape 3 · ou « Lancer le cas »' : 'Send, then step 2 and step 3 · or "Run case"',
       state: sampleState(lang, [demoCase(lang)], { caseId: 'case_demo', step: 0 }, { guide: true }) },
     { id: 'suite', label: fr ? 'Banque Lumière · 10 cas de test prêts' : 'Harbor Bank · 10 ready-made test cases',
       hint: fr ? '« Tout lancer » donne le rapport de recette' : '"Run all" gives the UAT evidence report',
@@ -220,7 +220,7 @@ const S = (lang) => {
     { id: 'lifecycle', label: fr ? 'Jetons et impayés · 12 cas (TK, PL)' : 'Tokens and chargebacks · 12 cases (TK, PL)',
       hint: fr ? 'Apple Pay, annulation, remboursement, impayé' : 'Apple Pay, reversal, refund, chargeback',
       state: sampleState(lang, lifecycleCases(lang), { caseId: 'tk01', step: 0 }) },
-    { id: 'httpbin', label: fr ? 'Vrai appel Internet · httpbin.org' : 'Real internet call · httpbin.org', autorun: true,
+    { id: 'httpbin', label: fr ? 'Vrai appel Internet · httpbin.org' : 'Real internet call · httpbin.org',
       hint: fr ? 'La requête quitte vraiment le navigateur' : 'The request really leaves the browser',
       state: sampleState(lang, [httpbinCase(lang)], { caseId: 'case_httpbin', step: 0 }) },
   ];

@@ -90,6 +90,6 @@ Conformité et contrôle interne, équipe, Conformité`,
 };
 
 export const SAMPLES = {
-  en: [{ id: 'exception-file-realtime', label: 'Exception File listing in real time', hint: 'Harbor Bank (sample)', state: EN, autorun: true }],
-  fr: [{ id: 'liste-opposition-temps-reel', label: "Liste d'opposition en temps réel", hint: 'Banque Lumière (exemple)', state: FR, autorun: true }],
+  en: [{ id: 'exception-file-realtime', label: 'Exception File listing in real time', hint: 'Harbor Bank (sample)', state: EN }],
+  fr: [{ id: 'liste-opposition-temps-reel', label: "Liste d'opposition en temps réel", hint: 'Banque Lumière (exemple)', state: FR }],
 };

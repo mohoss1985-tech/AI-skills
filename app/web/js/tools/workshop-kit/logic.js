@@ -106,6 +106,19 @@ export function fitToDuration(agenda, duration, readbackTitle = 'Read back decis
   return a;
 }
 
+/** Fit v2: when there are more topics than the duration allows (3 per 90 min), move the last topics to the next
+    workshop instead of squeezing everything, then fit the rest. → {agenda, moved: [titles]} */
+export function fitAndMove(agenda, duration, readbackTitle) {
+  let a = (agenda || []).map((b) => ({ ...b }));
+  const moved = [];
+  const max = maxTopics(duration);
+  while (a.filter((b) => b.kind === 'topic').length > max) {
+    let k = -1; a.forEach((b, i) => { if (b.kind === 'topic') k = i; });
+    moved.unshift(a[k].title); a.splice(k, 1);
+  }
+  return { agenda: fitToDuration(a, duration, readbackTitle), moved };
+}
+
 /** Timer: state.timer = {i, startedAt (epoch ms) | null, acc (ms already spent on block i), spent: {blockId: ms}} */
 export const timerDefaults = () => ({ i: 0, startedAt: null, acc: 0, spent: {} });
 export function elapsed(timer, now = Date.now()) {
@@ -125,20 +138,49 @@ export function timerNext(timer, agenda, now = Date.now(), dir = 1) {
   t.startedAt = running ? now : null;
   return t;
 }
+/** Finish the workshop: store the time spent on the current block and pause. */
+export function timerFinish(timer, agenda, now = Date.now()) { return timerPause(timerNext(timer, agenda, now, 0), now); }
 export function timerReset() { return timerDefaults(); }
 export const mmss = (ms) => { const s = Math.floor(Math.abs(ms) / 1000); return `${ms < 0 ? '−' : ''}${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
 
-/** Quick capture: "A: Ask the processor @Tom 2026-11-20" → {type, text, owner, due}. */
-export function parseNote(raw, fallbackType = 'D') {
+/** "20/11", "20/11/2026", "20.11.26" (day first) → ISO date, or '' when it is not a valid date. `now` gives the year. */
+export function parseDate(d, m, y, now = new Date()) {
+  let yy = y == null || y === '' ? now.getFullYear() : +y;
+  if (yy < 100) yy += 2000;
+  const dt = new Date(Date.UTC(yy, +m - 1, +d));
+  if (dt.getUTCFullYear() !== yy || dt.getUTCMonth() !== +m - 1 || dt.getUTCDate() !== +d) return '';
+  return dt.toISOString().slice(0, 10);
+}
+
+/** Quick capture: "A: Ask the processor @Tom 2026-11-20" → {type, text, owner, due}.
+    Owners: @Tom, @"Ana Lopez", @[Ana Lopez], or @Ana when `names` (attendees) has "Ana Lopez" and the text continues with Lopez.
+    Dates: 2026-11-20 or day-first 20/11, 20/11/2026, 20.11.26. */
+export function parseNote(raw, fallbackType = 'D', names = [], now = new Date()) {
   let text = String(raw || '').trim();
   let type = fallbackType;
   const m = text.match(/^(D|A|Q|R|REQ|RQ)\s*[:\-]\s*/i);
   if (m) { const k = m[1].toUpperCase(); type = k === 'R' || k === 'RQ' ? 'REQ' : k; text = text.slice(m[0].length); }
   let owner = '', due = '';
-  const o = text.match(/(?:^|\s)@([\p{L}][\p{L}\p{N}._-]*)/u);
-  if (o) { owner = o[1]; text = text.replace(o[0], ' '); }
+  const q = text.match(/(?:^|\s)@(?:"([^"]+)"|\[([^\]]+)\])/);
+  if (q) { owner = (q[1] || q[2]).trim(); text = text.replace(q[0], ' '); }
+  else {
+    const o = text.match(/(?:^|\s)@([\p{L}][\p{L}\p{N}._-]*)/u);
+    if (o) {
+      owner = o[1]; text = text.replace(o[0], ' ');
+      const full = (names || []).find((n) => n.toLowerCase().startsWith(owner.toLowerCase() + ' '));
+      if (full) {
+        const rest = full.slice(owner.length).trim();
+        const re = new RegExp('(?:^|\\s)' + rest.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=\\s|$)', 'i');
+        if (re.test(text)) { text = text.replace(re, ' '); owner = full; }
+      }
+    }
+  }
   const d = text.match(/(?:^|\s)(\d{4}-\d{2}-\d{2})\b/);
   if (d) { due = d[1]; text = text.replace(d[0], ' '); }
+  else {
+    const e = text.match(/(?:^|\s)(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?=\s|$)/);
+    if (e) { const iso = parseDate(e[1], e[2], e[3], now); if (iso) { due = iso; text = text.replace(e[0], ' '); } }
+  }
   return { type, text: text.replace(/\s+/g, ' ').trim(), owner, due };
 }
 export function addNote(notes, note, blockId) {

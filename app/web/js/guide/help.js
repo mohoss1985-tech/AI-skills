@@ -193,7 +193,7 @@ const Kit = {
 
   // ---------- how the app works ----------
   const APP = [
-    [['how does', 'how it works', 'how do i start', 'get started', 'what is this', 'what can you do', 'help', 'start'], 'How Analyst Kit works',
+    [['how does', 'how it works', 'how do i start', 'get started', 'what is this', 'what can you do', 'help', 'start'], 'How Skills Portal works',
       '1. **Pick a deliverable** in the sidebar or press **N**.\n2. **Paste your notes** (or drop a .txt, .md or .csv file), or click a **scenario** to try one.\n3. **Create**: Claude writes the document and you get a notification.\n4. **Ask for changes** in the conversation next to it. Every version is kept.\n5. **Hand it over**: Word, PDF or copy, then *Mark as sent*.',
       [{ label: 'New deliverable', href: '#/new' }]],
     [['upload', 'document', 'pdf', 'word', 'excel', 'image', 'source', 'evidence', 'proof', 'knowledge', 'attach'], 'Documents and knowledge',

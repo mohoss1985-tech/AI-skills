@@ -1,7 +1,7 @@
 /* node app/web/js/tools/workshop-kit/logic.test.mjs [--write-json] */
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
-import { parseAttendees, checks, fitToDuration, totalMinutes, maxTopics, timerStart, timerPause, timerNext, elapsed, parseNote, addNote, actionsCsv, agendaFromCsv } from './logic.js';
+import { parseAttendees, checks, fitToDuration, totalMinutes, maxTopics, timerStart, timerPause, timerNext, elapsed, parseNote, addNote, actionsCsv, agendaFromCsv, fitAndMove, parseDate, timerFinish } from './logic.js';
 import { SAMPLES } from './samples.js';
 
 const p = parseAttendees('Ana (Head of cards, sponsor), Tom (Card IT; host), Legal (absent)');
@@ -28,5 +28,15 @@ assert.equal(parseNote('R: listing in real time').type, 'REQ');
 assert.equal(addNote(w1.notes, { type: 'A', text: 'x' }, 'b1').at(-1).id, 'A-06');
 assert.ok(actionsCsv(w1).startsWith('id,action,owner,due,block,workshop\r\nA-01,'));
 assert.equal(agendaFromCsv('title,kind,minutes\nIntro,intro,10\n"Rules, examples",topic,30').length, 2);
+// V3 regressions
+const fm = fitAndMove(w2.agenda, 60, 'Read back');
+assert.equal(totalMinutes(fm.agenda), 60); assert.ok(fm.moved.length >= 1, 'a topic is moved to the next workshop');
+assert.equal(Object.fromEntries(checks({ ...w2, agenda: fm.agenda }).map((c) => [c.id, c.level])).topics, 'ok');
+assert.deepEqual(parseNote('A: call @Ana Lopez 20/11', 'D', ['Ana Lopez'], new Date('2026-06-01')), { type: 'A', text: 'call', owner: 'Ana Lopez', due: '2026-11-20' });
+assert.equal(parseNote('A: x @"Ana Lopez"').owner, 'Ana Lopez');
+assert.equal(parseNote('A: x @Tom 31/02/2026').due, '');
+assert.equal(parseDate('5', '6', '26'), '2026-06-05');
+const fin = timerFinish(timerStart({}, 1000), w1.agenda, 5000);
+assert.equal(fin.startedAt, null); assert.equal(fin.spent.b1, 4000);
 console.log('workshop-kit logic: all checks pass');
 if (process.argv.includes('--write-json')) writeFileSync(new URL('./samples.json', import.meta.url), JSON.stringify(SAMPLES, null, 2) + '\n');

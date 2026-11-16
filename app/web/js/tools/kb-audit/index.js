@@ -4,7 +4,7 @@
 import { register, getLang } from '../../core/i18n.js';
 import strings from './i18n.js';
 import { SAMPLES } from './samples.js';
-import { audit, actionsCsv, auditCsv, coverageCsv, DEFAULT_CYCLES, TYPES } from './logic.js';
+import { audit, validateInput, actionsCsv, auditCsv, coverageCsv, DEFAULT_CYCLES, TYPES } from './logic.js';
 import { fill, mdTable } from '../mapping-grid/csv.js';
 
 const T = register('kb-audit', strings);
@@ -24,27 +24,29 @@ function h(tag, attrs = {}, ...kids) {
   return e;
 }
 function actionText(a) {
-  if (a.type === 'owner') return F(a.vars.who ? 'a_ownerLeft' : 'a_owner', a.vars);
+  if (a.type === 'owner') return F(a.vars.status === 'unknown' ? 'a_ownerUnknown' : a.vars.who ? 'a_ownerLeft' : 'a_owner', a.vars);
   if (a.type === 'review' && a.vars.age === '—') return F('a_reviewNever', a.vars);
   return F('a_' + a.type, { ...a.vars, q: a.vars.q });
 }
+const weeksText = (w, n) => F(w === 1 ? 'weeksLine1' : 'weeksLine', { w, n });
+const issueText = (i) => F(i.code, i.vars);
 const weekText = (a) => (a.week === 0 ? T('now') : a.week == null ? T('unplanned') : String(a.week));
 
 /* ------------------------------------------------------------------------------------------- markdown */
 function toMarkdown(s) {
   const r = audit(s);
-  const L = [`## ${s.title || T('mdInventory')}`, ''];
-  L.push(`### 1 · ${T('mdSummary')}`, '', F('mdAsOf', { d: r.asOf, c: TYPES.map((t) => `${T('type_' + t)} ${r.cycles[t]}`).join(', ') }), '');
+  const L = [`# ${s.title || T('mdInventory')}`, ''];
+  L.push(`## 1 · ${T('mdSummary')}`, '', F('mdAsOf', { d: r.asOf, c: TYPES.map((t) => `${T('type_' + t)} ${r.cycles[t]}`).join(', ') }), '');
   L.push(`- **${T('tileFresh')}:** ${['fresh', 'due', 'stale', 'never'].map((b) => `${T('b_' + b)} ${r.summary.fresh[b]}`).join(' · ')}`);
   L.push(`- **${T('tileOwners')}:** ${F('ownedOf', { a: r.summary.owned, b: r.summary.articles })}`);
   L.push(`- **${T('tileQuestions')}:** ${F('coveredOf', { p: r.summary.coveredPct })}; ${F('gapLine', { n: r.summary.gaps, v: nf(r.summary.gapVolume) })}`);
-  L.push(`- **${T('tileBacklog')}:** ${F('backlogLine', { e: r.summary.effort })}${r.summary.weeks ? ` · ${F('weeksLine', { w: r.summary.weeks, n: s.writers })}` : ''}`, '');
+  L.push(`- **${T('tileBacklog')}:** ${F('backlogLine', { e: r.summary.effort })}${r.summary.weeks ? ` · ${weeksText(r.summary.weeks, s.writers)}` : ''}`, '');
   if (s.notes) L.push(s.notes, '');
-  L.push(`### 2 · ${T('mdInventory')}`, '', mdTable([T('colId'), T('colTitle'), T('colOwner'), T('colType'), T('colAudience'), T('colLast'), T('colAge'), T('colFresh'), T('colQs')],
+  L.push(`## 2 · ${T('mdInventory')}`, '', mdTable([T('colId'), T('colTitle'), T('colOwner'), T('colType'), T('colAudience'), T('colLast'), T('colAge'), T('colFresh'), T('colQs')],
     r.articles.map((a) => [a.id, a.title, a.owner ? `${a.owner}${a.ownerStatus !== 'ok' ? ` (${T('o_' + a.ownerStatus)})` : ''}` : T('o_none'), T('type_' + a.type), T('aud_' + a.audience), a.last, a.age ?? '', T('b_' + a.bucket), a.questions.join(' ')])), '');
-  L.push(`### 3 · ${T('mdCoverage')}`, '', mdTable([T('colQuestion'), T('colVolume'), T('colArticles'), T('colCoverage')],
+  L.push(`## 3 · ${T('mdCoverage')}`, '', mdTable([T('colQuestion'), T('colVolume'), T('colArticles'), T('colCoverage')],
     [...r.questions].sort((a, b) => b.volume - a.volume).map((q) => [q.text, nf(q.volume), q.refs.join(' '), T('c_' + q.coverage)])), '');
-  L.push(`### 4 · ${T('mdBacklog')}`, '', mdTable(['#', T('colAction'), T('colVolume'), T('colEffort'), T('colWeek'), T('colOwner')],
+  L.push(`## 4 · ${T('mdBacklog')}`, '', mdTable(['#', T('colAction'), T('colVolume'), T('colEffort'), T('colWeek'), T('colOwner')],
     r.actions.map((a) => [a.n, actionText(a), nf(a.volume), a.effort, weekText(a), a.owner])), '');
   return L.join('\n');
 }
@@ -117,6 +119,10 @@ function mount(el, ctx) {
   const tabs = ui.tabs({ tabs: [{ id: 'articles', label: T('tabArticles') }, { id: 'questions', label: T('tabQuestions') }, { id: 'owners', label: T('tabOwners') }, { id: 'actions', label: T('tabActions') }],
     active: S().tab || 'articles', onChange: (id) => set({ tab: id }), panels });
   const main = h('div', { class: 'kb-main' }, tiles, tabs);
+  const issuesBox = h('div', { class: 'kb-issues', role: 'alert' });
+  const invite = h('p', { class: 'kb-invite', text: T('invite') });
+  let ready = false;   // frame sets ctx.guided right AFTER mount: first result paint waits one macrotask
+  const showResults = () => ready && !ctx.guided;
   const empty = ui.emptyState({ icon: 'library', title: T('emptyTitle'), text: T('emptyBody'),
     sample: { label: SAMPLES[getLang() === 'fr' ? 'fr' : 'en'][0].label, onClick: () => ctx.loadSample(getLang() === 'fr' ? 'fr' : 'en', 0) } });
   const badge = (text, tone) => ui.badge({ text, tone });
@@ -127,8 +133,12 @@ function mount(el, ctx) {
   function paint() {
     const r = audit(S());
     const has = r.articles.length > 0 || r.questions.length > 0;
-    empty.hidden = has; main.hidden = !has;
+    const show = showResults();
+    empty.hidden = has; main.hidden = !has || !show; invite.hidden = !has || show;
+    issuesBox.replaceChildren(...(r.issues.length ? [ui.icon('triangle-alert'), h('b', { text: T('issuesTitle') }), h('ul', {}, ...r.issues.map((i) => h('li', { text: issueText(i) })))] : []));
+    issuesBox.hidden = !r.issues.length;
     adv.setCount(advCount());
+    if (!show) return r;
     if (!has) { ctx.frame.setStatus(null); return r; }
     const sm = r.summary;
     // freshness bar: one segment per bucket, labelled (never colour alone)
@@ -139,7 +149,7 @@ function mount(el, ctx) {
       tile(T('tileFresh'), `${sm.fresh.fresh + sm.fresh.due} / ${sm.articles}`, '', h('div', {}, bar, legend)),
       tile(T('tileOwners'), `${sm.owned} / ${sm.articles}`, F('ownedOf', { a: sm.owned, b: sm.articles })),
       tile(T('tileQuestions'), `${sm.coveredPct} %`, `${F('coveredOf', { p: sm.coveredPct })} · ${F('gapLine', { n: sm.gaps, v: nf(sm.gapVolume) })}`),
-      tile(T('tileBacklog'), F('backlogLine', { e: sm.effort }), sm.weeks ? F('weeksLine', { w: sm.weeks, n: S().writers }) : T('noCapacity')));
+      tile(T('tileBacklog'), F('backlogLine', { e: sm.effort }), sm.weeks ? weeksText(sm.weeks, S().writers) : T('noCapacity')));
 
     panels.articles.replaceChildren(ui.table({
       columns: [
@@ -182,9 +192,10 @@ function mount(el, ctx) {
     ctx.frame.setStatus({ tone: sm.gaps || sm.fresh.stale ? 'warn' : 'ok', text });
     return r;
   }
-  el.append(adv, empty, main);
-  ctx.__kbRefresh = paint;
+  el.append(adv, issuesBox, empty, invite, main);
+  ctx.__kbRefresh = () => { ready = true; return paint(); };
   paint();
+  setTimeout(() => { ready = true; paint(); }, 0);
 }
 
 /* ------------------------------------------------------------------------------------------- module */
@@ -204,6 +215,7 @@ export default {
     const e = [];
     if (!(s.articles || '').trim()) e.push({ field: 'articles', message: getLang() === 'fr' ? 'Collez au moins un article, par ex. KB-01, J’ai perdu ma carte, Claire Dubois, 2026-09-30, procédure, client.' : 'Paste at least one article, for example KB-01, I lost my card, Priya Shah, 2026-09-30, procedure, customer.' });
     if (!(s.questions || '').trim()) e.push({ field: 'questions', message: getLang() === 'fr' ? 'Collez au moins une question client, par ex. J’ai perdu ma carte, 6500, KB-01, O.' : 'Paste at least one customer question, for example I lost my card, 6500, KB-01, Y.' });
+    for (const i of validateInput(s)) e.push({ field: i.field, message: issueText(i) });
     return e;
   },
   run(s, ctx) {

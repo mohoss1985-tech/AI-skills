@@ -14,14 +14,44 @@ const AUD_ALIAS = { customer: 'customer', customers: 'customer', client: 'custom
 const EFFORT = { write: 1, partial: 0.5, review: 0.5, dedupe: 0.5, internal: 1, owner: 0 };
 
 const dayMs = 86400000;
-const toDay = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null; };
+/** YYYY-MM-DD, or day-first DD/MM/YYYY, DD.MM.YYYY, D/M/YY (never month-first). Impossible dates (31/02) → null. */
+export function isoDate(s) {
+  const t = String(s || '').trim();
+  let y, mo, d;
+  let m = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/.exec(t);
+  if (m) [, y, mo, d] = m; else if ((m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/.exec(t))) { [, d, mo, y] = m; if (y.length === 2) y = '20' + y; } else return '';
+  const dt = new Date(Date.UTC(+y, +mo - 1, +d));
+  return dt.getUTCFullYear() === +y && dt.getUTCMonth() === +mo - 1 && dt.getUTCDate() === +d ? dt.toISOString().slice(0, 10) : '';
+}
+const toDay = (s) => { const iso = isoDate(s); if (!iso) return null; const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso); return Date.UTC(+m[1], +m[2] - 1, +m[3]); };
 
 export function parseArticles(text) {
   return parseList(text, ['id']).map((r) => ({
-    id: r[0] || '', title: r[1] || '', owner: r[2] || '', last: r[3] || '',
+    id: r[0] || '', title: r[1] || '', owner: r[2] || '', last: isoDate(r[3]) || r[3] || '',
     type: TYPE_ALIAS[(r[4] || '').toLowerCase()] || 'faq', audience: AUD_ALIAS[(r[5] || '').toLowerCase()] || 'customer',
   })).filter((a) => a.id);
 }
+/** Row-level input checks → [{field, code, row, vars}]. Nothing is corrected silently: a comma in a title, a bad date,
+    a repeated id or a non-numeric volume is reported with its row number. */
+export function validateInput(state) {
+  const out = [];
+  const arts = parseList(state.articles, ['id']);
+  const seen = new Set();
+  arts.forEach((r, i) => {
+    const row = i + 1, id = r[0] || '';
+    if (r.length > 6) out.push({ field: 'articles', code: 'vCols', row, vars: { row, id, n: r.length } });
+    if (id && seen.has(id.toUpperCase())) out.push({ field: 'articles', code: 'vDupId', row, vars: { row, id } });
+    seen.add(id.toUpperCase());
+    if ((r[3] || '').trim() && !isoDate(r[3])) out.push({ field: 'articles', code: 'vDate', row, vars: { row, id, v: r[3] } });
+  });
+  parseList(state.questions, ['question']).forEach((r, i) => {
+    const row = i + 1, v = String(r[1] ?? '').trim();
+    if (v !== '' && !/^\d[\d\s\u00a0,.]*$/.test(v)) out.push({ field: 'questions', code: 'vVolume', row, vars: { row, q: r[0] || '', v } });
+    if (r[3] && !/^(Y|YES|O|OUI|P|PARTIAL|PARTIEL|N|NO|NON)$/i.test(r[3])) out.push({ field: 'questions', code: 'vAnswer', row, vars: { row, q: r[0] || '', v: r[3] } });
+  });
+  return out;
+}
+
 export function parseOwners(text) {
   return parseList(text, ['name', 'nom', 'owner']).map((r) => ({ name: r[0] || '', team: r[1] || '', left: /^(left|parti|partie|gone|inactive|inactif)$/i.test(r[2] || '') })).filter((o) => o.name);
 }
@@ -75,7 +105,7 @@ export function audit(state) {
   }
   for (const a of articles) {
     if (a.bucket === 'stale' || a.bucket === 'never') act('review', a.id, { id: a.id, t: a.title, age: a.age ?? '—' }, a.volume, a.ownerStatus === 'ok' ? a.owner : '');
-    if (a.ownerStatus !== 'ok') act('owner', a.id, { id: a.id, t: a.title, who: a.owner }, a.volume);
+    if (a.ownerStatus !== 'ok') act('owner', a.id, { id: a.id, t: a.title, who: a.owner, status: a.ownerStatus }, a.volume);
   }
   const order = { write: 0, internal: 1, partial: 2, review: 3, dedupe: 4, owner: 5 };
   actions.sort((x, y) => y.volume - x.volume || order[x.type] - order[y.type]);
@@ -97,7 +127,7 @@ export function audit(state) {
     coveredPct: totalVol ? Math.round((100 * vol(['ok'])) / totalVol) : 0,
     gapVolume: vol(['gap']), totalVol, weeks: perWeek ? Math.ceil(used / perWeek) : null, effort: used, perWeek,
   };
-  return { articles, questions, owners: ownerRows, actions, summary, cycles, asOf: new Date(asOf).toISOString().slice(0, 10) };
+  return { issues: validateInput(state), articles, questions, owners: ownerRows, actions, summary, cycles, asOf: new Date(asOf).toISOString().slice(0, 10) };
 }
 
 export function actionsCsv(r, label = (a) => a.type) {

@@ -7,7 +7,7 @@ import { register, getLang } from '../../core/i18n.js';
 import strings from './i18n.js';
 import { SAMPLES } from './samples.js';
 import { SAMPLES as UAT_SAMPLES } from '../uat-tracker/samples.js';
-import { toSpec, validate, testsCsv, featureFiles, executionJson, testsBulkJson, importGuide, checkColumns, testsFromList, testsFromUat, testsFromApi, TYPES, JIRA_PRIORITIES, labelsOf } from './logic.js';
+import { toSpec, validate, testsCsv, testsCsvAll, blockingErrors, featureFiles, executionJson, testsBulkJson, importGuide, checkColumns, testsFromList, testsFromSfdCsv, testsFromUat, testsFromApi, TYPES, JIRA_PRIORITIES, labelsOf } from './logic.js';
 import { fmtVars, mdCell } from '../uat-tracker/csv.js';
 
 const T = register('xray-builder', strings);
@@ -49,7 +49,7 @@ function toMarkdown(state) {
     L.push('');
   }
   L.push(`### 5 · ${T('md5')}`, '');
-  const csv = testsCsv(spec, target);
+  const csv = testsCsvAll(spec, target);
   if (csv) L.push('`tests.csv`', '', '```csv', csv.replace(/\r\n/g, '\n').trimEnd(), '```', '');
   for (const f of featureFiles(spec)) L.push(`\`${f.name}\``, '', '```gherkin', f.text.trimEnd(), '```', '');
   const ex = executionJson(spec, target);
@@ -102,6 +102,7 @@ function mount(el, ctx) {
   const tgtF = ui.field({ label: T('target'), input: tgt });
   const addMenu = ui.menu({ label: T('addFrom'), icon: 'import', items: [
     { label: T('fromList'), icon: 'import', onClick: () => pasteDialog() },
+    { label: T('fromSfd'), hint: T('fromSfdHint'), icon: 'file-text', onClick: () => pasteDialog(true) },
     { label: T('fromUat'), hint: T('fromUatHint'), icon: 'clipboard-check', onClick: () => fromTool('uat-tracker') },
     { label: T('fromApi'), hint: T('fromApiHint'), icon: 'send', onClick: () => fromTool('api-tester') },
   ] });
@@ -265,7 +266,7 @@ function mount(el, ctx) {
     table.setRows(tests.map((t, i) => { const id = t.id || `#${i + 1}`; const mine = byTest(id); return { ...t, _e: mine.filter((x) => x.level === 'error').length, _w: mine.filter((x) => x.level === 'warn').length }; }));
     markSel();
     const has = tests.length > 0;
-    empty.hidden = has; main.hidden = !has; lower.hidden = !has;
+    empty.hidden = has; main.hidden = !has; lower.hidden = !has || !ready || !!ctx.guided; // guided: inputs only until Run
     // validation panel
     valBox.replaceChildren();
     const e = issues.filter((i) => i.level === 'error').length, w = issues.filter((i) => i.level === 'warn').length;
@@ -285,7 +286,7 @@ function mount(el, ctx) {
     }
     // previews
     const pre = (text, lang) => { const c = ui.codeEditor({ value: text, lang, readonly: true, rows: 14 }); const w2 = h('div', 'xr-code'); w2.append(ui.copyButton({ text, size: 'sm', variant: 'ghost' }), c); return w2; };
-    const csv = testsCsv(spec, target);
+    const csv = testsCsvAll(spec, target);
     pv.csv.replaceChildren(csv ? pre(csv.replace(/\r\n/g, '\n'), 'bash') : h('p', 'xr-hint', T('noManual')));
     const files = featureFiles(spec);
     pv.feature.replaceChildren(...(files.length ? files.map((f) => { const d = h('div', 'xr-file'); d.append(h('div', 'xr-fname mono', f.name), pre(f.text, 'gherkin')); return d; }) : [h('p', 'xr-hint', T('noCucumber'))]));
@@ -294,25 +295,29 @@ function mount(el, ctx) {
     pv.bulk.replaceChildren(pre(JSON.stringify(testsBulkJson(spec), null, 2), 'json'));
     pv.guide.replaceChildren(pre(importGuide(spec, target), 'bash'));
     pvTabs.setCount('feature', files.length || '');
-    ctx.frame.setStatus(e ? { tone: 'bad', text: fmt('statusBad', { e, target: targetName(target) }) } : { tone: 'ok', text: fmt('statusOk', { n: tests.length, target: targetName(target) }) });
+    if (!ready || ctx.guided) ctx.frame.setStatus(null);
+    else ctx.frame.setStatus(e ? { tone: 'bad', text: fmt('statusBad', { e, target: targetName(target) }) } : { tone: 'ok', text: fmt('statusOk', { n: tests.length, target: targetName(target) }) });
     paintEditorIssues();
     return { errors: e, warnings: w, tests: tests.length, target };
   }
 
   // ---- sources
-  function pasteDialog() {
+  function pasteDialog(sfd = false) {
     const ta = ui.textarea({ rows: 12, mono: true, placeholder: 'CARD-T10: Card blocked twice shows one confirmation\nreq: CARD-110\nTap Block on a blocked card | Test card 4111… | The button is disabled' });
-    const f = ui.field({ label: T('pasteTitle'), help: T('pasteHelp'), input: ta });
+    if (sfd) ta.placeholder = 'ID,Rule,Example,Source,Message,Stories,Test idea';
+    const f = ui.field({ label: T(sfd ? 'pasteSfdTitle' : 'pasteTitle'), help: T(sfd ? 'pasteSfdHelp' : 'pasteHelp'), input: ta });
     const apply = (replace) => (close) => {
-      const list = testsFromList(ta.value, { prefix: `${S().project || 'TEST'}-T` });
-      if (!list.length) { f.setError(T('pasteNone')); return false; }
+      const prefix = `${S().project || 'TEST'}-T`;
+      const fromSfd = testsFromSfdCsv(ta.value, { prefix }); // an SFD rules CSV pasted in the plain dialog is recognised too
+      const list = sfd || fromSfd.length ? fromSfd : testsFromList(ta.value, { prefix });
+      if (!list.length) { f.setError(T(sfd ? 'pasteNoSfd' : 'pasteNone')); return false; }
       const tests = replace ? list : [...(S().tests || []), ...list];
       sel = replace ? 0 : (S().tests || []).length; ctx.__xraySel = sel;
       setTests(tests, { repaintEditor: true });
       ctx.toast(fmt('added', { n: list.length }));
       close && close();
     };
-    ui.modal({ title: T('pasteTitle'), body: f, size: 'lg', actions: [{ label: T('cancel') }, { label: T('pasteReplace'), onClick: apply(true) }, { label: T('pasteAdd'), variant: 'primary', onClick: apply(false) }] });
+    ui.modal({ title: T(sfd ? 'pasteSfdTitle' : 'pasteTitle'), body: f, size: 'lg', actions: [{ label: T('cancel') }, { label: T('pasteReplace'), onClick: apply(true) }, { label: T('pasteAdd'), variant: 'primary', onClick: apply(false) }] });
     setTimeout(() => ta.focus(), 0);
   }
   async function fromTool(tool) {
@@ -342,12 +347,22 @@ function mount(el, ctx) {
 
   el.append(adv, empty, main, lower);
   ctx.__xrayRefresh = refresh;
+  // The frame sets ctx.guided right AFTER mount: first reveal of validation + previews waits one macrotask (rule 8).
+  let ready = false;
   refresh();
   paintEditor();
+  setTimeout(() => { ready = true; refresh(); }, 0);
 }
 
 /* ---------------------------------------------------------------- module */
-const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state, autorun: true }));
+const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state }));
+/** Downloads are blocked while validation errors exist; the message lists them (the Validation panel shows them in full). */
+function gate(s) {
+  const spec = specOf(s);
+  const errs = blockingErrors(spec, tgtOf(s));
+  if (!errs.length) return;
+  throw new Error(`${fmt('statusBad', { e: errs.length, target: targetName(tgtOf(s)) })} · ${T('fixFirst')}: ${errs.slice(0, 3).map((i) => `${i.test ? i.test + ' ' : ''}${issueText(i, spec)}`).join(' | ')}${errs.length > 3 ? ' …' : ''}`);
+}
 const tgtOf = (s) => s.target || 'cloud';
 
 export default {
@@ -380,9 +395,9 @@ export default {
   },
   toMarkdown,
   exports: [
-    { id: 'csv', label: { en: strings.en.exportCsv, fr: strings.fr.exportCsv }, build: (s) => { const t = testsCsv(specOf(s), tgtOf(s)); if (!t) throw new Error(T('noManual')); return { name: `tests-${tgtOf(s)}.csv`, mime: 'text/csv', text: t }; } },
-    { id: 'bulk', label: { en: strings.en.exportBulk, fr: strings.fr.exportBulk }, build: (s) => ({ name: `tests-${tgtOf(s)}.json`, mime: 'application/json', text: JSON.stringify(testsBulkJson(specOf(s)), null, 2) + '\n' }) },
-    { id: 'results', label: { en: strings.en.exportResults, fr: strings.fr.exportResults }, build: (s) => { const j = executionJson(specOf(s), tgtOf(s)); if (!j || !j.tests.length) throw new Error(T('noResults')); return { name: `results-${tgtOf(s)}.json`, mime: 'application/json', text: JSON.stringify(j, null, 2) + '\n' }; } },
+    { id: 'csv', label: { en: strings.en.exportCsv, fr: strings.fr.exportCsv }, build: (s) => { gate(s); const t = testsCsvAll(specOf(s), tgtOf(s)); if (!t) throw new Error(T('noTests')); return { name: `tests-${tgtOf(s)}.csv`, mime: 'text/csv', text: t }; } },
+    { id: 'bulk', label: { en: strings.en.exportBulk, fr: strings.fr.exportBulk }, build: (s) => (gate(s), { name: `tests-${tgtOf(s)}.json`, mime: 'application/json', text: JSON.stringify(testsBulkJson(specOf(s)), null, 2) + '\n' }) },
+    { id: 'results', label: { en: strings.en.exportResults, fr: strings.fr.exportResults }, build: (s) => { gate(s); const j = executionJson(specOf(s), tgtOf(s)); if (!j || !j.tests.length) throw new Error(T('noResults')); return { name: `results-${tgtOf(s)}.json`, mime: 'application/json', text: JSON.stringify(j, null, 2) + '\n' }; } },
     { id: 'guide', label: { en: strings.en.exportGuide, fr: strings.fr.exportGuide }, build: (s) => ({ name: `IMPORT-${tgtOf(s)}.md`, mime: 'text/markdown', text: importGuide(specOf(s), tgtOf(s)) }) },
   ],
   aiActions: [

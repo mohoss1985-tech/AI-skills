@@ -40,9 +40,17 @@ Score each answer 0/1 (or 0–1) per metric. Retrieval and generation are measur
 
 Faithfulness, answer relevance, context precision and context recall follow the definitions popularised by the Ragas framework; any evaluation tool can compute them.
 
+**Score at claim level, and say how each score was produced.** Break the answer into atomic claims, then:
+
+- *Faithfulness* = supported claims / claims, against the retrieved context only.
+- *Correctness* = F1 over claims against the approved answer (covered, missing, contradicting).
+- *Context recall* = approved-answer claims found in the retrieved context / its claims.
+
+A rule-based pre-check (no LLM) can settle the mechanical part: numbers with units normalised (120 days ≈ 4 months, 6 months ≠ 120 days), flipped negation or yes/no, terms the context never mentions. It cannot judge synonyms or implied meaning, so label every score `rule` or `judge`, and never present keyword overlap as "answer relevance": call it "on-topic (keywords)" (the `answer_relevance` column of `score_eval.py`).
+
 ## 3. Who judges
 
-- **LLM-as-judge** for scale, with a written rubric per metric and 2–3 scored examples in the prompt.
+- **LLM-as-judge** for scale, with a written rubric per metric and 2–3 scored examples in the prompt. Ask for the claims, a verdict and a reason per claim, the ratio, then 0 / 1 against the threshold (Ragas / DeepEval method), as JSON.
 - **Business-expert review** on a stratified sample (all `high` risk items + 10% of the rest) to calibrate the judge. Report judge–human agreement; below ~85%, fix the rubric before trusting automated scores.
 - **Disagreement log:** every case where human and judge differ is reviewed in the weekly quality ritual.
 

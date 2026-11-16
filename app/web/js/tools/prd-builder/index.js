@@ -143,7 +143,8 @@ function mount(el, ctx) {
   el.append(adv, aiBox, host);
   paintAi();
   paintSections();
-  paintResults(ctx);
+  // The frame sets ctx.guided right AFTER mount: first paint of results waits one macrotask (rule 8).
+  setTimeout(() => { ctx._prdReady = true; paintResults(ctx); }, 0);
 }
 
 /* ---------------------------------------------------------------------------------------------- results pane */
@@ -158,6 +159,7 @@ function paintResults(ctx) {
       sample: { label: T('sample.load'), onClick: () => ctx.loadSample(getLang() === 'fr' ? 'fr' : 'en', 0) } }));
     return;
   }
+  if (!ctx._prdReady || ctx.guided) { if (ctx.guided) frame.setStatus(null); return; } // guided: the frame shows the invitation
   const m = meter(s);
   frame.setStatus({ tone: TONE[m.verdict], text: `${T('meter.pct', { pct: m.pct })} · ${T('verdict.' + m.verdict)}` });
 
@@ -263,13 +265,14 @@ export default {
   ],
 };
 
-/** Jira CSV: one Epic (the PRD) + one Story per requirement, Parent = the epic summary (map it in the import wizard). */
+/** Jira CSV (Atlassian CSV import): "Work item ID" + "Work type" + "Parent". The Epic row comes first (id 1);
+    each requirement is a Story whose Parent is the epic's Work item ID. */
 function epicCsv(s) {
   const cell = (v) => { const x = v == null ? '' : String(v); return /[",\n\r;]/.test(x) ? `"${x.replace(/"/g, '""')}"` : x; };
   const prio = { Must: 'High', Should: 'Medium', Could: 'Low', "Won't": 'Lowest' };
-  const rows = [['Summary', 'Issue Type', 'Description', 'Priority', 'Labels', 'Parent']];
+  const rows = [['Work item ID', 'Work type', 'Summary', 'Description', 'Priority', 'Labels', 'Parent']];
   const title = s.title || 'PRD';
-  rows.push([title, 'Epic', [s.tldr || s.problem, '', ...s.goals.map((g) => `${g.id}: ${g.text}`)].join('\n'), 'High', 'prd', '']);
-  for (const r of s.reqs) rows.push([`${r.id} ${r.text}`.slice(0, 250), 'Story', `${r.text}\n\nGoal: ${parseIds(r.goal).join(', ') || '—'}${r.notes ? `\n${r.notes}` : ''}`, prio[r.priority] || 'Medium', 'prd', title]);
-  return '﻿' + rows.map((r) => r.map(cell).join(',')).join('\r\n');
+  rows.push([1, 'Epic', title, [s.tldr || s.problem, '', ...s.goals.map((g) => `${g.id}: ${g.text}`)].join('\n'), 'High', 'prd', '']);
+  s.reqs.forEach((r, i) => rows.push([i + 2, 'Story', `${r.id} ${r.text}`.slice(0, 250), `${r.text}\n\nGoal: ${parseIds(r.goal).join(', ') || '—'}${r.notes ? `\n${r.notes}` : ''}`, prio[r.priority] || 'Medium', 'prd', 1]));
+  return '\ufeff' + rows.map((r) => r.map(cell).join(',')).join('\r\n');
 }

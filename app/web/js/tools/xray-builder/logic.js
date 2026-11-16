@@ -5,7 +5,7 @@
      execution?: {summary, version, testPlanKey, testExecutionKey, environments: [], start, finish, results: [{test, status, comment, defects}]}}
    The tool state keeps labels / requirements as text ("a b" / "CARD-110, CARD-111"); toSpec() turns it into the spec.
    Target: 'cloud' | 'server' (Server / Data Center). */
-import { toCsv, parseRows } from '../uat-tracker/csv.js';
+import { toCsv, parseRows, sfdRulesFromCsv } from '../uat-tracker/csv.js';
 
 export const KEY = /^[A-Z][A-Z0-9_]+-\d+$/;
 export const PROJECT = /^[A-Z][A-Z0-9_]+$/;
@@ -142,6 +142,43 @@ export function testsCsv(spec, target = 'cloud') {
   }
   return toCsv(rows);
 }
+
+/** One CSV for ALL test types (Xray Test Case Importer maps "Gherkin Definition" and "Unstructured Definition" too).
+    Manual tests keep the layout of testsCsv (one row per step, same id on every row); a Cucumber test is one row with
+    Test Type Cucumber + Gherkin Definition; a Generic test is one row with Test Type Generic + Unstructured Definition.
+    With manual tests only, the two extra columns are left out so the file equals testsCsv (parity with build_xray.py).
+    The precondition stays in the Description (real Precondition issues are a later step). */
+export function testsCsvAll(spec, target = 'cloud') {
+  const all = spec.tests || [];
+  if (!all.length) return '';
+  const hasC = all.some((t) => t.type === 'cucumber'), hasG = all.some((t) => t.type === 'generic');
+  if (!hasC && !hasG) return testsCsv(spec, target);
+  const nReq = Math.max(1, ...all.map((t) => (t.requirements || []).length));
+  const nLab = Math.max(1, ...all.map((t) => (t.labels || []).length));
+  const step = target === 'server' && spec.serverStepColumn === 'Step' ? 'Step' : 'Action';
+  const head = ['Test ID', 'Summary', 'Description', 'Test Type', 'Priority', 'Test Repository Path',
+    ...Array(nReq).fill('Requirement'), ...Array(nLab).fill('Labels'), step, 'Data', 'Expected Result',
+    ...(hasC ? ['Gherkin Definition'] : []), ...(hasG ? ['Unstructured Definition'] : [])];
+  const rows = [head];
+  const extra = (c, g) => [...(hasC ? [c] : []), ...(hasG ? [g] : [])];
+  for (const t of all) {
+    let desc = (t.description || '').trim();
+    if (t.precondition) desc = (desc ? desc + '\n\n' : '') + 'Precondition: ' + t.precondition.trim();
+    const reqs = [...(t.requirements || []), ...Array(nReq - (t.requirements || []).length).fill('')];
+    const labs = [...(t.labels || []), ...Array(nLab - (t.labels || []).length).fill('')];
+    const first = [t.id, t.summary, desc, TYPES[t.type] || 'Manual', t.priority || '', t.folder || spec.folder || '', ...reqs, ...labs];
+    if (t.type === 'cucumber') rows.push([...first, '', '', '', ...extra((t.scenario || '').split('\n').map((l) => l.trim()).filter(Boolean).join('\n'), '')]);
+    else if (t.type === 'generic') rows.push([...first, '', '', '', ...extra('', t.definition || '')]);
+    else {
+      const blank = [t.id, ...Array(first.length - 1).fill('')];
+      (t.steps || []).forEach((st, j) => rows.push([...(j === 0 ? first : blank), st.action, st.data || '', st.result, ...extra('', '')]));
+    }
+  }
+  return toCsv(rows);
+}
+
+/** Blocking errors (level "error") of a spec: the CSV / JSON downloads refuse while any exist. */
+export const blockingErrors = (spec, target = 'cloud') => validate(spec, target).filter((i) => i.level === 'error');
 
 /* ---------------------------------------------------------------- .feature files (port of write_features) */
 const slug = (s) => (String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50)) || 'tests';
@@ -302,7 +339,7 @@ export function testsFromList(text, { prefix = 'T' } = {}) {
     const m = head.match(/^([A-Z][A-Z0-9_]*-[A-Z]*\d+)\s*(?:[:|–-])\s*(.+)$/);
     if (m) { id = m[1]; head = m[2].trim(); }
     const rest = lines.slice(1).map((l) => l.trim().replace(/^\s*(?:[-*•]|\d+[.)])\s+/, ''));
-    const t = { id: id || `${prefix}-${String(++n).padStart(2, '0')}`, type: 'manual', summary: head, priority: 'Medium', labels: '', requirements: '', folder: '', precondition: '', steps: [], scenario: '', definition: '' };
+    const t = { id: id || `${prefix}${/[A-Za-z]$/.test(prefix) ? '' : '-'}${String(++n).padStart(2, '0')}`, type: 'manual', summary: head, priority: 'Medium', labels: '', requirements: '', folder: '', precondition: '', steps: [], scenario: '', definition: '' };
     if (rest.length && rest.every((l) => isGherkin(l))) { t.type = 'cucumber'; t.scenario = rest.join('\n'); }
     else if (rest.length === 1 && /^definition\s*:/i.test(rest[0])) { t.type = 'generic'; t.definition = rest[0].replace(/^definition\s*:\s*/i, ''); }
     else {
@@ -318,6 +355,8 @@ export function testsFromList(text, { prefix = 'T' } = {}) {
         else t.steps.push({ action: l, data: '', result: '' });
       }
     }
+    // a manual test needs a step to import: start from its title (the tester refines it)
+    if (t.type === 'manual' && !t.steps.length) t.steps.push({ action: head, data: '', result: '' });
     return t;
   };
   for (const b of blocks) {
@@ -327,6 +366,20 @@ export function testsFromList(text, { prefix = 'T' } = {}) {
     else tests.push(one(b));
   }
   return tests;
+}
+
+/** SFD builder rules CSV → one Manual test per rule: requirement = the rule's story when it is a Jira key (else none),
+    label = the rule id (so the trace to the SFD survives), step = the worked example, expected result = the rule.
+    Ids `<prefix>NN`; returns [] when the text is not an SFD rules CSV. */
+export function testsFromSfdCsv(text, { prefix = 'T' } = {}) {
+  const { rules, error } = sfdRulesFromCsv(text);
+  if (error) return [];
+  return rules.map((r, i) => {
+    const stories = listOf(r.stories).filter((x) => KEY.test(x));
+    return { id: `${prefix}${/[A-Za-z]$/.test(prefix) ? '' : '-'}${String(i + 1).padStart(2, '0')}`, type: 'manual', summary: `${r.id} · ${r.text}`.slice(0, 200), priority: 'Medium',
+      labels: r.id.replace(/\s+/g, '-'), requirements: stories.join(', '), folder: '', precondition: '',
+      steps: [{ action: r.example || r.text, data: '', result: r.text }], scenario: '', definition: '' };
+  });
 }
 
 /** UAT tracker state → tests (one Manual test per case, one step; status → execution result). */
@@ -368,17 +421,20 @@ export function importGuide(spec, target) {
     ? `# get a token (valid 24 h)\nexport XRAY_TOKEN=$(curl -s -H "Content-Type: application/json" -X POST --data '{"client_id":"'$XRAY_CLIENT_ID'","client_secret":"'$XRAY_CLIENT_SECRET'"}' ${base}/authenticate | tr -d '"')`
     : '# JIRA_PAT = a Jira personal access token (Profile › Personal Access Tokens)';
   const tests = spec.tests || [];
-  const nCsv = tests.filter((t) => t.type === 'manual').length;
+  const nCsv = tests.length;
   const files = featureFiles(spec);
   const nFeat = files.reduce((a, f) => a + f.count, 0);
   const ex = executionJson(spec, target);
   const g = [`# Import guide · ${title} · project ${p}`, ''];
   let step = 1;
   if (nCsv) {
-    g.push(`## ${step++}. Manual tests (${nCsv}) · \`tests.csv\``, '', 'Jira › Xray › **Test Case Importer** › CSV. Delimiter `,`, encoding UTF-8. Tick **Create folders** if the repository folders don\'t exist yet.', '',
+    g.push(`## ${step++}. Tests (${nCsv}) · \`tests.csv\``, '', 'Jira › Xray › **Test Case Importer** › CSV. Delimiter `,`, encoding UTF-8. Tick **Create folders** if the repository folders don\'t exist yet.', '',
       '| CSV column | Map to |', '|---|---|', '| Test ID | Test Case Identifier (groups the step rows of one test) |', '| Summary | Summary |', '| Description | Description |',
       '| Test Type | Test Type |', '| Priority | Priority |', '| Test Repository Path | Test Repository Path |', '| Requirement (each column) | Link "Tests" |', '| Labels (each column) | Labels |',
       `| Action · Data · Expected Result | ${target === 'cloud' ? 'Action · Data · Expected Result' : 'Step · Data · Expected Result (named Action in recent versions) *to confirm on your version*'} |`, '',
+      ...(tests.some((t) => t.type === 'cucumber') ? ['| Gherkin Definition | Gherkin Definition (Cucumber tests) |'] : []),
+      ...(tests.some((t) => t.type === 'generic') ? ['| Unstructured Definition | Generic Definition (Generic tests) |'] : []), '',
+      ...(nFeat ? ['> **Cucumber tests are in this CSV and in the `.feature` files.** Pick one route for them (CSV or `.feature`), not both, or they are created twice.', ''] : []),
       'Save the mapping as a configuration file at the end: next imports take one click.', '');
   }
   if (nFeat) {

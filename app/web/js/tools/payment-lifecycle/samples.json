@@ -4,7 +4,6 @@
    "id": "reversal",
    "label": "Hotel cancels before clearing: reversal",
    "hint": "Harbour Hotel, €65.00, same evening",
-   "autorun": true,
    "state": {
     "scheme": "visa",
     "currency": "EUR",
@@ -29,7 +28,6 @@
    "id": "refund",
    "label": "Customer returns one pair: partial refund",
    "hint": "Northwind Shoes, €120.00 cleared, €40 back",
-   "autorun": true,
    "state": {
     "scheme": "visa",
     "currency": "EUR",
@@ -54,7 +52,6 @@
    "id": "not-received",
    "label": "\"Not received\" (13.1): merchant wins on representment",
    "hint": "Atlas Home, €89.00, signed proof of delivery",
-   "autorun": true,
    "state": {
     "scheme": "visa",
     "currency": "EUR",
@@ -86,8 +83,7 @@
   {
    "id": "fraud-3ds",
    "label": "Stolen card, 10.4 fraud: blocked by 3-D Secure, issuer pays",
-   "hint": "QuickGift Codes, €219.00, ECI 05 (switch 3-D Secure to None to see €349 charged back)",
-   "autorun": true,
+   "hint": "QuickGift Codes, €219.00, ECI 05 (switch 3-D Secure to None: the chargeback opens against the merchant)",
    "state": {
     "scheme": "visa",
     "currency": "EUR",
@@ -114,7 +110,6 @@
    "id": "reversal",
    "label": "Annulation avant remise : double autorisation",
    "hint": "Boulangerie, 12,40 € autorisés deux fois",
-   "autorun": true,
    "state": {
     "scheme": "cb",
     "currency": "EUR",
@@ -139,7 +134,6 @@
    "id": "refund",
    "label": "Remboursement après retour",
    "hint": "Boutique, 79 € compensés, article renvoyé",
-   "autorun": true,
    "state": {
     "scheme": "cb",
     "currency": "EUR",
@@ -164,7 +158,6 @@
    "id": "not-received",
    "label": "Marchandise non reçue : représentation gagnée",
    "hint": "Marchand en ligne, 89 €, preuve de livraison signée",
-   "autorun": true,
    "state": {
     "scheme": "cb",
     "currency": "EUR",
@@ -196,8 +189,7 @@
   {
    "id": "fraud-3ds",
    "label": "Carte volée : 140 € authentifiés 3-D Secure, la banque supporte",
-   "hint": "Remboursement L133-18 J+1 ; passez 3-D Secure à Aucun pour voir l’impayé sur 60 €",
-   "autorun": true,
+   "hint": "Remboursement L133-18 J+1 ; passez 3-D Secure à Aucun : l’impayé s’ouvre contre le commerçant",
    "state": {
     "scheme": "cb",
     "currency": "EUR",

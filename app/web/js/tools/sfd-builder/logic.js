@@ -7,7 +7,7 @@ export const VAGUE = ['should', 'ideally', 'etc', 'as usual', 'if possible', 'no
   'devrait', 'idéalement', 'comme d\'habitude', 'si possible', 'normalement', 'rapidement', 'approprié', 'etc.'];
 
 const TYPE_WORDS = [
-  ['amount', /\b(amount|montant|€|eur)\b/i], ['datetime', /\b(datetime|timestamp|horodatage|date-heure|date et heure)\b/i],
+  ['amount', /(\b(amount|montant|eur)\b|€)/i], ['datetime', /\b(datetime|timestamp|horodatage|date-heure|date et heure)\b/i],
   ['date', /\b(date)\b/i], ['number', /\b(number|nombre|integer|entier|numeric|numérique)\b/i],
   ['boolean', /\b(boolean|booléen|checkbox|case à cocher|yes\/no|oui\/non)\b/i], ['button', /\b(button|bouton)\b/i],
   ['list', /\b(list|liste|table)\b/i], ['choice', /\b(choice|choix|select|enum|liste de valeurs)\b/i], ['id', /\b(id|identifier|identifiant)\b/i],
@@ -20,7 +20,8 @@ const pad = (n) => String(n).padStart(2, '0');
 export const rgId = (n) => `RG-${pad(n)}`;
 export const msgId = (n) => `MSG-${pad(n)}`;
 export const parseIds = (v) => [...new Set(String(v ?? '').split(/[\s,;]+/).map((x) => x.trim().toUpperCase()).filter(Boolean))];
-const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.replace(/^\s*[-*•]\s*/, '').trim()).filter(Boolean);
+// list markers only: `-`, `*`, `•`, `1.`, `2)` (a number that belongs to the text stays)
+const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.replace(/^\s*(?:[-*•]\s*|\d{1,3}[.)]\s+)/, '').trim()).filter(Boolean);
 
 export function vagueWords(text) {
   const s = ' ' + String(text || '').toLowerCase().replace(/[,;:!?()«»"]/g, ' ').replace(/\.(\s|$)/g, ' ') + ' ';
@@ -171,7 +172,9 @@ export const mdTable = (head, rows) => [`| ${head.map(cell).join(' | ')} |`, `|$
 const csvCell = (v) => { const s = v == null ? '' : String(v); return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
 export const toCsv = (rows) => '﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
 
-/** Rules CSV (feeds the Xray builder and the UAT tracker): ID, Rule, Example, Source, Message, Stories, Test idea. */
+/** Rules CSV: ID, Rule, Example, Source, Message, Stories, Test idea. Importable by the UAT tracker ("Import from SFD rules CSV":
+    one case per rule, requirement = rule id, expected = example) and the Xray builder (Add from → SFD rules CSV: one manual test
+    per rule, label = rule id). Both read it with `sfdRulesFromCsv` (uat-tracker/csv.js); the header must stay as written here. */
 export function rulesCsv(state, T) {
   const ideas = Object.fromEntries(testIdeas(state, T).map((x) => [x.id, x.idea]));
   return toCsv([['ID', 'Rule', 'Example', 'Source', 'Message', 'Stories', 'Test idea'],

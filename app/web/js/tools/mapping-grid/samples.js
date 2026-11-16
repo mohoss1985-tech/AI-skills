@@ -175,11 +175,11 @@ T-01, 826, GBP, Livre sterling`,
 
 export const SAMPLES = {
   en: [
-    { id: 'visa-fraud-report', label: 'Fraud cases → Visa fraud reports', hint: 'Harbor Bank (sample)', state: EN_FRAUD, autorun: true },
-    { id: 'iso8583-json', label: 'ISO 8583 → internal JSON (with defects)', hint: 'Harbor Bank (sample)', state: EN_ISO, autorun: true },
+    { id: 'visa-fraud-report', label: 'Fraud cases → Visa fraud reports', hint: 'Harbor Bank (sample)', state: EN_FRAUD },
+    { id: 'iso8583-json', label: 'ISO 8583 → internal JSON (with defects)', hint: 'Harbor Bank (sample)', state: EN_ISO },
   ],
   fr: [
-    { id: 'cb-declaration', label: 'Dossiers de fraude → déclarations GIE CB', hint: 'Banque Lumière (exemple)', state: FR_FRAUD, autorun: true },
-    { id: 'iso8583-json', label: 'ISO 8583 → JSON interne (avec défauts)', hint: 'Banque Lumière (exemple)', state: FR_ISO, autorun: true },
+    { id: 'cb-declaration', label: 'Dossiers de fraude → déclarations GIE CB', hint: 'Banque Lumière (exemple)', state: FR_FRAUD },
+    { id: 'iso8583-json', label: 'ISO 8583 → JSON interne (avec défauts)', hint: 'Banque Lumière (exemple)', state: FR_ISO },
   ],
 };

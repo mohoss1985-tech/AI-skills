@@ -6,7 +6,7 @@
 import { register, getLang } from '../../core/i18n.js';
 import strings from './i18n.js';
 import { SAMPLES } from './samples.js';
-import { checkGraph, DECISION, fromJson, isFallback, layout, matchReply, NODE_W, nextId, nodeOf, outOf, replyChoices, stepsToGraph, TERMINAL, toJson, toMermaid, TYPES, walk } from './logic.js';
+import { runUtterances, checkGraph, DECISION, fromJson, isFallback, layout, matchReply, NODE_W, nextId, nodeOf, outOf, replyChoices, stepsToGraph, TERMINAL, toJson, toMermaid, TYPES, walk } from './logic.js';
 
 const T = register('journey-builder', strings);
 const fmt = (k, v = {}) => T(k).replace(/\{(\w+)\}/g, (_, x) => (v[x] ?? ''));
@@ -599,6 +599,20 @@ export default {
       ui.field({ label: T('solved'), help: T('solvedHelp'), optional: true, input: ui.input({ value: s.solved, onInput: set('solved') }) }),
       ui.field({ label: T('handoff'), help: T('handoffHelp'), optional: true, input: ui.input({ value: s.handoff, onInput: set('handoff') }) }),
       ui.field({ label: T('utterances'), help: T('utterancesHelp'), optional: true, input: ui.textarea({ value: s.utterances, rows: 5, onInput: set('utterances') }) }),
+      (() => {
+        const box = document.createElement('div'); box.className = 'jb-utt-results';
+        const go = ui.button({ label: T('runUtt'), icon: 'play', size: 'sm', variant: 'secondary', onClick: () => {
+          const g = G().nodes.length ? G() : stepsToGraph(ctx.state, { resolved: T('resolved') }).graph;
+          if (g.nodes.length < 2) { box.textContent = T('errSteps'); return; }
+          const r = runUtterances(g, ctx.state.utterances);
+          if (!r.total) { box.textContent = T('uttEmpty'); return; }
+          const tone = { pass: 'ok', fallback: 'warn', unhandled: 'bad', fail: 'bad' };
+          const tbl = ui.table({ columns: [{ key: 'utterance', label: T('uttPhrase') }, { key: 'branch', label: T('uttBranch'), format: (v) => v || '—' },
+            { key: 'status', label: T('uttResult'), format: (v) => ui.badge({ text: T('utt_' + v), tone: tone[v] }) }], rows: r.rows });
+          box.replaceChildren(ui.badge({ text: fmt('uttCover', { n: r.handled, t: r.total }), tone: r.handled === r.total ? 'ok' : 'warn' }), tbl);
+        } });
+        const w = document.createElement('div'); w.className = 'stack'; w.append(go, box); return w;
+      })(),
       ui.field({ label: T('titleField'), help: T('titleHelp'), optional: true, input: ui.input({ value: s.title, onInput: set('title') }) }),
     );
     const adv = ui.advanced({ label: T('advanced'), body: advBody, count: advCount() });
@@ -608,6 +622,7 @@ export default {
     el.append(steps, syn, adv, live.draftBox, live.inspector, live.checksEl);
     paintDraft();
     frame.output.replaceChildren(buildStage(ctx));
+    try { const k = 'kit-split:journey-builder', f = 'sp-default:journey-builder'; if (!localStorage.getItem(f)) { localStorage.setItem(f, '1'); localStorage.setItem(k, '0.3'); } const sp = el.closest('.splitpane'); const r = parseFloat(localStorage.getItem(k)); if (sp && r > 0.15 && r < 0.85) sp.style.setProperty('--split', `${r * 100}%`); } catch { /* default ratio */ }
     paintAll();
     requestAnimationFrame(() => fitZoom(0.8));
     startSim();
@@ -633,6 +648,7 @@ export default {
     paintAll();
     fitZoom(0.8);
     startSim();
+    requestAnimationFrame(() => { try { const st = live.canvas && live.canvas.closest('.jb-stage'); st && st.scrollIntoView({ block: 'start' }); } catch { /* ignore */ } });  // canvas + chat fully in view after Run
     if (prev) showNote(T('replaced'), { label: T('undo'), onClick: () => { commit(prev); showNote(T('restored')); } });
   },
   status() { return statusFor(); },

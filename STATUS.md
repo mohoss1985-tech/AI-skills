@@ -1,54 +1,56 @@
-# Analyst Kit V2 · build status (saved 2026-11-09 00:40)
+# Analyst Kit V3 · build status (started 2026-11-16)
 
-Resume by telling Claude: **"Continue the Analyst Kit V2 build from STATUS.md in
-~/Documents/Claude Built Apps/AnalystKit_V2_2026-11-08_1431."**
+Resume by telling Claude: **"Continue the Analyst Kit V3 build from STATUS.md in
+~/Documents/Claude Built Apps/AnalystKit_V3_2026-11-16_0022."**
 
-## Where things are
-- Folder: this one. Own local git repo (NOT the home repo). Commits so far: `a577883` baseline (tag `v1-baseline`),
-  `37a410e` Wave 0. Wave 1 work is **uncommitted** on purpose (builders must not commit; Claude commits at integration).
-- Published V1 repo: `~/Documents/Claude Built Apps/AI-skills` (clone of github.com/mohoss1985-tech/AI-skills) — untouched.
-- Contract: `GOAL.md`, `DESIGN_SPEC.md` (owner decisions ★: one codebase, V2 at `/`, V1 frozen at `/v1/` from tag
-  `v1.0.0`; MIT + CC BY; fictional Harbor Bank / Banque Lumière mock API; new tools tokenization + payment-lifecycle).
-- Research: `research/01…09` (+ `09-wave0.md`, `demo-api/`, `tech-draft/`). Builder rules: `research/wave1-common.md`.
+- Folder = git clone of the published AI-skills repo at V2 (`e0e6339`). Published repo untouched.
+- Owner goal: "a lot of tools are good, a lot are not; examples unclear, functions don't work right" →
+  every tool really works + is impressive. Builders run on the **Fable** model (owner request).
+- Method: command-library product-refinement-swarm playbook.
 
-## Update 2026-11-09 afternoon
-All 11 Wave-1 builders done (reports research/wave1-A…K.md). Integration: 27 backend tests + 13 tool logic test files
-pass; all 20 tools render with their sample (screenshots/v2/final/); static demo checked (API tester OK; SQL runner
-needs a real-browser check because headless virtual time stalls the sql.js worker). Committed `d5f37f0`.
-Next: owner says "push" → tag v1.0.0 in AI-skills repo + Release, sync V2 into it, README V1→V2, push, check Pages.
-Known polish: Home tool card descriptions still use V1 deliverable text; FR labels in A's action bar; 35 old Edge
-profile folders in the system temp dir (deleting them needs the owner's OK).
+## Phase
+1. Audit + best-in-class research: ONE Fable agent at a time (owner: slow burn). Queue: audit-1 (api-tester, sql-runner, tokenization, payment-lifecycle, kb-audit) **RUNNING** + audit-2 (prd, story, sfd, uat, xray) **RUNNING** → audit-3 (bpmn, journey, mapping, impact, rag) → audit-4 (wsjf, use-case, workshop, raci, ai-risk). Prompts = same as audit-1 with tool list + ports 93N1–93N9. Brief: `research/v3/00-audit-brief.md` (incl. talking points + quota rules).
+   NEW V3 feature (owner): every tool shows a Talking points panel — Replaces <product> · what it does · 2–3 how-it-works bullets.
+2. Checkpoint 1: owner reviews scores + V3 plan per tool.
+3. DESIGN_SPEC V3 delta → Checkpoint 2 → builders (≤7 at once, Fable) → integrate → ship as v3.0.0 (V2 kept at /v2/?).
 
-## Wave 1 builders (reports in research/wave1-<LETTER>.md)
-| Builder | Tools | State at save |
-|---|---|---|
-| A | design system, shell, core, V1 views restyle | running · `wave1-A-api.md` published; no final report yet |
-| B | backend, security token, workspaces, kit.py, pages.yml, LICENSE, CHANGELOG | **done** (27 tests pass) |
-| C | API tester + Harbor Bank mock (+ tokens/disputes endpoints) | running |
-| D | SQL runner | **done** (screenshots to retake once A's CSS lands) |
-| E | BPMN editor, Journey builder | running |
-| F | WSJF & PI planner, AI use-case scorer | **done** |
-| G | UAT tracker, Xray builder, RAG eval | running |
-| H | PRD, Story, SFD builders | running |
-| I | Mapping grid, Impact heatmap, KB audit | running |
-| J | Workshop kit, RACI & power grid, AI risk register | **not started** — prompt pattern = same as I (see below) |
-| K | Tokenization simulator, Payment lifecycle & chargeback simulator, skills `tokenizing-cards`, `handling-chargebacks` | running |
+## Pace + deadline (owner, 2026-11-16)
+- **2 Fable agents at once, never more.** Frugal prompts. Deadline: V3 shipped by **2026-11-17**.
+- Plan: audit-1 + audit-2 running → audit-3 + audit-4 → Checkpoint 1 (owner) → short DESIGN_SPEC V3 delta
+  (incl. shared Talking points panel) → builders in pairs, worst tools first → integrate, test, ship.
 
-If the session ended, running builders stopped: check which `research/wave1-<LETTER>.md` exist, then relaunch missing
-builders with "re-check the current state of your files first, then finish your Wave-1 <LETTER> task" + their prompt
-(prompts saved in `_Command Library/history/Analyst Kit V1 to V2 (2026-11-08)/`).
+## Owner decisions (2026-11-16, before sleeping)
+- **V3 is named "Skills Portal"** (instead of "AI skills" / "Analyst Kit"). Rename in-app title, README, Pages title.
+  Renaming the GitHub repo/URL is outward-facing → ask owner first (old links would redirect).
+- Overnight: Claude keeps going on its own (2 agents max): finish audits 1–4 → draft DESIGN_SPEC V3 delta →
+  start builders on clear bugs + Talking points panel + rename. **Nothing is pushed/published until the owner says so.**
 
-## Known follow-ups
-- Test PANs: use the corrected Luhn-valid list in `research/wave1-D.md` everywhere (C and K told).
-- D: `expects:'sql'` for AI actions → A to allow; B could add `tools/schemas/sql-runner.json`.
-- F: long titles truncated in A's grid; "1 pts free" plural.
-- Sandbox blocks local ports and `.git` writes → run servers/git with the sandbox disabled.
-- Usage limit hit twice (14:00 and 21:00); 7+ agents at once burn ~5 h of quota in ~2 h.
+## 2026-11-16 05:11 — quota event
+- 4 Fable agents (≈5 min) + 2 Fable agents (≈7 min) used the WHOLE 5-hour quota by 00:31; reset 05:10.
+  → Fable is very expensive. Now: **1 Fable agent at a time**, report saved per tool. Agent 2 paused until agent 1 is done.
+- Agent 1 resumed 05:11 (api-tester, sql-runner, tokenization captured; payment-lifecycle, kb-audit to do).
+- Agent 2 had screenshots for prd/story/sfd but no report → resume it after agent 1 (SendMessage, same instructions).
+- 05:16 audit-1 DONE (api-tester W; sql-runner, tokenization, payment-lifecycle, kb-audit Wk; none broken). Agent 2 resumed.
+- 05:23 audit-2 DONE (prd Wk, story Wk, sfd W, uat W, xray Wk; worst: cross-tool traceability cosmetic, Jira CSV epic link broken). Agent 3 resumed.
+- 05:31 audit-3 DONE (bpmn Wk, journey Wk, mapping W, impact Wk, rag Wk; worst: rag-eval scoring is word matching under Ragas names). Agent 4 resumed.
+- 05:33 quota hit AGAIN (window 05:10→10:10 lasted ~23 min with 1 Fable agent at a time). 10:11 agent 4 resumed (wsjf done; 4 tools left).
+- 10:14 audit-4 DONE. Scorecard: research/v3/SCORECARD.md (2 B, 13 Wk, 5 W). Waiting for owner Checkpoint 1 + Mix/Fable choice.
 
-## Remaining phases
-1. Finish Wave 1 (J + any unfinished builder).
-2. Integrate: run `python3 app/server/server.py`, fix cross-module errors, `python3 -m unittest` in `app/server/tests`,
-   static export, headless-Edge screenshots of every tool (light/dark, EN/FR) into `screenshots/v2/`, §9 checklist.
-3. Commit in this folder; then sync into `AI-skills` repo: tag `v1.0.0` on current V1 commit + GitHub Release, commit V2,
-   README (V1 → V2 before/after, 3 demos, disclaimer), push → Pages builds V2 at `/` and V1 at `/v1/` (only on owner "push").
-4. Save this run's prompts to the command library history (folder already created).
+## Checkpoint 1 APPROVED by owner (2026-11-16 ~10:30, "APPROVE" → Mix plan)
+Spec: research/v3/SPEC-V3.md · builder rules: research/v3/builder-common.md · reports: research/v3/build-<L>.md
+Waves (2 agents max):
+- W1: A (Sonnet) shell: rename, Talking points panel, guided demo, ⌘↵ · R1 (Fable) ai-risk-register
+- W2: B (Sonnet) use-case-scorer, wsjf, workshop-kit, impact-heatmap, kb-audit · R2 (Fable) rag-eval
+- W3: C (Sonnet) prd, story, xray, sfd, uat · R3 (Fable) tokenization
+- W4: D (Sonnet) api-tester, sql-runner, payment-lifecycle, bpmn, journey, mapping, raci
+- Then: lead integrates, tests, screenshots, owner says "push".
+- 10:45 A DONE (rename, talking points EN+FR, guided demo, ⌘↵). Launching B (Sonnet).
+- 10:50 quota hit (window 10:10→15:10 ≈ 40 min: A done, R1 + B partly done). 15:11 R1 + B resumed.
+- 15:12 R1 DONE (ai-risk-register: decision tree, OJ-sourced dates incl. Reg 2026/1744, 22/22 tests). R2 (Fable, rag-eval) launched; B still running.
+- 15:14 B DONE (use-case-scorer, wsjf, impact, workshop, kb-audit; tests pass; WSJF: blank/0 points = not estimated — owner to confirm). C (Sonnet) launched; R2 running.
+- 15:22 C DONE (story, prd, xray, uat, sfd; Jira CSV epic IDs, SFD→UAT/Xray import, honest UAT coverage). D (Sonnet, last 7 tools + tool-frame restore-lang/New) launched; R2 running; R3 tokenization after R2. Note: skills/running-uat/scripts/uat_report.py still counts covered on any pass (tool differs on purpose).
+- 15:25 R2 DONE (rag-eval claim-level scoring, 19/19 tests, LLM-judge prompt export; sample DSP-06 now 'four months'). R3 (Fable, tokenization) launched; D running.
+- ~15:40 quota hit (reset 20:10 announced). 15:44 owner 'continue' → D (5/7 done) and R3 (no report yet) resumed.
+- 15:44 D DONE (8 tasks; frame restore-lang unverified; sql default sample = 1 row → no chart).
+- 15:44 Integration check: node --test over 19 tool suites → 74 tests pass, 0 fail (145 PASS asserts). Waiting on R3.
+- 15:53 R3 DONE (tokenization guided steps + lifecycle, 10/10 tests). ALL BUILDERS DONE → lead integration.

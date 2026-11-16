@@ -24,10 +24,22 @@ function flagText(f) {
   return f.code === 'dep-out' ? fmt('flagDepOut', { dep: f.dep })
     : f.code === 'pulled' ? fmt('flagPulled', { dep: f.dep })
     : f.code === 'unknown' ? fmt('flagUnknown', { dep: f.dep })
-    : f.code === 'cycle' ? T('flagCycle') : T('flagDeadline');
+    : f.code === 'cycle' ? T('flagCycle') : f.code === 'invalid' ? T('flagInvalid') : f.code === 'unestimated' ? T('flagUnestimated') : T('flagDeadline');
+}
+const FIELD = { business_value: 'colBV', time_criticality: 'colTC', risk_reduction: 'colRR', job_size: 'colSize', points: 'colPts' };
+function errText(e) {   // grid wording instead of the CSV wording of wsjf.py ("line 2", job_size)
+  const f = FIELD[e.field] ? T(FIELD[e.field]) : e.field;
+  if (e.code === 'nan') return fmt('errNan', { id: e.id, field: f });
+  if (e.code === 'scale') return fmt('errScale', { id: e.id, field: f, v: e.value });
+  if (e.code === 'points') return fmt('errPoints', { id: e.id });
+  if (e.code === 'unknown-dep') return fmt('errUnknownDep', { id: e.id, dep: e.dep });
+  if (e.code === 'dup') return fmt('errDup', { id: e.id });
+  return e.text;
 }
 function whyText(o) {
   if (o.reason.code === 'cycle') return T('whyCycle');
+  if (o.reason.code === 'invalid') return T('flagInvalid');
+  if (o.reason.code === 'unestimated') return T('flagUnestimated');
   const { free, need, extra } = o.reason;
   return extra.length ? fmt('whyCapacityWith', { free, need, extra: extra.join(', ') }) : fmt('whyCapacity', { free, need });
 }
@@ -101,6 +113,9 @@ function promptObjectives(state) {
 function mount(el, ctx) {
   const { ui } = ctx;
   const s0 = ctx.state;
+  // The frame sets ctx.guided right AFTER mount: first paint of results waits one macrotask (rule 8).
+  let ready = false;
+  const showResults = () => ready && !ctx.guided;
   if (!Array.isArray(s0.items)) ctx.setState({ items: [] }, { silent: true });
 
   // ---- command bar: capacity · project key (items, scores and size are the grid)
@@ -173,7 +188,7 @@ function mount(el, ctx) {
   };
   const byId = (r, id) => r.ranked.find((x) => x.id === id);
   const columns = [
-    { key: '_rank', label: T('colRank'), width: 36, num: true, compute: (row) => { const r = current(); const i = r.ranked.findIndex((x) => x.id === row.id); return i < 0 ? '' : String(i + 1); } },
+    { key: '_rank', label: T('colRank'), width: 36, num: true, compute: (row) => { if (!showResults()) return ''; const r = current(); const i = r.ranked.findIndex((x) => x.id === row.id); return i < 0 ? '' : String(i + 1); } },
     { key: 'id', label: T('colId'), mono: true, width: 72 },
     { key: 'title', label: T('colTitle') },
     { key: 'type', label: T('colType'), type: 'select', options: TYPES, width: 96 },
@@ -181,18 +196,23 @@ function mount(el, ctx) {
     { key: 'time_criticality', label: T('colTC'), type: 'fib', width: 64 },
     { key: 'risk_reduction', label: T('colRR'), type: 'fib', width: 64 },
     { key: 'job_size', label: T('colSize'), type: 'fib', width: 64 },
-    { key: '_cod', label: T('colCoD'), width: 52, num: true, compute: (row) => { const x = byId(current(), row.id); return x ? String(x.cod) : ''; } },
-    { key: '_wsjf', label: T('colWsjf'), width: 64, num: true, compute: (row) => { const x = byId(current(), row.id); if (!x) return ''; const b = document.createElement('b'); b.className = 'wsjf-score'; b.textContent = num(x.wsjf); return b; } },
+    { key: '_cod', label: T('colCoD'), width: 52, num: true, compute: (row) => { const x = showResults() ? byId(current(), row.id) : null; return x && x.cod != null ? String(x.cod) : ''; } },
+    { key: '_wsjf', label: T('colWsjf'), width: 64, num: true, compute: (row) => { const x = showResults() ? byId(current(), row.id) : null; if (!x || x.wsjf == null) return ''; const b = document.createElement('b'); b.className = 'wsjf-score'; b.textContent = num(x.wsjf); return b; } },
     { key: 'points', label: T('colPts'), type: 'number', width: 64 },
     { key: 'depends_on', label: T('colDeps'), mono: true, width: 96, placeholder: '—' },
     { key: 'deadline', label: T('colDeadline'), type: 'select', options: DEADLINES(), width: 104 },
     { key: '_pi', label: T('colPI'), width: 112, compute: (row) => piCell(current(), row.id) },
+    { key: 'note', label: T('colNote'), width: 220, placeholder: '—' },
   ];
   function piCell(r, id) {
     const box = document.createElement('span'); box.className = 'wsjf-pi';
-    if (!byId(r, id)) return box;
+    if (!showResults() || !byId(r, id)) return box;
     const inPi = r.pids.has(id);
-    box.append(ui.badge({ text: inPi ? T('piIn') : T('piOut'), tone: inPi ? 'ok' : 'neutral', icon: inPi ? 'check' : 'minus' }));
+    const skip = r.skipped.has(id);
+    const b = ui.badge({ text: inPi ? T('piIn') : skip ? T('piSkipped') : T('piOut'), tone: inPi ? 'ok' : skip ? 'warn' : 'neutral', icon: inPi ? 'check' : skip ? 'clock' : 'minus' });
+    const o = r.out.find((x) => x.item.id === id);
+    if (o) b.title = whyText(o);
+    box.append(b);
     const flags = (r.flags[id] || []).filter((f) => f.code !== 'pulled');
     if (flags.length) {
       const w = ui.badge({ text: String(flags.length), tone: flags.some((f) => f.code === 'deadline' || f.code === 'cycle') ? 'bad' : 'warn' });
@@ -210,14 +230,21 @@ function mount(el, ctx) {
   };
   gridEl = ui.grid({
     columns, rows: ctx.state.items || [], removable: true, addLabel: T('addItem'),
-    newRow: (rows) => ({ id: nextId(rows), title: '', type: 'Story', business_value: 1, time_criticality: 1, risk_reduction: 1, job_size: 1, points: 0, depends_on: '', deadline: '', note: '' }),
+    newRow: (rows) => ({ id: nextId(rows), title: '', type: 'Story', business_value: 1, time_criticality: 1, risk_reduction: 1, job_size: 1, points: '', depends_on: '', deadline: '', note: '' }),
     onChange: (rows) => {
+      const added = rows.length > prevLen; prevLen = rows.length;
       ctx.setState({ items: rows }, { silent: true });
+      if (added) {   // V3: a new row stays where it is until you leave it; focus its Feature cell (not the ID cell)
+        pendingSort = true; refresh();
+        setTimeout(() => { const t = gridEl.querySelector(`[data-cell="${rows.length - 1}:${columns.findIndex((c) => c.key === 'title')}"]`); if (t) t.focus(); }, 0);
+        return;
+      }
       const a = document.activeElement;
       const typing = a && gridEl.contains(a) && a.tagName === 'INPUT' && a.type !== 'checkbox';
       if (typing) { pendingSort = true; refresh(); } else refresh({ resort: true });
     },
   });
+  let prevLen = (ctx.state.items || []).length;
   gridEl.classList.add('wsjf-grid');
   let pendingSort = false;
   gridEl.addEventListener('focusout', (e) => {
@@ -317,7 +344,8 @@ function mount(el, ctx) {
       tr.classList.toggle('is-out', !!out);
       if (out && cutAt < 0) cutAt = i;
     });
-    if (cutAt >= 0 && rows.length) {
+    trs.forEach((tr, i) => tr.classList.toggle('is-skipped', !!rows[i] && r.skipped.has(rows[i].id)));
+    if (cutAt >= 0 && rows.length && r.cleanCut) {
       const tr = document.createElement('tr'); tr.className = 'wsjf-cut';
       const td = document.createElement('td'); td.colSpan = columns.length + 1;
       const lab = document.createElement('span'); lab.textContent = fmt('cutLine', { free: r.capacity - r.used });
@@ -330,7 +358,8 @@ function mount(el, ctx) {
 
   function refresh({ resort = false, repaint = false } = {}) {
     const items = ctx.state.items || [];
-    if (resort || repaint) {
+    const show = showResults();
+    if ((resort || repaint) && show) {
       const sorted = rankOrder(items);
       const changed = sorted.some((x, i) => x !== items[i]);
       if (changed || repaint) {
@@ -351,23 +380,27 @@ function mount(el, ctx) {
     const hasItems = (ctx.state.items || []).length > 0;
     empty.hidden = hasItems;
     gridEl.hidden = !hasItems;
-    lower.hidden = !hasItems;
-    bar.hidden = !hasItems;
+    lower.hidden = !hasItems || !show;
+    bar.hidden = !hasItems || !show;
+    invite.hidden = !hasItems || show;
+    strip.hidden = !show;
+    errorsBox.hidden = true;
+    if (!show && repaint) gridEl.setRows(ctx.state.items || []);
     const real = r.errors.filter((e) => e.code !== 'unknown-dep');
     const tone = !hasItems ? 'neutral' : r.late.length || r.used > r.capacity ? 'bad' : real.length ? 'warn' : 'ok';
     pill.update({ tone, text: hasItems ? fmt('used', { used: nf(r.used), cap: nf(r.capacity), pct: r.pct }) : T('ready') });
     counts.textContent = hasItems ? `${fmt('committed', { n: r.planned.length })} · ${fmt('candidates', { n: r.out.length })}` : '';
     errorsBox.replaceChildren();
-    errorsBox.hidden = !r.errors.length;
-    if (r.errors.length) {
+    errorsBox.hidden = !r.errors.length || !show;
+    if (r.errors.length && show) {
       const b = document.createElement('b'); b.textContent = T('errorsTitle');
       const ul = document.createElement('ul');
-      for (const e of r.errors) { const li = document.createElement('li'); li.textContent = e.text; ul.append(li); }
+      for (const e of r.errors) { const li = document.createElement('li'); li.textContent = errText(e); ul.append(li); }
       errorsBox.append(ui.icon('triangle-alert'), b, ul);
     }
     paintBar(r);
-    if (hasItems) { decorate(r); paintOut(r); }
-    ctx.frame.setStatus({ tone, text: pill.textContent });
+    if (hasItems && show) { decorate(r); paintOut(r); }
+    if (show) ctx.frame.setStatus({ tone, text: pill.textContent });
     return r;
   }
 
@@ -378,12 +411,15 @@ function mount(el, ctx) {
   top.append(adv);
   el.append(top, itemsHead, bar, errorsBox, hint, empty, gridEl, lower);
   paintObjectives();
-  ctx.__wsjfRefresh = refresh;
-  refresh({ resort: true });
+  const invite = document.createElement('p'); invite.className = 'wsjf-hint wsjf-invite'; invite.textContent = T('invite');
+  gridEl.after(invite);
+  ctx.__wsjfRefresh = (o) => { ready = true; return refresh({ ...o, repaint: true }); };
+  refresh();
+  setTimeout(() => { ready = true; refresh({ resort: true, repaint: true }); }, 0);
 }
 
 /* ---------------------------------------------------------------------------------------------- module */
-const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state, autorun: true }));
+const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state }));
 
 export default {
   id: 'wsjf-planner',

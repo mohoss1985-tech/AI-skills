@@ -23,7 +23,9 @@ const words = (text, list) => {
   return list.filter((w) => s.includes(' ' + w + ' '));
 };
 export const splitLines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-const bullets = (s) => splitLines(s).map((l) => l.replace(/^\s*[-*•\d.)]+\s*/, '').trim()).filter(Boolean);
+/** Strip a list marker (`-`, `*`, `•`, `1.`, `2)`) but never a number that is part of the text ("3 documents", "3DS"). */
+export const stripMarker = (l) => String(l).replace(/^\s*(?:[*•]\s*|-\s+|\d{1,3}[.)]\s+)/, '').trim();
+const bullets = (s) => splitLines(s).map(stripMarker).filter(Boolean);
 
 export function nextId(ids, prefix) {
   let n = 0;
@@ -50,7 +52,7 @@ export function buildMap(state) {
   const s = structuredClone(state);
   const lines = bullets(s.rulesText);
   if (!s.stories.length) {
-    s.stories.push(newStory('S1', { title: s.feature, want: lowerFirst(s.feature) }));
+    s.stories.push(newStory('S1', { title: s.feature, want: wantText(s.feature, s.lang) }));
     s.active = 'S1';
   }
   const story = s.stories.find((x) => x.id === s.active) || s.stories[0];
@@ -66,6 +68,14 @@ export function buildMap(state) {
   return s;
 }
 const lowerFirst = (t) => String(t || '').replace(/^\p{Lu}(?!\p{Lu})/u, (c) => c.toLowerCase());
+/** English "I want ___": a verb phrase needs "to" ("dispute a card payment" -> "to dispute a card payment");
+    a noun phrase ("a receipt", "my money back") and text that already has "to" are left alone. */
+const NOT_VERB = /^(to|a|an|the|my|your|our|his|her|their|some|any|all|no|one|each|every|more|less|fewer|this|that|these|those|not|be)\b|^[\d"'«“(]/i;
+export function wantText(text, lang = 'en') {
+  const t = lowerFirst(String(text || '').trim());
+  if (!t || lang === 'fr') return t;
+  return NOT_VERB.test(t) ? t : 'to ' + t;
+}
 
 /** SPIDR "Rules" split, done offline: every rule after the first becomes its own story. */
 export function splitByRule(state, storyId) {
@@ -77,8 +87,9 @@ export function splitByRule(state, storyId) {
   if (!rest.length) return s;
   story.rules = keep ? [keep] : [];
   const added = rest.map((r) => {
-    const n = newStory(ids.story(s), { title: r.text, want: lowerFirst(r.text), soThat: story.soThat, rules: [r] });
-    n.priority = story.priority; n.source = story.source;
+    const n = newStory(ids.story(s), { title: r.text, want: story.want, soThat: story.soThat, rules: [r] });
+    n.dependsOn = story.dependsOn;
+    n.priority = story.priority; n.source = story.source; n.points = '';
     s.stories.push(n);
     return n;
   });
@@ -93,11 +104,14 @@ export function stubExamples(state, storyId, T) {
   if (!story) return s;
   for (const r of story.rules) {
     if (r.examples.length) continue;
-    r.examples.push({ ...newExample(ids.example(s), 'happy', T('stub.happy', { rule: r.text })), given: T('stub.given', { persona: s.persona || T('persona') }) });
-    r.examples.push({ ...newExample(ids.example(s), 'fail', T('stub.fail', { rule: r.text })), given: T('stub.given', { persona: s.persona || T('persona') }) });
+    r.examples.push({ ...newExample(ids.example(s), 'happy', T('stub.happy', { rule: r.text })), stub: true, given: T('stub.given', { persona: s.persona || T('persona') }) });
+    r.examples.push({ ...newExample(ids.example(s), 'fail', T('stub.fail', { rule: r.text })), stub: true, given: T('stub.given', { persona: s.persona || T('persona') }) });
   }
   return s;
 }
+
+/** A stub from "Add example stubs" that nobody completed (no When, no Then): never exported as a real scenario. */
+export const isStub = (e) => !!e.stub && !String(e.when || '').trim() && !String(e.then || '').trim();
 
 /* ---------- Checks ---------- */
 
@@ -168,11 +182,13 @@ export function storyLine(story, persona, lang) {
     const afin = !so ? '' : /^qu(e|')/i.test(so) ? `, afin ${so}` : /^[aeiouyéèêàh]/i.test(so) ? `, afin d'${so}` : `, afin de ${so}`;
     return `En tant que ${p}, je veux ${story.want || '…'}${afin}.`;
   }
-  return `As ${/^[aeiou]/i.test(p) ? 'an' : 'a'} ${p}, I want ${story.want || '…'}${so ? `, so that ${so}` : ''}.`;
+  return `As ${/^[aeiou]/i.test(p) ? 'an' : 'a'} ${p}, I want ${wantText(story.want, 'en') || '…'}${so ? `, so that ${so}` : ''}.`;
 }
 
+/** Users often type the keyword themselves ("Given Sam has…"): drop it so it is not written twice. */
+const STEP_KW = /^(given|when|then|and|but|soit|quand|alors|et|mais|étant donné que|etant donne que)\s+/i;
 function steps(kw, block, out, indent) {
-  block.forEach(([k, text]) => splitLines(text).forEach((line, i) => out.push(`${indent}${i ? kw.and : kw[k]} ${line}`)));
+  block.forEach(([k, text]) => splitLines(text).forEach((line, i) => out.push(`${indent}${i ? kw.and : kw[k]} ${line.replace(STEP_KW, '')}`)));
 }
 
 /** Scenarios of one rule as Gherkin lines (indent = spaces before `Scenario`). */
@@ -180,6 +196,7 @@ export function scenarioLines(rule, story, lang, indent = '    ') {
   const kw = KW[lang] || KW.en;
   const out = [];
   for (const e of rule.examples) {
+    if (isStub(e)) continue;
     out.push(`${indent}@${story.id} @${e.kind}`, `${indent}${kw.scenario}: ${e.name || e.id}`);
     steps(kw, [['given', e.given], ['when', e.when], ['then', e.then]], out, indent + '  ');
     out.push('');
@@ -199,7 +216,7 @@ export function toFeature(state, onlyStory) {
   for (const s of list) {
     for (const r of s.rules) {
       out.push(`  ${kw.rule}: ${r.text}`, '');
-      if (r.examples.length) out.push(...scenarioLines(r, s, lang));
+      if (r.examples.some((e) => !isStub(e))) out.push(...scenarioLines(r, s, lang));
     }
   }
   return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
@@ -209,18 +226,29 @@ export function toFeature(state, onlyStory) {
 const csvCell = (v) => { const s = v == null ? '' : String(v); return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
 export const toCsv = (rows) => '﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
 
-/** Jira Cloud CSV import (research/05): Summary, Issue Type, Description, Priority, Labels ×2, Story Points, Parent.
-    Acceptance criteria go in the Description (custom-field names differ per site). */
+/** Jira Cloud CSV import (Atlassian "Import data from a CSV file"): hierarchy needs "Work item ID", "Work type" and
+    "Parent"; Parent holds the parent's Work item ID, and parents come before children. So: one Epic row first
+    (id 1, from the Epic field), then each story with its own id and Parent = the epic's id. Labels is repeated once per
+    label (all of them kept). Story id, rules and dependencies go in the Description (no custom fields needed). */
 export function toJiraCsv(state, T) {
   const lang = state.lang === 'fr' ? 'fr' : 'en';
   const labels = String(state.labels || '').split(/[\s,;]+/).filter(Boolean).map((l) => l.replace(/\s+/g, '-'));
-  const rows = [['Summary', 'Issue Type', 'Description', 'Priority', 'Labels', 'Labels', 'Story Points', 'Parent']];
+  const nl = Math.max(1, labels.length);
+  const pad = (a) => Array.from({ length: nl }, (_, i) => a[i] || '');
+  const rows = [['Work item ID', 'Work type', 'Summary', 'Description', 'Priority', ...Array(nl).fill('Labels'), 'Story Points', 'Parent']];
+  const epic = String(state.epic || '').trim();
+  let n = 0;
+  const epicId = epic ? ++n : '';
+  if (epic) rows.push([epicId, 'Epic', epic, '', '', ...pad([]), '', '']);
   for (const s of state.stories) {
     const gh = s.rules.flatMap((r) => [`${KW[lang].rule}: ${r.text}`, ...scenarioLines(r, s, lang, '  ').filter((l) => !l.trim().startsWith('@'))]);
-    const desc = [storyLine(s, state.persona, lang), '', `*${T('md.ac')}*`, ...gh];
+    const desc = [storyLine(s, state.persona, lang), '', `*${T('md.ac')}*`];
+    if (gh.length) desc.push('{code}', ...gh, '{code}');
     if (String(s.checklist || '').trim()) desc.push('', `*${T('md.checklist')}*`, ...splitLines(s.checklist).map((c) => '* ' + c));
-    if (s.source) desc.push('', `${T('md.source')}: ${s.source}`);
-    rows.push([s.title, 'Story', desc.join('\n').trim(), s.priority || 'Medium', labels[0] || '', labels[1] || '', s.points ?? '', state.epic || '']);
+    const ref = [`${s.id}`, s.rules.length && `${s.rules.map((r) => r.id).join(', ')}`, s.dependsOn && `${lang === 'fr' ? 'dépend de' : 'depends on'} ${s.dependsOn}`].filter(Boolean);
+    desc.push('', `ID: ${ref.join(' · ')}`);
+    if (s.source) desc.push(`${T('md.source')}: ${s.source}`);
+    rows.push([++n, 'Story', s.title, desc.join('\n').trim(), s.priority || 'Medium', ...pad(labels), s.points ?? '', epicId]);
   }
   return toCsv(rows);
 }
@@ -240,10 +268,10 @@ export function toMarkdown(state, T) {
     out.push(`**${T('md.map')}**`);
     for (const rule of s.rules) {
       out.push(`- *${T('card.rule')}${c}* ${rule.text}`);
-      for (const e of rule.examples) out.push(`  - *${T('kind.' + e.kind)}${c}* ${e.name}`);
+      for (const e of rule.examples.filter((x) => !isStub(x))) out.push(`  - *${T('kind.' + e.kind)}${c}* ${e.name}`);
     }
     for (const q of s.questions) out.push(`- *${T('card.question')}${c}* ${q.text}${q.answer ? ` → **${T('md.answered')}${c} ${q.answer}**` : ''}`);
-    const gh = s.rules.flatMap((rule) => (rule.examples.length ? [`${KW[lang].rule}: ${rule.text}`, ...scenarioLines(rule, s, lang, '  ').filter((l) => !l.trim().startsWith('@'))] : []));
+    const gh = s.rules.flatMap((rule) => (rule.examples.some((x) => !isStub(x)) ? [`${KW[lang].rule}: ${rule.text}`, ...scenarioLines(rule, s, lang, '  ').filter((l) => !l.trim().startsWith('@'))] : []));
     if (gh.length) out.push('', '```gherkin', ...(lang === 'fr' ? ['# language: fr'] : []), ...gh.map((l) => l.trimEnd()), '```');
     if (String(s.checklist || '').trim()) out.push('', `**${T('md.checklist')}**`, ...splitLines(s.checklist).map((x) => `- [ ] ${x}`));
     const inv = r.invest.map((x) => `${x.letter} ${x.ok ? '✓' : x.level === 'warn' ? '⚠' : '✗'}`).join(' · ');

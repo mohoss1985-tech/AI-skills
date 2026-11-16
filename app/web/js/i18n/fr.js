@@ -87,7 +87,7 @@ export default {
   'Documents for this deliverable': 'Documents de ce livrable', 'Add evidence or a newer version: Claude uses it when you ask for changes.': 'Ajoutez une preuve ou une nouvelle version : Claude l\'utilise quand vous demandez une modification.',
   'Also read from the skill knowledge': 'Également lus dans la base documentaire', 'Document added. Send the message to update the deliverable': 'Document ajouté. Envoyez le message pour mettre à jour le livrable',
   // read-only demo
-  'This demo is read-only. To create your own deliverables, run Analyst Kit on your computer with Claude Code (see the README on GitHub).': 'Cette démo est en lecture seule. Pour créer vos propres livrables, lancez Analyst Kit sur votre ordinateur avec Claude Code (voir le README sur GitHub).',
+  'This demo is read-only. To create your own deliverables, run Skills Portal on your computer with Claude Code (see the README on GitHub).': 'Cette démo est en lecture seule. Pour créer vos propres livrables, lancez Skills Portal sur votre ordinateur avec Claude Code (voir le README sur GitHub).',
   'Read-only demo': 'Démo en lecture seule', 'Read-only demo.': 'Démo en lecture seule.', 'How to run it': 'Comment l\'installer',
   'Browse the finished samples (Visa rules in English, CB rules in French), the guided questions, the scenarios and the Guide, and download the import files. Creating a deliverable runs on your computer with Claude Code.': 'Parcourez les exemples terminés (règles CB en français, Visa en anglais), les questions guidées, les scénarios et le Guide, et téléchargez les fichiers d\'import. La création d\'un livrable se fait sur votre ordinateur avec Claude Code.',
   // V2 shell and components (owner A, Wave 1)
@@ -154,6 +154,9 @@ export default {
   "Documents Claude writes from your notes and files, and the ones you save from a tool. Each keeps its conversation and versions.": "Les documents que Claude rédige à partir de vos notes et fichiers, et ceux que vous enregistrez depuis un outil. Chacun garde sa conversation et ses versions.",
   "Filter by status": "Filtrer par statut",
   "Working tools for payments BAs & POs": "Des outils concrets pour les BA et PO paiement",
+  "20 working tools for business analysts in payments": "20 outils concrets pour les analystes métier en paiements",
+  "Replaces": "Remplace", "What it does": "Ce que ça fait", "How it works": "Comment ça marche", "Press": "Appuyez sur", "Inputs loaded.": "Données chargées.", "to see the result.": "pour voir le résultat.",
+  "Talking points": "Points clés",
   "Each tool does the job in 3–4 inputs and about 60 seconds. Claude drafts, critiques and explains on top.": "Chaque outil fait le travail en 3 ou 4 saisies et environ 60 secondes. Claude rédige, critique et explique en plus.",
   "Try a demo in 60 seconds": "Essayer une démo en 60 secondes",
   "Demo": "Démo",
@@ -162,7 +165,7 @@ export default {
   "Recent deliverables": "Livrables récents",
   "See all": "Tout voir",
   "Fictional data. Not affiliated with Visa or GIE CB. No real card data.": "Données fictives. Sans lien avec Visa ni le GIE CB. Aucune donnée de carte réelle.",
-  "Analyst Kit V2 · code MIT · samples and docs CC BY 4.0": "Analyst Kit V2 · code MIT · exemples et docs CC BY 4.0",
+  "Skills Portal · code MIT · samples and docs CC BY 4.0": "Skills Portal · code MIT · exemples et docs CC BY 4.0",
   "Reload the page. If it happens again, the tool has a bug: the rest of the kit still works.": "Rechargez la page. Si cela se reproduit, l'outil a un bug : le reste du kit fonctionne.",
   "There is no tool at this address.": "Aucun outil à cette adresse.",
   "This tool could not load": "Cet outil n'a pas pu se charger",

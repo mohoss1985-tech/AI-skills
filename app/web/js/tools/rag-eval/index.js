@@ -1,19 +1,44 @@
-/* RAG eval scorer (evaluating-rag-quality), owner G.
-   Golden Q&A set + model answers (CSV) → offline per-question checks (faithfulness / groundedness, correctness, citation,
-   refusal, relevance, retrieval recall / precision), manual or AI-judge overrides, overall score vs threshold and the
-   score_eval.py release gates → PASS / BLOCKED with plain reasons. Logic and parity tests: logic.js, logic.test.mjs. */
+/* RAG eval scorer (evaluating-rag-quality), owner G · V3 rebuild R2.
+   Golden Q&A set + model answers (CSV) → offline CLAIM-LEVEL checks (numbers with units, polarity, terms missing from the
+   context, contradiction vs the approved answer) → faithfulness / correctness / context recall / precision ratios with
+   "how this is computed", per-answer explainer (claims green / amber / red + reason), manual or LLM-judge overrides,
+   copy-ready LLM-judge prompt, overall score vs threshold and the score_eval.py release gates → PASS / BLOCKED.
+   No LLM runs in the page. Logic and tests: logic.js, logic.test.mjs. */
 import { register, getLang } from '../../core/i18n.js';
 import strings from './i18n.js';
 import { SAMPLES } from './samples.js';
-import { evaluate, report, resultsCsv, METRICS, CAUSES, DEFAULT_GATES, goldenFromCsv, answersFromCsv, factText } from './logic.js';
+import { evaluate, report, resultsCsv, reasonText, METRICS, METHOD, CAUSES, DEFAULT_GATES, goldenFromCsv, answersFromCsv, factText } from './logic.js';
 import { fmtVars, mdCell } from '../uat-tracker/csv.js';
 
 const T = register('rag-eval', strings);
 const fmt = (k, v) => fmtVars(T(k), v);
 const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const dec = (x) => { if (x == null) return '—'; const s = (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, ''); return getLang() === 'fr' ? s.replace('.', ',') : s; };
-const facts = (list) => (list || []).map((f) => factText(f, getLang() === 'fr' ? 'fr' : 'en')).join(', ');
-const whyText = (w) => fmt('why_' + w.code, { ...w, n: w.facts ? facts(w.facts) : w.n });
+const ft = (q) => factText(q, getLang() === 'fr' ? 'fr' : 'en');
+const facts = (list) => (list || []).map(ft).join(', ');
+/** One localised sentence per claim reason (logic.js reasonText() is the English twin for CSV / prompts). */
+function whyText(r) {
+  const cv = r.conv ? fmt('rs_conv', { a: ft(r.ref || r.near[0]), b: ft(r.conv) }) : '';
+  switch (r.code) {
+    case 'qtyNotInContext': return fmt(r.near.length ? 'rs_qtyNotInContextNear' : 'rs_qtyNotInContext', { q: ft(r.q), near: facts(r.near) }) + cv;
+    case 'termNotInContext': return fmt('rs_termNotInContext', { terms: r.terms.join(', ') });
+    case 'polarityContext': case 'polarityGolden': return fmt('rs_' + r.code, { words: r.words.join(', '), ref: r.ref });
+    case 'yesNoGolden': return fmt('rs_yesNoGolden', { says: T(r.says > 0 ? 'yes' : 'no'), ref: T(r.ref > 0 ? 'yes' : 'no') });
+    case 'qtyVsGolden': case 'qtyEquivGolden': case 'qtyEquivContext': return fmt('rs_' + r.code, { q: ft(r.q), ref: ft(r.ref) }) + cv;
+    default: return T('rs_' + r.code);
+  }
+}
+const refText = (r) => fmt('ref_' + r.code, { pct: r.pct, list: facts(r.facts) }) + (r.equiv || []).map((e) => ' · ' + fmt('rs_equiv', { a: ft(e.hit), b: ft(e.q) })).join('');
+/** The ratio behind a 0 / 1 score, as text: "2/3 claims", "F1 0.67", "67 %". */
+function ratioText(i, m) {
+  const x = (i.ratios || {})[m];
+  if (!x || i.overridden.includes(m)) return '';
+  if (m === 'faithfulness') return fmt('rt_faith', { num: x.num, den: x.den }) + (x.review ? ' · ' + fmt('rt_review', { n: x.review }) : '');
+  if (m === 'correctness') return fmt('rt_corr', { f1: dec(x.value * 100), tp: x.tp, fp: x.fp, fn: x.fn });
+  if (m === 'context_recall') return fmt(x.mode === 'ids' ? 'rt_recallIds' : 'rt_recall', { num: x.num, den: x.den });
+  if (m === 'context_precision') return fmt('rt_prec', { v: dec(x.value * 100), k: x.k });
+  return fmt('rt_pct', { v: dec(x.value * 100) });
+}
 const pc = (x) => (x == null ? '—' : `${dec(x * 100)} %`);
 
 function reasons(r) {
@@ -27,7 +52,7 @@ function highLines(r) {
   for (const i of r.highFails) {
     const bad = i.claims.filter((c) => !c.supported);
     if (!bad.length) { out.push(fmt('r_high', { id: i.id, risk: T('risk_' + i.risk), claim: i.answer.slice(0, 120), why: T('overriddenBy') })); continue; }
-    for (const c of bad) out.push(fmt('r_high', { id: i.id, risk: T('risk_' + i.risk), claim: c.text, why: c.why ? whyText(c.why) : '' }));
+    for (const c of bad) out.push(fmt('r_high', { id: i.id, risk: T('risk_' + i.risk), claim: c.text, why: c.reasons.filter((x) => x.level === 'bad').map(whyText).join(' · ') }));
   }
   return out;
 }
@@ -46,18 +71,43 @@ function toMarkdown(state) {
 }
 
 /* ---------------------------------------------------------------- AI prompts */
+/** Ready-to-run LLM-as-judge prompt (Ragas / DeepEval method: claims → verdicts → ratios → thresholds → reason).
+    Its JSON answer goes back into Advanced › "Apply judge scores". */
 function promptJudge(state) {
   const r = evaluate(state);
   const fr = getLang() === 'fr';
-  const lines = r.items.map((i) => [`### ${i.id} · ${i.type} · risk ${i.risk}`, `Question: ${i.question}`, `Reference answer: ${i.expected_answer}`, `Retrieved context: ${i.context || '(none)'}`, `Model answer: ${i.answer || '(no answer)'}`,
-    `Offline scores: ${METRICS.map((m) => `${m}=${i.metrics[m] === '' ? 'n/a' : i.metrics[m]}`).join(', ')}`].join('\n'));
+  const cases = r.items.map((i) => {
+    const notes = i.claims.flatMap((c) => c.reasons.filter((x) => x.level !== 'ok').map((x) => `  - "${c.text}" → ${reasonText(x)}`));
+    return [`### ${i.id} · ${i.type} · risk ${i.risk}`, `Question: ${i.question}`, `Approved answer: ${i.expected_answer}`, `Retrieved context: ${i.context || '(none)'}`, `Model answer: ${i.answer || '(no answer)'}`,
+      `Offline rule check: ${METRICS.map((m) => `${m}=${i.metrics[m] === '' ? 'n/a' : i.metrics[m]}`).join(', ')}`, ...notes].join('\n');
+  });
   return [
-    'You are the LLM-as-judge for a card-dispute support assistant (skill: evaluating-rag-quality).',
-    'Rubric. faithfulness: 1 only if EVERY claim of the answer is supported by the retrieved context (Ragas definition: supported claims / claims = 1). correctness: 1 if the answer matches the reference answer on every fact that matters (numbers, deadlines, conditions). answer_relevance: 1 if it addresses the question without padding. correct_refusal: for must_refuse / must_escalate items, 1 if it refused or handed off.',
-    'Example: context "up to 120 days after the transaction date", answer "You have 180 days" → faithfulness 0, correctness 0 (invented time limit).',
-    'Scheme time limits not stated in the context must not be assumed: mark them *to confirm*.',
-    '', ...lines, '',
-    'Answer ONLY with JSON: {"overrides": [{"id": "…", "faithfulness": 0|1, "correctness": 0|1, "answer_relevance": 0|1, "correct_refusal": 0|1, "reason": "one sentence"}]}, one entry per question where you disagree with the offline scores.',
+    `# LLM-judge prompt · RAG answer evaluation (Ragas / DeepEval method)${state.title ? ' · ' + state.title : ''}`,
+    '',
+    'You are an impartial evaluation judge for a retrieval-augmented support assistant. Judge every test case below.',
+    'Use ONLY the retrieved context and the approved answer given in each case, never your own knowledge. Regulatory or scheme time limits that the context does not state must not be assumed.',
+    '',
+    '## Method (apply the steps to every case)',
+    '1. Claims: break the model answer into atomic claims (one fact each, pronouns resolved, no greetings).',
+    '2. Faithfulness (Ragas): give each claim a verdict. "supported" only if it can be inferred from the retrieved context; otherwise "unsupported" (contradicted, or simply not there). faithfulness_ratio = supported claims / claims.',
+    '3. Answer correctness (Ragas factual correctness): compare the claims with the approved answer. TP = facts present in both, FP = answer facts that contradict the approved answer, FN = approved facts missing from the answer. correctness_f1 = TP / (TP + 0.5 × (FP + FN)). The same value in another unit is the same fact (120 days ≈ 4 months); a flipped yes / no or a flipped negation is a contradiction.',
+    '4. Context recall (Ragas): share of the approved answer\'s claims that can be attributed to the retrieved context.',
+    '5. Answer relevancy: does the answer address the question, without padding?',
+    '6. Refusal (must_refuse / must_escalate / needs_clarification cases only): did the assistant refuse / hand off / ask a clarifying question, and leak nothing?',
+    '7. Thresholds (DeepEval style) → 0 or 1 per metric: faithfulness = 1 only if faithfulness_ratio = 1.0; correctness = 1 only if there is no FP and correctness_f1 ≥ 0.8; context_recall = 1 if ≥ 0.5; answer_relevance and correct_refusal are 0 or 1.',
+    '8. Reason: one sentence per case that names the claim that decided the score.',
+    '',
+    '## Scored example',
+    'Context: "you can dispute a Visa card payment up to 120 days after the transaction date". Approved answer: "Up to 120 days after the transaction date." Model answer: "You have 180 days to dispute, and there is no need to keep the receipt."',
+    '{"id": "EX-1", "claims": [{"claim": "The customer has 180 days to dispute", "verdict": "unsupported", "reason": "the context says 120 days"}, {"claim": "The receipt does not need to be kept", "verdict": "unsupported", "reason": "not in the context"}], "faithfulness_ratio": 0, "correctness_f1": 0, "faithfulness": 0, "correctness": 0, "context_recall": 1, "answer_relevance": 1, "reason": "Invented 180-day time limit (source: 120 days)."}',
+    '',
+    `## Test cases (${r.items.length})`,
+    'The "Offline rule check" lines come from a deterministic pre-check (numbers and units, negation, terms missing from the context). Treat them as hints, not as truth: confirm or overturn them.',
+    '', cases.join('\n\n'), '',
+    '## Output',
+    'Answer ONLY with JSON, one entry per test case, in this shape:',
+    '{"overrides": [{"id": "…", "claims": [{"claim": "…", "verdict": "supported|unsupported", "reason": "…"}], "faithfulness_ratio": 0.0, "correctness_f1": 0.0, "faithfulness": 0, "correctness": 0, "context_recall": 0, "answer_relevance": 0, "correct_refusal": 0, "reason": "one sentence"}]}',
+    'Leave out correct_refusal on answerable cases, and answer_relevance / context_recall on refusal cases.',
     fr ? 'Write the reasons in French.' : 'Write the reasons in English.',
   ].join('\n');
 }
@@ -111,23 +161,24 @@ function mount(el, ctx) {
   const jb = ui.button({ label: T('judgeApply'), size: 'sm', icon: 'scale', onClick: () => {
     let list = [];
     try { const txt = jta.value.slice(jta.value.indexOf('{'), jta.value.lastIndexOf('}') + 1); const j = JSON.parse(txt); list = Array.isArray(j) ? j : j.overrides || []; } catch { list = []; }
-    const ov = structuredClone(S().overrides || {}); let n = 0;
-    for (const o of list) { if (!o || !o.id) continue; ov[o.id] = ov[o.id] || {}; for (const m of METRICS) if (o[m] === 0 || o[m] === 1) { ov[o.id][m] = o[m]; n++; } }
+    const ov = structuredClone(S().overrides || {}); const notes = { ...(S().judgeNotes || {}) }; let n = 0;
+    for (const o of list) { if (!o || !o.id) continue; let k = 0; for (const m of METRICS) if (o[m] === 0 || o[m] === 1) { ov[o.id] = ov[o.id] || {}; ov[o.id][m] = o[m]; n++; k++; } if (k && typeof o.reason === 'string' && o.reason.trim()) notes[o.id] = o.reason.trim().slice(0, 400); }
     if (!n) { jf.setError(T('judgeBad')); return; }
     jf.setError(''); jta.value = '';
-    ctx.setState({ overrides: ov }, { silent: true }); advCount(); rerender(); ctx.toast(fmt('judgeDone', { n }));
+    ctx.setState({ overrides: ov, judgeNotes: notes }, { silent: true }); advCount(); rerender(); ctx.toast(fmt('judgeDone', { n }));
   } });
-  const clr = ui.button({ label: T('clearOverrides'), size: 'sm', variant: 'ghost', icon: 'eraser', onClick: () => { ctx.setState({ overrides: {} }, { silent: true }); advCount(); rerender(); } });
-  const advBody = h('div', 're-adv'); const ab = h('div', 'row'); ab.append(jb, clr);
-  advBody.append(h('div', 'section-label', T('gatesTitle')), gw, jf, ab);
+  const clr = ui.button({ label: T('clearOverrides'), size: 'sm', variant: 'ghost', icon: 'eraser', onClick: () => { ctx.setState({ overrides: {}, judgeNotes: {} }, { silent: true }); advCount(); rerender(); } });
+  const advBody = h('div', 're-adv'); const ab = h('div', 'row'); ab.append(ui.copyButton({ text: () => promptJudge(S()), label: T('copyJudge'), variant: 'secondary' }), jb, clr);
+  advBody.append(h('div', 'section-label', T('gatesTitle')), gw, h('div', 'section-label', T('judgeSection')), h('p', 're-sub', T('judgeSteps')), jf, ab);
   const adv = ui.advanced({ label: T('advanced'), body: advBody });
   const advCount = () => adv.setCount(Object.keys(DEFAULT_GATES).filter((k) => gates[k] !== DEFAULT_GATES[k]).length + Object.keys(S().overrides || {}).length);
   advCount();
   el.append(tabs, adv);
   info();
-  ctx.frame.output.append(ui.emptyState({ icon: 'gauge', title: T('emptyTitle'), text: T('emptyBody'),
+  ctx.frame.output.append(ui.emptyState({ icon: 'gauge', title: T('emptyTitle'), text: T(S().golden && S().answers ? 'invite' : 'emptyBody'),
     sample: { label: getLang() === 'fr' ? 'CB FR' : 'Visa EN', onClick: () => ctx.loadSample(getLang() === 'fr' ? 'fr' : 'en', 0) } }));
-  function rerender() { if (!ctx.lastRun) return; const r = evaluate(S()); ctx.lastRun = summary(r); renderAll(r, ctx); ctx.frame.setStatus(statusOf(ctx.lastRun)); }
+  function rerender() { if (!ctx.lastRun || ctx.guided) return; // guided demo: nothing is scored before the presenter's first run
+    const r = evaluate(S()); ctx.lastRun = summary(r); renderAll(r, ctx); ctx.frame.setStatus(statusOf(ctx.lastRun)); }
   ctx.__reRerender = rerender;
 }
 
@@ -170,12 +221,21 @@ function renderAll(r, ctx) {
   out.append(gs);
   // questions table
   const qs = h('section', 're-sec');
-  qs.append(h('h2', null, T('questions')), h('p', 're-sub', T('heuristic')));
+  const judge = h('div', 're-judge');
+  judge.append(h('p', 're-sub', T('heuristic')), ui.copyButton({ text: () => promptJudge(ctx.state), label: T('copyJudge'), variant: 'secondary' }));
+  const how = h('details', 're-how'); how.append(h('summary', null, T('howTitle')));
+  const howList = h('dl', 're-howlist');
+  for (const m of METRICS) { const dt = h('dt'); dt.append(h('span', null, T('ml_' + m)), ui.badge({ text: T('method_' + METHOD[m]), tone: METHOD[m] === 'ragas' ? 'info' : 'neutral', icon: false })); howList.append(dt, h('dd', null, T('how_' + m))); }
+  how.append(howList, h('p', 're-sub', T('howNote')));
+  qs.append(h('h2', null, T('questions')), judge, how);
   const cell = (i, m) => {
     const v2 = i.metrics[m];
     const s = h('span', `re-m ${v2 === 1 ? 'is-pass' : v2 === 0 ? 'is-fail' : 'is-na'}${i.overridden.includes(m) ? ' is-ov' : ''}`);
     s.append(v2 === '' ? document.createTextNode('—') : ui.icon(v2 === 1 ? 'check' : 'x', { size: 14 }));
-    s.title = `${T('ml_' + m)}: ${v2 === '' ? T('na') : v2 === 1 ? T('manualPass') : T('manualFail')}${i.overridden.includes(m) ? ' · ' + T('overriddenBy') : ''}`;
+    const x = (i.ratios || {})[m];
+    if (v2 !== '' && x && x.den && !i.overridden.includes(m) && (m === 'faithfulness' || m === 'context_recall')) { s.classList.add('has-ratio'); s.append(h('span', 're-m-r num', `${x.num}/${x.den}`)); }
+    const rt = ratioText(i, m);
+    s.title = `${T('ml_' + m)}: ${v2 === '' ? T('na') : v2 === 1 ? T('manualPass') : T('manualFail')}${rt ? ' · ' + rt : ''}${i.overridden.includes(m) ? ' · ' + T('overriddenBy') : ''}`;
     if (v2 !== '') s.setAttribute('aria-label', s.title);
     return s;
   };
@@ -204,22 +264,47 @@ function renderAll(r, ctx) {
     row('q', i.question); row('expected', i.expected_answer); row('answer', i.answer);
     row('sources', i.expected_sources, 'mono'); row('retrieved', i.retrieved, 'mono'); row('cited', (i.detail.cited || []).join(', '), 'mono');
     detail.append(head, dl);
+    // per-answer explainer: the answer with every claim highlighted, then one line per claim with its reasons
     detail.append(h('div', 'section-label', T('claims')));
-    if (!i.claims.length) detail.append(h('p', 're-sub', i.detail.noContext ? T('noContext') : '—'));
+    if (i.detail.noAnswer) detail.append(h('p', 're-sub', '—'));
     else {
+      const tone = (c) => (c.status === 'bad' ? 'bad' : c.status === 'warn' ? 'warn' : 'ok');
+      const para = h('p', 're-answer');
+      for (const sg of i.segments) {
+        if (sg.claim < 0) { para.append(sg.flag ? h('mark', 're-c is-' + sg.flag, sg.raw) : document.createTextNode(sg.raw)); continue; }
+        const c = i.claims[sg.claim]; const mk = h('mark', 're-c is-' + tone(c), sg.raw);
+        mk.title = c.reasons.map(whyText).join(' · ') || T('st_ok'); para.append(mk);
+      }
+      const legend = h('p', 're-legend');
+      for (const k of ['ok', 'warn', 'bad']) { const sp = h('span', null); sp.append(h('mark', 're-c is-' + k, T('st_' + k)), document.createTextNode(' ' + T('lg_' + k))); legend.append(sp); }
+      detail.append(para, legend);
+      if (i.detail.noContext) detail.append(h('p', 're-warn', T('noContext')));
+      if (i.detail.yesNo) detail.append(h('p', 're-why is-bad', fmt('rs_yesNoGolden', { says: T(i.detail.yesNo.answer > 0 ? 'yes' : 'no'), ref: T(i.detail.yesNo.golden > 0 ? 'yes' : 'no') })));
       const ul = h('ul', 're-claims');
       for (const c of i.claims) {
-        const li = h('li', c.supported ? 'is-ok' : 'is-bad');
-        li.append(ui.badge({ text: c.supported ? T('supported') : T('unsupported'), tone: c.supported ? 'ok' : 'bad' }), h('span', null, c.text));
-        if (c.why) li.append(h('em', 're-why', whyText(c.why)));
-        ul.append(li);
+        const li = h('li', 'is-' + tone(c));
+        li.append(ui.badge({ text: T('st_' + tone(c)), tone: tone(c) }), h('span', 're-ctext', c.text));
+        const why = h('ul', 're-whys');
+        for (const x of c.reasons) { const w = h('li', 're-why is-' + x.level); w.append(h('b', null, T('sc_' + x.scope) + ' '), document.createTextNode(whyText(x))); why.append(w); }
+        if (!c.reasons.length) why.append(h('li', 're-why is-ok', T(i.context ? 'rs_allFound' : 'rs_noCheck')));
+        li.append(why); ul.append(li);
+      }
+      if (i.claims.length) detail.append(ul);
+    }
+    if (i.refClaims && i.refClaims.length) {
+      detail.append(h('div', 'section-label', T('refClaims')));
+      const ul = h('ul', 're-claims');
+      for (const r of i.refClaims) {
+        const li = h('li', 'is-' + r.status);
+        li.append(ui.badge({ text: T('rf_' + r.status), tone: r.status }), h('span', 're-ctext', r.text));
+        const why = h('ul', 're-whys'); why.append(h('li', 're-why is-' + r.status, refText(r))); li.append(why); ul.append(li);
       }
       detail.append(ul);
     }
     const notes = [];
-    if (i.detail.correctness) { const d = i.detail.correctness; if (d.missing.length) notes.push(fmt('corr_missing', { list: facts(d.missingFacts) })); if (d.conflict.length) notes.push(fmt('corr_conflict', { list: facts(d.conflictFacts) })); notes.push(fmt('corr_cov', { pct: d.coverage })); }
     if (i.detail.citation) notes.push(T('cit_' + i.detail.citation));
     if (notes.length) detail.append(h('p', 're-sub', notes.join(' · ')));
+    if (i.judgeNote) { const jn = h('p', 're-jnote'); jn.append(h('b', null, T('judgeSays') + ' '), document.createTextNode(i.judgeNote)); detail.append(jn); }
     // overrides
     detail.append(h('div', 'section-label', T('scores')));
     const grid = h('div', 're-ov');
@@ -228,7 +313,8 @@ function renderAll(r, ctx) {
       const autoTxt = i.auto[m] === '' ? T('na') : i.auto[m] === 1 ? T('manualPass') : T('manualFail');
       const sel = ui.select({ size: 'sm', value: ov === 0 || ov === 1 ? String(ov) : '', ariaLabel: T('ml_' + m), options: [{ value: '', label: `${T('auto')} (${autoTxt})` }, { value: '1', label: T('manualPass') }, { value: '0', label: T('manualFail') }],
         onChange: (val) => { const all = structuredClone(ctx.state.overrides || {}); all[i.id] = all[i.id] || {}; if (val === '') delete all[i.id][m]; else all[i.id][m] = +val; if (!Object.keys(all[i.id]).length) delete all[i.id]; ctx.setState({ overrides: all }, { silent: true }); ctx.__reRerender && ctx.__reRerender(); } });
-      const f = h('label', 're-ov-row'); f.append(h('span', null, T('ml_' + m)), sel);
+      const f = h('label', 're-ov-row'); const lab = h('span', 're-ov-l'); lab.append(h('span', null, T('ml_' + m)), h('small', null, ratioText(i, m) || T('method_' + METHOD[m])));
+      f.title = T('how_' + m); f.append(lab, sel);
       grid.append(f);
     }
     detail.append(grid);
@@ -244,7 +330,7 @@ function renderAll(r, ctx) {
 }
 
 /* ---------------------------------------------------------------- module */
-const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state, autorun: true }));
+const sampleList = (lang) => SAMPLES[lang].map((s) => ({ id: s.id, label: s.title, hint: s.client, state: s.state }));
 
 export default {
   id: 'rag-eval',
@@ -256,7 +342,7 @@ export default {
   primary: { label: { en: strings.en.run, fr: strings.fr.run }, icon: 'gauge' },
   schema: 1,
   defaults() {
-    return { title: '', threshold: 90, golden: '', answers: '', gates: { ...DEFAULT_GATES }, overrides: {}, causes: {} };
+    return { title: '', threshold: 90, golden: '', answers: '', gates: { ...DEFAULT_GATES }, overrides: {}, causes: {}, judgeNotes: {} };
   },
   samples: { en: sampleList('en'), fr: sampleList('fr') },
   mount,
@@ -275,10 +361,11 @@ export default {
   toMarkdown,
   exports: [
     { id: 'csv', label: { en: strings.en.exportCsv, fr: strings.fr.exportCsv }, build: (s) => ({ name: 'eval_results.csv', mime: 'text/csv', text: resultsCsv(evaluate(s)) }) },
+    { id: 'judge-prompt', label: { en: strings.en.exportJudge, fr: strings.fr.exportJudge }, build: (s) => ({ name: 'llm_judge_prompt.md', mime: 'text/markdown', text: promptJudge(s) }) },
   ],
   aiActions: [
     { id: 'judge', label: { en: strings.en.aiJudge, fr: strings.fr.aiJudge }, prompt: (s) => promptJudge(s), expects: 'json' },
     { id: 'causes', label: { en: strings.en.aiCauses, fr: strings.fr.aiCauses }, prompt: (s) => promptCauses(s), expects: 'markdown' },
   ],
-  _internals: { toMarkdown, evaluate },
+  _internals: { toMarkdown, evaluate, promptJudge },
 };

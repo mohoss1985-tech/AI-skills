@@ -7,7 +7,16 @@ description: Explains and specifies network tokenization and wallet provisioning
 
 You act as a payments Business Analyst on the issuer side (Harbor Bank in English / Visa terms, Banque Lumière in French / CB terms). A tokenization spec is good when **every actor knows what it holds and never sees**, every lifecycle transition has an allowed and a refused test, and the effect of a **card block on its tokens** is written down.
 
-Tool: **Tokenization simulator** in Analyst Kit (`#/tool/tokenization`) runs the flow below on the demo mock (rules T1–T18, B3). Use it to show the flow, then paste its Markdown export into the spec.
+Tool: **Tokenization simulator** in Skills Portal (`#/tool/tokenization`) runs the flow below on the demo mock (rules T1–T18, B3). Use it to show the flow, then paste its Markdown export into the spec.
+
+How to demo it (guided, step by step):
+
+1. Load a sample (inputs only: EN = Visa VTS card in Apple Pay, FR = CB co-badged card) and press **Run flow**.
+2. Press **Next step ▸** (or the → key; ← goes back; **Play all** shows the rest). Each press draws one arrow between Wallet / Device → Token Requestor → Token Service (VTS / MDES) → Issuer, with one plain sentence and the fields carried by that message: masked PAN, token (DPAN), token reference, PAR, cryptogram (TAVV, or ARQC for contactless), ID&V methods, eligibility and the issuer decision.
+3. Three paths: **green** (approved), **yellow** (step-up: the flow stops at the code box; a wrong code shows the refusal, `123456` activates the token, three wrong codes delete it), **red** (declined, no token).
+4. After provisioning, the **Token lifecycle** panel takes one visible step per button: pay (a new cryptogram per transaction), suspend, resume, card replaced (the token and the PAR stay, the PAN is updated), delete (final).
+
+The scheme field names shown per message (for example `vProvisionedTokenID` for VTS, `tokenUniqueReference` for MDES, `paymentAccountReference`) are indicative: mark them *to confirm* against the scheme specification before they go into a spec. CB names are neutral placeholders.
 
 ## 1. Actors (EMVCo vocabulary)
 
@@ -42,6 +51,7 @@ Questions a BA must ask: which signals send a card to yellow? Which ID&V methods
 | Phone found | Resume | T12 |
 | Card lost or stolen (opposition) | Suspend **every** token of the PAN; the next cryptogram is refused | B3, T16 |
 | Replacement card active | Re-map the tokens to the new PAN (same token, same PAR): the cardholder keeps paying without adding the card again | T13 |
+| Card replaced with no block (renewal, reissue) | PAN update only: the token stays active, same token, same PAR | T13 |
 | Resume while the card is blocked and no replacement is active | Refused | T13 |
 | Fraud on the token | Delete; a token suspended for fraud cannot be resumed | T14 |
 | Delete | Final: any later call is refused | T15 |
@@ -54,7 +64,7 @@ The Secure Enclave approves (Face ID / passcode), then the Secure Element builds
 
 ## 5. Output contract
 
-1. Sequence diagram (Mermaid) with the 6 actors and one arrow per step.
+1. Sequence diagram (Mermaid) with the 6 actors and one arrow per step, each arrow with its payload fields (PAN masked).
 2. Issuer decision table: rule ID · condition · green / yellow / red · ID&V method · rationale.
 3. Lifecycle table (§3) including the card-block effect.
 4. "Who sees what" matrix (§1).

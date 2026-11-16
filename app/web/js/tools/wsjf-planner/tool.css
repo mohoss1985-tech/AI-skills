@@ -43,3 +43,6 @@
 .tool-wsjf-planner .wsjf-li-why { color: var(--fg-2); font-size: var(--fs-12); }
 .tool-wsjf-planner .wsjf-alert, .tool-wsjf-planner .wsjf-ok { margin: var(--s-2) 0; color: var(--fg); }
 .tool-wsjf-planner .wsjf-pi .badge { white-space: nowrap; }
+
+.tool-wsjf-planner .wsjf-grid tr.is-skipped td { background: var(--warn-soft, transparent); }
+.tool-wsjf-planner .wsjf-invite { padding: var(--s-4); border: 1px dashed var(--border, #ccc); border-radius: var(--r-2, 8px); }

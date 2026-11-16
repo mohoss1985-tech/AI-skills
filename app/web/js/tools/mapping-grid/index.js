@@ -85,6 +85,9 @@ function promptRules(state) {
 /* ------------------------------------------------------------------------------------------- view */
 function mount(el, ctx) {
   const { ui } = ctx;
+  // The frame sets ctx.guided right AFTER mount: the first paint of results waits one macrotask (rule 8).
+  let ready = false;
+  const showResults = () => ready && !ctx.guided;
   const S = () => ctx.state;
   const set = (patch) => ctx.setState(patch, { silent: true });
   let timer = null;
@@ -135,7 +138,7 @@ function mount(el, ctx) {
   let A = null; // last analysis
 
   function rowBadge(row) {
-    if (!A || (!row.target && !row.source)) return '';
+    if (!A || !showResults() || (!row.target && !row.source)) return '';
     const list = A.issues.filter((x) => x.level !== 'info' && row.target && x.field === row.target);
     const pv = A.pv.find((p) => p.target === row.target);
     if (!list.length) {
@@ -182,6 +185,7 @@ function mount(el, ctx) {
   const covBox = h('section', { class: 'mg-panel' });
   const pvBox = h('section', { class: 'mg-panel mg-preview' });
   const lower = h('div', { class: 'mg-lower' }, h('div', { class: 'mg-col' }, checksBox, covBox), pvBox);
+  const invite = h('p', { class: 'mg-hint mg-invite', text: T('invite') });
   const empty = ui.emptyState({ icon: 'arrow-left-right', title: T('emptyTitle'), text: T('emptyBody'),
     sample: { label: SAMPLES[getLang() === 'fr' ? 'fr' : 'en'][0].label, onClick: () => ctx.loadSample(getLang() === 'fr' ? 'fr' : 'en', 0) } });
 
@@ -246,11 +250,14 @@ function mount(el, ctx) {
     A = analyse(S());
     A.pv = preview(S());
     const has = model(S()).targets.length > 0 || (S().map || []).length > 0;
-    empty.hidden = has; lower.hidden = !has; gridBox.hidden = !has; head.hidden = !has; hint.hidden = !has;
+    const show = showResults();
+    invite.hidden = !has || show;
+    empty.hidden = has; lower.hidden = !has || !show; gridBox.hidden = !has; head.hidden = !has; hint.hidden = !has;
     if (gridEl) { const rows = gridEl.getRows(); gridEl.querySelectorAll('tbody tr').forEach((tr, ri) => {
       const cell = tr.cells[7]; if (cell && rows[ri]) { const b = rowBadge(rows[ri]); cell.firstChild.replaceChildren(b instanceof Node ? b : document.createTextNode(b)); } }); }
-    paintChecks(); paintCoverage(); paintPreview();
     adv.setCount(advCount());
+    if (!show) return A;
+    paintChecks(); paintCoverage(); paintPreview();
     const text = F('meta', { n: A.coverage.length, e: A.counts.error, w: A.counts.warning });
     ctx.frame.setStatus({ tone: A.counts.error ? 'bad' : A.counts.warning ? 'warn' : 'ok', text });
     return A;
@@ -258,9 +265,10 @@ function mount(el, ctx) {
   function rebuild() { A = analyse(S()); A.pv = preview(S()); buildGrid(); refreshKeepGrid(); }
   const refresh = refreshKeepGrid;
 
-  el.append(adv, head, hint, empty, gridBox, lower);
+  el.append(adv, head, hint, empty, gridBox, invite, lower);
   ctx.__mgRefresh = refreshKeepGrid;
   rebuild();
+  setTimeout(() => { ready = true; rebuild(); }, 0);
 }
 
 /* ------------------------------------------------------------------------------------------- module */

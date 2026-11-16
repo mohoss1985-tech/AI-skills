@@ -28,7 +28,7 @@ export function renderChrome() {
   document.querySelectorAll('[data-i18n]').forEach((el) => (el.textContent = L(el.dataset.i18n)));
   document.documentElement.lang = S.lang;
   const total = newCount + S.chatUnread;
-  document.title = (total ? `(${total}) ` : '') + 'Analyst Kit';
+  document.title = (total ? `(${total}) ` : '') + 'Skills Portal';
   $('#me-name').textContent = DEMO ? L('Guest') : S.profile.name || L('Set up your profile');
   $('#me-sub').textContent = DEMO ? L('Read-only demo') : [S.profile.title, S.profile.company].filter(Boolean).join(' · ') || L('Profile');
   $('#me-avatar').textContent = initials(S.profile.name);

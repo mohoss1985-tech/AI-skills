@@ -334,3 +334,66 @@ export function schemaText(schema, only = []) {
   const list = only.length ? schema.filter((t) => only.includes(t.name)) : schema;
   return list.map((t) => `${t.name}(${t.columns.map((c) => `${c.name} ${c.type}${c.pk ? ' PK' : ''}`).join(', ')}) -- ${t.rows} rows`).join('\n');
 }
+
+// ---------------------------------------------------------------------------------------------- question → SQL (offline templates)
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, ' ');
+const MONTHS = { jan: '01', janv: '01', feb: '02', fev: '02', mar: '03', apr: '04', avr: '04', may: '05', mai: '05', jun: '06', juin: '06', jul: '07', juil: '07', aug: '08', aou: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+
+/** Turn a plain-words question into SQL for the sample database, or null when no template fits (then Claude is needed). */
+export function questionToSql(question) {
+  const q = ' ' + norm(question) + ' ';
+  const has = (re) => re.test(q);
+  const dispute = has(/\b(dispute|disputes|litige|litiges|chargeback|chargebacks|impaye|impayes|contestation)/);
+  const rate = has(/approval rate|acceptance rate|approval|taux d ?acceptation|taux d approbation|acceptation/);
+  const declines = has(/declin|refus|rejet|denied|reject/);
+  const amount = has(/\b(amount|value|volume|montant|total spend|euros?)\b/);
+  const topM = q.match(/\b(?:top|les|premiers?)\s+(\d{1,2})\b/);
+  const limit = topM ? Math.min(50, Math.max(1, +topM[1])) : 0;
+  let month = null;
+  const mm = q.match(/\b(jan|janv|january|janvier|feb|fev|february|fevrier|mar|march|mars|apr|avr|april|avril|may|mai|jun|juin|june|jul|juil|july|juillet|aug|aou|august|aout|sep|sept|september|septembre|oct|october|octobre|nov|november|novembre|dec|december|decembre)\b/);
+  if (mm) month = MONTHS[mm[1]] || MONTHS[mm[1].slice(0, 4)] || MONTHS[mm[1].slice(0, 3)] || null;
+  const year = (q.match(/\b(20\d\d)\b/) || [])[1] || '2026';
+
+  if (dispute) {
+    const by = has(/\b(condition|reason|motif|code)\b/) ? 'condition_code' : has(/\b(status|statut|state|etat)\b/) ? 'status' : null;
+    const sel = by ? `d.${by} AS ${by},\n       ` : '';
+    const sql = `-- ${String(question).replace(/\s+/g, ' ').trim()}\nSELECT ${sel}COUNT(*) AS disputes,\n       ROUND(SUM(d.amount_minor) / 100.0, 2) AS amount_eur\nFROM disputes d\n${by ? `GROUP BY d.${by}\nORDER BY disputes DESC` : ''}`.trim();
+    return { sql, notes: 'disputes' };
+  }
+
+  let dim = null, dimSel = '', dimJoin = '';
+  if (has(/\b(channel|canal|canaux)\b/)) { dim = 'channel'; dimSel = 'a.channel AS channel'; }
+  else if (has(/\b(mcc|categor\w*|sector|secteur)\b/)) { dim = 'merchant_category'; dimSel = 'mc.label_en AS merchant_category'; dimJoin = 'JOIN merchants m  ON m.merchant_id = a.merchant_id\nJOIN mcc_codes mc ON mc.mcc = m.mcc'; }
+  else if (has(/\b(merchant|merchants|commercant|commercants)\b/)) { dim = 'merchant'; dimSel = 'm.name AS merchant'; dimJoin = 'JOIN merchants m ON m.merchant_id = a.merchant_id'; }
+  else if (has(/\b(response code|response codes|decline code|decline codes|code|codes|reason|reasons|motif|motifs)\b/)) { dim = 'response'; dimSel = "a.response_code AS response_code,\n       rc.label_en AS meaning"; dimJoin = 'JOIN response_codes rc ON rc.code = a.response_code'; }
+  else if (has(/\b(day|days|daily|jour|jours|quotidien|date)\b/)) { dim = 'day'; dimSel = 'substr(a.auth_ts, 1, 10) AS day'; }
+  else if (has(/\b(scheme|schemes|reseau|reseaux|visa|cb)\b/) && has(/\b(by|per|par|each|chaque)\b/)) { dim = 'scheme'; dimSel = 'a.scheme AS scheme'; }
+  else if (has(/\b(entry mode|mode de saisie|contactless|chip)\b/)) { dim = 'entry_mode'; dimSel = 'a.entry_mode AS entry_mode'; }
+  if (!dim && !rate && !declines && !amount && !has(/\b(how many|count|number|combien|nombre)\b/)) return null;
+  if (!has(/\b(authori[sz]ations?|autorisations?|transactions?|payments?|paiements?|cards?|cartes?|merchant|merchants|commercant|commercants|decline|declined|declines|refus|approval|acceptation)\b/) && !dim) return null;
+
+  const where = [];
+  if (declines && !rate) where.push("a.response_code <> '00'");
+  if (has(/stand ?in|stip/)) where.push('a.stip = 1');
+  if (has(/\bvisa\b/) && dim !== 'scheme') where.push("a.scheme = 'VISA'");
+  else if (has(/\bcb\b/) && dim !== 'scheme') where.push("a.scheme = 'CB'");
+  if (has(/\b(ecom|e commerce|online|en ligne)\b/) && dim !== 'channel') where.push("a.channel = 'ecom'");
+  if (month) {
+    const ny = month === '12' ? +year + 1 : +year, nm = month === '12' ? '01' : String(+month + 1).padStart(2, '0');
+    where.push(`a.auth_ts >= '${year}-${month}-01' AND a.auth_ts < '${ny}-${nm}-01'`);
+  }
+  const measure = rate ? "ROUND(100.0 * SUM(CASE WHEN a.response_code = '00' THEN 1 ELSE 0 END) / COUNT(*), 1) AS approval_pct"
+    : amount ? 'ROUND(SUM(a.amount_minor) / 100.0, 2) AS amount_eur'
+      : declines ? 'COUNT(*) AS declined' : 'COUNT(*) AS auths';
+  const mName = rate ? 'approval_pct' : amount ? 'amount_eur' : declines ? 'declined' : 'auths';
+  const n = limit || (dim && dim !== 'day' && dim !== 'channel' && dim !== 'scheme' ? 10 : 0);
+  const lines = [`-- ${String(question).replace(/\s+/g, ' ').trim()}`, `SELECT ${dimSel ? dimSel + ',\n       ' : ''}${measure}`, 'FROM authorisations a'];
+  if (dimJoin) lines.push(dimJoin);
+  if (where.length) lines.push('WHERE ' + where.join('\n  AND '));
+  if (dim) {
+    lines.push('GROUP BY ' + (dim === 'response' ? 'a.response_code, rc.label_en' : dim === 'day' ? 'substr(a.auth_ts, 1, 10)' : dim === 'merchant_category' ? 'mc.label_en' : dim === 'merchant' ? 'm.name' : 'a.' + dim));
+    lines.push(dim === 'day' ? 'ORDER BY day' : `ORDER BY ${mName} DESC`);
+  }
+  if (n) lines.push('LIMIT ' + n);
+  return { sql: lines.join('\n'), notes: 'authorisations' };
+}
