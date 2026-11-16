@@ -80,8 +80,8 @@ const tool = {
   toMarkdown,
   exports: [
     { id: 'curl', label: { en: 'cURL (this request)', fr: 'cURL (cette requête)' }, build: (st) => ({ name: 'request.sh', mime: 'text/x-shellscript', text: curlNote() + toCurl(st.req, allVars(st)) + '\n' }) },
-    { id: 'postman', label: { en: 'Postman collection v2.1 (with tests)', fr: 'Collection Postman v2.1 (avec tests)' }, build: (st) => ({ name: 'analyst-kit.postman_collection.json', mime: 'application/json', text: JSON.stringify(toPostman(T('collectionName'), casesForExport(st), allVars(st), { env: st.env }), null, 2) }) },
-    { id: 'pytest', label: { en: 'pytest file', fr: 'Fichier pytest' }, build: (st) => ({ name: 'analyst_kit_api_test.py', mime: 'text/x-python', text: toPytest(casesForExport(st), allVars(st), { env: st.env, title: T('collectionName') }) }) },
+    { id: 'postman', label: { en: 'Postman collection v2.1 (with tests)', fr: 'Collection Postman v2.1 (avec tests)' }, build: (st) => ({ name: 'skills-portal.postman_collection.json', mime: 'application/json', text: JSON.stringify(toPostman(T('collectionName'), casesForExport(st), allVars(st), { env: st.env }), null, 2) }) },
+    { id: 'pytest', label: { en: 'pytest file', fr: 'Fichier pytest' }, build: (st) => ({ name: 'skills_portal_api_test.py', mime: 'text/x-python', text: toPytest(casesForExport(st), allVars(st), { env: st.env, title: T('collectionName') }) }) },
     { id: 'report-md', label: { en: 'Evidence report (Markdown)', fr: 'Rapport de preuve (Markdown)' }, build: (st, r) => ({ name: 'api-test-report.md', mime: 'text/markdown', text: toReportMd(suiteFor(st, r), T, { env: st.env.name }) }) },
     { id: 'report-csv', label: { en: 'Evidence report (CSV)', fr: 'Rapport de preuve (CSV)' }, build: (st, r) => ({ name: 'api-test-report.csv', mime: 'text/csv', text: toReportCsv(suiteFor(st, r), { env: st.env.name }) }) },
   ],

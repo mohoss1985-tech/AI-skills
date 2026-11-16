@@ -18,6 +18,19 @@ Ce dépôt le fait une seule fois. Chaque compétence contient la méthode ; l'a
 
 ---
 
+## Utiliser pour de vrai
+
+La démo en ligne sert à essayer. Pour utiliser les outils sur **vos projets, vos données et vos API**, lancez Skills
+Portal sur votre ordinateur — il suffit de Python 3 :
+
+1. Bouton vert **Code** de cette page → **Download ZIP**, puis décompressez (ou `git clone` du dépôt).
+2. Ouvrez un terminal dans ce dossier et lancez `python3 app/server/server.py` (Windows : `python app/server/server.py`).
+3. Ouvrez **http://localhost:4317**. Votre travail est enregistré dans `app/data/kit.db`, et le testeur d'API peut appeler **n'importe quelle API accessible** (interne, VPN, recette), via le proxy de l'entreprise si besoin (`HTTPS_PROXY`).
+
+Dans la démo en ligne, le testeur d'API ne peut appeler que la simulation Banque Lumière et quelques API publiques (le navigateur bloque les autres) ; tous les autres outils fonctionnent avec vos propres données (collez, lancez, exportez).
+
+📖 **[Manuel utilisateur](MANUAL.md)** (en anglais) : installation Mac / Windows / Linux, fonctionnement commun et une fiche par outil (ce que vous apportez, les étapes, les fichiers obtenus, les limites). Chaque page d'outil renvoie vers sa fiche.
+
 ## V2 → V3 (Skills Portal, 16 nov.)
 
 La V2 reste en ligne sur [/v2/](https://mohoss1985-tech.github.io/AI-skills/v2/) et la V1 sur [/v1/](https://mohoss1985-tech.github.io/AI-skills/v1/). Chaque outil de la V2 a été utilisé pour de vrai dans un navigateur, noté puis corrigé (audit : `research/v3/`).

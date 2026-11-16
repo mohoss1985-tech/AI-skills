@@ -49,4 +49,4 @@ export function viewHome() {
 
 /** Disclaimer (DESIGN_SPEC §5), on Home and in the page footers. */
 export const disclaimer = () => `<footer class="site-foot"><p>${esc(L('Fictional data. Not affiliated with Visa or GIE CB. No real card data.'))}</p>
-  <p>${esc(L('Skills Portal · code MIT · samples and docs CC BY 4.0'))}</p></footer>`;
+  <p><a href="https://github.com/mohoss1985-tech/AI-skills/blob/main/MANUAL.md" target="_blank" rel="noopener">${esc(L('Use it for real: user manual'))} →</a> · ${esc(L('Skills Portal · code MIT · samples and docs CC BY 4.0'))}</p></footer>`;

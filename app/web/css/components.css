@@ -568,3 +568,8 @@ dl.answers dt { color: var(--fg-2); } dl.answers dd { margin: 0; }
 @keyframes tf-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-text) 55%, transparent); } 70%, 100% { box-shadow: 0 0 0 10px transparent; } }
 @media (prefers-reduced-motion: reduce) { .tf-primary.tf-pulse { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-text) 45%, transparent); } }
 @media print { .tf-tp-body { display: block !important; } .tf-run-hint { display: none; } }
+
+/* Talking points: link to the user manual */
+.tf-tp-real { margin: 10px 0 0; font-size: 13px; }
+.tf-tp-real a { color: var(--accent-text); text-decoration: none; font-weight: 500; }
+.tf-tp-real a:hover { text-decoration: underline; }

@@ -6,7 +6,7 @@
 [![V2](https://img.shields.io/badge/V2%20(frozen)-gray?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/v2/)
 [![V1](https://img.shields.io/badge/V1%20(frozen)-gray?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/v1/)
 
-🇫🇷 [Version française](README.fr.md) · [Changelog](CHANGELOG.md)
+🇫🇷 [Version française](README.fr.md) · 📖 [User manual](MANUAL.md) · [Changelog](CHANGELOG.md)
 
 ![API tester](screenshots/v2/final/api-tester-en-light.png)
 
@@ -17,6 +17,17 @@
 | [**Test a card-blocking API**](https://mohoss1985-tech.github.io/AI-skills/#/tool/api-tester?sample=en:0) | Method + URL, auth, data, expected result. Send → 200, click a value to make a check, then pay with the blocked card → declined 41. Export curl, Postman, pytest. |
 | [**Notes → user stories → Jira**](https://mohoss1985-tech.github.io/AI-skills/#/tool/story-builder?sample=en:0) | Example mapping turns rules into stories and Gherkin, with an INVEST check per story and a Jira CSV. |
 | [**Top decline codes with SQL**](https://mohoss1985-tech.github.io/AI-skills/#/tool/sql-runner?sample=en:0) | Real SQL on a sample card database, right in the browser. One query finds the stolen card approved in stand-in. |
+
+## Use it for real
+
+The live demo is for trying the tools. To use them on **your own projects, data and APIs**, run Skills Portal on your
+computer — only Python 3 is needed:
+
+1. Click the green **Code** button on this page → **Download ZIP**, and unzip it (or `git clone` this repo).
+2. Open a terminal in that folder and run `python3 app/server/server.py`
+3. Open **http://localhost:4317**. Your work is saved in `app/data/kit.db`, and the API tester can call **any API you can reach** (internal, VPN, UAT), through your company proxy if needed.
+
+📖 **[User manual](MANUAL.md)**: install on Mac / Windows / Linux, how every tool works, and a section per tool (what you bring, the steps, the files you get, limits). Every tool page also links to its section.
 
 ## V2 → V3 (Skills Portal, Nov 16)
 
