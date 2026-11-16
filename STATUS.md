@@ -54,3 +54,5 @@ Waves (2 agents max):
 - 15:44 D DONE (8 tasks; frame restore-lang unverified; sql default sample = 1 row → no chart).
 - 15:44 Integration check: node --test over 19 tool suites → 74 tests pass, 0 fail (145 PASS asserts). Waiting on R3.
 - 15:53 R3 DONE (tokenization guided steps + lifecycle, 10/10 tests). ALL BUILDERS DONE → lead integration.
+- 15:57 Integration: static export OK; Edge smoke 20 tools × EN/FR → 0 console errors, no NaN/null/undefined text; screenshots checked (tokenization, rag-eval, sql-runner). Local commit done. NEXT: owner 'push' → tag v2.0.0 already exists; sync into AI-skills clone, tag v3.0.0, keep V2 at /v2/?, push.
+- 15:57 Integration: static export OK; Edge smoke 20 tools × EN/FR → 0 console errors, no NaN/null/undefined text; screenshots checked. Local commit done (identity: Claude, as in AI-skills). NEXT on owner "push": sync into AI-skills clone, tag v3.0.0, push → Pages.
