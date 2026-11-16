@@ -17,6 +17,21 @@
 | [**Notes → user stories → Jira**](https://mohoss1985-tech.github.io/AI-skills/#/tool/story-builder?sample=en:0) | Example mapping turns rules into stories and Gherkin, with an INVEST check per story and a Jira CSV. |
 | [**Top decline codes with SQL**](https://mohoss1985-tech.github.io/AI-skills/#/tool/sql-runner?sample=en:0) | Real SQL on a sample card database, right in the browser. One query finds the stolen card approved in stand-in. |
 
+## V2 → V3 (Skills Portal, Nov 16)
+
+V2 is frozen at [/v2/](https://mohoss1985-tech.github.io/AI-skills/v2/) and V1 at [/v1/](https://mohoss1985-tech.github.io/AI-skills/v1/).
+Every V2 tool was used for real in a browser, scored and fixed (audit: `research/v3/`).
+
+| | V2 | V3 (Skills Portal) |
+|---|---|---|
+| Tools broken / weak | 2 / 13 | 0 / 0 known bugs |
+| Talking points | none | every tool: *Replaces …*, what it does, how it works (EN + FR) |
+| Demo | samples opened already computed | guided: the sample fills the inputs, **you** press Run (⌘↵) |
+| AI risk register | could say "Minimal" for credit scoring | EU AI Act decision tree with article numbers and current dates |
+| RAG eval | word matching | claim-level checks (polarity, units, hallucinations) + LLM-judge prompt |
+| Tokenization | end state only | step-by-step sequence (Next ▸) + token lifecycle |
+| Jira / Xray exports | epic link lost; Cucumber dropped | epic linked by ID; Manual + Cucumber + Generic; SFD rules import into UAT and Xray |
+
 ## V1 → V2
 
 | | V1 (Nov 2, [frozen at /v1/](https://mohoss1985-tech.github.io/AI-skills/v1/)) | V2 |
