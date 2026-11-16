@@ -2,7 +2,7 @@
 
 How to use the 20 tools **for real**, on your own projects, data and APIs — not only in the demo.
 
-🇫🇷 Résumé en français : [README.fr.md › Utiliser pour de vrai](README.fr.md#utiliser-pour-de-vrai) · 🏠 [README](README.md) · ▶ [Live demo](https://mohoss1985-tech.github.io/AI-skills/)
+🇫🇷 [Version française](MANUAL.fr.md) · 🏠 [README](README.md) · ▶ [Live demo](https://mohoss1985-tech.github.io/AI-skills/)
 
 **Contents:** [1. Demo or local?](#1-demo-or-local) · [2. Install and run](#2-install-and-run-on-your-computer) ·
 [3. How every tool works](#3-how-every-tool-works) · [4. Tool by tool](#4-tool-by-tool) · [5. Troubleshooting](#5-troubleshooting)
@@ -151,7 +151,7 @@ Format: **Replaces** · **You bring** · **Steps** · **You get** · ⚠️ limi
 #### Xray builder · `#/tool/xray-builder`
 - **Replaces:** hand-building Xray import files.
 - **You bring:** test cases (Manual steps, Cucumber/Gherkin, or Generic/automated), project key, Xray Cloud or Server/DC.
-- **Steps:** paste tests or *Add from → SFD rules CSV* → **Run** → fix validation errors (download is blocked until clean).
+- **Steps:** paste tests or *Add tests from → SFD rules CSV…* → **Run** → fix validation errors (download is blocked until clean).
 - **You get:** Xray test CSV, bulk JSON, results JSON, and `IMPORT-*.md` with the exact import steps.
 
 ### Data

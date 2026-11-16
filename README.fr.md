@@ -29,7 +29,7 @@ Portal sur votre ordinateur — il suffit de Python 3 :
 
 Dans la démo en ligne, le testeur d'API ne peut appeler que la simulation Banque Lumière et quelques API publiques (le navigateur bloque les autres) ; tous les autres outils fonctionnent avec vos propres données (collez, lancez, exportez).
 
-📖 **[Manuel utilisateur](MANUAL.md)** (en anglais) : installation Mac / Windows / Linux, fonctionnement commun et une fiche par outil (ce que vous apportez, les étapes, les fichiers obtenus, les limites). Chaque page d'outil renvoie vers sa fiche.
+📖 **[Manuel utilisateur](MANUAL.fr.md)** : installation Mac / Windows / Linux, fonctionnement commun et une fiche par outil (ce que vous apportez, les étapes, les fichiers obtenus, les limites). Chaque page d'outil renvoie vers sa fiche.
 
 ## V2 → V3 (Skills Portal, 16 nov.)
 

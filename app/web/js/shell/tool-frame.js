@@ -431,7 +431,7 @@ function talkingPointsCard(id) {
   hd.append(ui.icon('chevron-down'));
   const bodyEl = document.createElement('div');
   bodyEl.className = 'tf-tp-body';
-  bodyEl.innerHTML = `<p><b>${esc(t('What it does'))}.</b> ${esc(pick(d.what))}</p><p class="tf-tp-how"><b>${esc(t('How it works'))}</b></p><ol>${d.how.map((x) => `<li>${esc(pick(x))}</li>`).join('')}</ol><p class="tf-tp-real"><a href="https://github.com/mohoss1985-tech/AI-skills/blob/main/MANUAL.md#${esc(id)}" target="_blank" rel="noopener">${esc(t('Use it for real: install and step-by-step guide'))} →</a></p>`;
+  bodyEl.innerHTML = `<p><b>${esc(t('What it does'))}.</b> ${esc(pick(d.what))}</p><p class="tf-tp-how"><b>${esc(t('How it works'))}</b></p><ol>${d.how.map((x) => `<li>${esc(pick(x))}</li>`).join('')}</ol><p class="tf-tp-real"><a href="https://github.com/mohoss1985-tech/AI-skills/blob/main/${getLang() === 'fr' ? 'MANUAL.fr.md' : 'MANUAL.md'}#${esc(id)}" target="_blank" rel="noopener">${esc(t('Use it for real: install and step-by-step guide'))} →</a></p>`;
   const paint = () => { card.classList.toggle('is-open', open); hd.setAttribute('aria-expanded', open ? 'true' : 'false'); bodyEl.hidden = !open; };
   hd.onclick = () => { open = !open; try { localStorage.setItem(TP_KEY, open ? '1' : '0'); } catch { /* ignore */ } paint(); };
   paint();

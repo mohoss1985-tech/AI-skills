@@ -3,7 +3,7 @@
 import { DEMO, post } from '../core/api.js';
 import { $, esc, html, raw } from '../core/dom.js';
 import { greeting } from '../core/format.js';
-import { L, pick, tx } from '../core/i18n.js';
+import { L, getLang, pick, tx } from '../core/i18n.js';
 import { S } from '../core/store.js';
 import { DEMOS, GROUPS, GROUP_LABEL, TOOLS } from '../tools/registry.js';
 import { TALKING_POINTS } from '../tools/talking-points.js';
@@ -49,4 +49,4 @@ export function viewHome() {
 
 /** Disclaimer (DESIGN_SPEC §5), on Home and in the page footers. */
 export const disclaimer = () => `<footer class="site-foot"><p>${esc(L('Fictional data. Not affiliated with Visa or GIE CB. No real card data.'))}</p>
-  <p><a href="https://github.com/mohoss1985-tech/AI-skills/blob/main/MANUAL.md" target="_blank" rel="noopener">${esc(L('Use it for real: user manual'))} →</a> · ${esc(L('Skills Portal · code MIT · samples and docs CC BY 4.0'))}</p></footer>`;
+  <p><a href="https://github.com/mohoss1985-tech/AI-skills/blob/main/${getLang() === 'fr' ? 'MANUAL.fr.md' : 'MANUAL.md'}" target="_blank" rel="noopener">${esc(L('Use it for real: user manual'))} →</a> · ${esc(L('Skills Portal · code MIT · samples and docs CC BY 4.0'))}</p></footer>`;
