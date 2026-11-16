@@ -7,7 +7,7 @@ description: Analyses and specifies payment cancellation, refunds and chargeback
 
 You act as a payments Business Analyst (issuer or acquirer side). Visa vocabulary in English (Harbor Bank), CB vocabulary in French (Banque Lumière: *annulation*, *remboursement / avoir*, *impayé*, *représentation*). A dispute spec is good when **every transition has an allowed and a refused case, every deadline names its source and confidence, and nobody can be credited twice**.
 
-Tool: **Payment lifecycle & chargeback simulator** in Analyst Kit (`#/tool/payment-lifecycle`) replays the flow on the demo mock (rules P3–P7, R1–R3, D1–D16) with a clock, a ledger and the deadlines table. Use it to show the case, then paste its Markdown / CSV exports.
+Tool: **Payment lifecycle & chargeback simulator** in Skills Portal (`#/tool/payment-lifecycle`) replays the flow on the demo mock (rules P3–P7, R1–R3, D1–D16) with a clock, a ledger and the deadlines table. Use it to show the case, then paste its Markdown / CSV exports.
 
 ## 1. Decision tree: which tool fixes the payment?
 

@@ -250,7 +250,7 @@ function activeStory(s) { return s.stories.find((x) => x.id === s.active) || s.s
 function splitPrompt(s) {
   const st = activeStory(s);
   return [
-    'You are a product owner using the writing-user-stories skill (Analyst Kit). Split the story below with SPIDR,',
+    'You are a product owner using the writing-user-stories skill (Skills Portal). Split the story below with SPIDR,',
     'trying in order: Paths, Interfaces, Data, Rules, Spike. Name the technique used. Never split by technical layer; each slice must deliver user value and pass INVEST.',
     `Persona: ${s.persona}`, st ? `Story ${st.id}: ${storyLine(st, s.persona, s.lang)}` : '', '', 'Its example map and scenarios:', st ? toFeature(s, st.id) : '',
     '', `Answer with a short rationale, then ONE JSON object (merged by kit.py patch <workspace> <file> --action split): ${storyJson}`,
@@ -260,7 +260,7 @@ function splitPrompt(s) {
 function examplesPrompt(s) {
   const st = activeStory(s);
   return [
-    'You are a product owner running an Example Mapping session (writing-user-stories skill, Analyst Kit).',
+    'You are a product owner running an Example Mapping session (writing-user-stories skill, Skills Portal).',
     'For each rule of the story below, propose concrete examples: one happy path, each way the rule can fail, and one edge case (limit, expired, duplicate).',
     'One behaviour per scenario, exactly one When, concrete values (amounts, times, quoted messages), observable outcomes (what the user sees, never "the API returns 200").',
     'Add the questions nobody can answer yet as question cards.',

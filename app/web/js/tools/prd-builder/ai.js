@@ -6,7 +6,7 @@ const lang = (s) => (s.lang === 'fr' ? 'Write in French (Banque Lumière, CB ter
 
 export function draftPrompt(s) {
   return [
-    'You are a senior product owner using the writing-prds skill (Analyst Kit). Draft a PRD from the notes below.',
+    'You are a senior product owner using the writing-prds skill (Skills Portal). Draft a PRD from the notes below.',
     'Problem before solution; every requirement traces to a goal; every goal has at least one metric with a baseline and a target;',
     'at least one guardrail metric; explicit non-goals; testable requirements (no "fast", "easy"); every open question has an owner.',
     'Mark gaps as ⟨TBD: …⟩ and anything only a scheme rulebook can confirm as *to confirm*. Fictional data only, no real card numbers.',

@@ -1,4 +1,4 @@
-"""Claude's side of Analyst Kit: find work, write deliverables, answer messages, fill tool workspaces.
+"""Claude's side of Skills Portal: find work, write deliverables, answer messages, fill tool workspaces.
 
   python3 app/server/kit.py wait                       block until there is work (keeps "Claude is online" lit)
   python3 app/server/kit.py pending                    print profile, learned notes, waiting requests and unanswered

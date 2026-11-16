@@ -84,7 +84,7 @@ def _mock_answer(method, url, path, headers, data, t0):
     from tools import mock_bank  # same package; imported lazily so a mock bug never breaks the proxy
     m = re.fullmatch(r"/mock/(harbor|lumiere)/v1(/.*)?", path)
     if not m:
-        return _fail("http.self_call", "The API tester can't call Analyst Kit itself (only /mock/harbor/v1 and /mock/lumiere/v1).", t0)
+        return _fail("http.self_call", "The API tester can't call Skills Portal itself (only /mock/harbor/v1 and /mock/lumiere/v1).", t0)
     res = mock_bank.BANKS[m.group(1)].handle(method, m.group(2) or "/", headers, (data or b"").decode("utf-8", "replace"))
     raw = res["body"].encode("utf-8")
     return {"ok": True, "status": res["status"], "reason": res["reason"], "headers": res["headers"], "body": res["body"],

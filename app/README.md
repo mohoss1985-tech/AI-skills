@@ -1,4 +1,4 @@
-# Analyst Kit
+# Skills Portal
 
 Turn your notes into client-ready deliverables (process maps, PRDs, user stories, API test plans, SQL queries) and talk to Claude about them.
 

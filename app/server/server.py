@@ -1,4 +1,4 @@
-"""Analyst Kit: working tools for payments BAs & POs. Claude (in your chat session) drafts on top.
+"""Skills Portal: working tools for payments BAs & POs. Claude (in your chat session) drafts on top.
 
 Stdlib HTTP server + SQLite. No API key: requests and chat messages wait in the
 database until Claude picks them up through kit.py and writes back.
@@ -214,7 +214,7 @@ def make_server(port=PORT, host=HOST):
 
 def main():
     srv = make_server()
-    print(f"Analyst Kit → http://localhost:{srv.server_address[1]}", flush=True)
+    print(f"Skills Portal → http://localhost:{srv.server_address[1]}", flush=True)
     for name, err in router.LOAD_ERRORS:
         print(f"  plug-in skipped: {name} ({err})", flush=True)
     srv.serve_forever()

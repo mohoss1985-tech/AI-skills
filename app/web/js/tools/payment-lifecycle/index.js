@@ -290,7 +290,7 @@ function prompt(kind, s, r) {
   const merchant = MERCHANTS.find((m) => m.id === s.merchant);
   const steps = res.log.map((l, i) => `${i + 1}. ${l.at} ${tr(l.title)}${l.detail ? ' — ' + tr(l.detail) : ''}${l.rule ? ` [${l.rule}]` : ''}`).join('\n');
   const ledger = res.ledger.map((l) => `- ${l.at} ${tr(l.note)}: ${l.debit || '—'} → ${l.credit || '—'} ${l.amount_minor == null ? '(to confirm)' : money(l.amount_minor, l.currency || s.currency)}`).join('\n');
-  const ctxText = `Simulator: payment lifecycle & chargebacks (Analyst Kit, skill handling-chargebacks). Fictional data.
+  const ctxText = `Simulator: payment lifecycle & chargebacks (Skills Portal, skill handling-chargebacks). Fictional data.
 Payment: ${money(Math.round(s.amount * 100))}, card ${s.cardId}, merchant ${merchant ? merchant.name : s.merchant}, channel ${s.channel}, 3-D Secure ${s.threeDs}${s.wallet ? ', wallet cryptogram' : ''}, scheme ${s.scheme === 'cb' ? 'Cartes Bancaires' : 'Visa'}.
 Event: ${s.event}${s.event === 'chargeback' ? ` ${s.reason} (${T('c.' + s.reason)})` : ` (${s.reason})`}. Mock today: ${res.today}.
 Dispute: ${res.dispute ? `${res.dispute.condition_code} ${res.dispute.workflow} · status ${res.dispute.status} · respond by ${res.dispute.respond_by || '—'} · evidence ${res.dispute.evidence.join(', ') || 'none'}` : 'none'}.

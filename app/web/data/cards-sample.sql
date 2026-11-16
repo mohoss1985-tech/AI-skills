@@ -1,4 +1,4 @@
--- Analyst Kit V2 · demo card-payments dataset (SQLite dialect, runs in sql.js / sqlite3)
+-- Skills Portal · demo card-payments dataset (SQLite dialect, runs in sql.js / sqlite3)
 -- Entirely fictional: Harbor Bank (Visa, EN) and Banque Lumière (CB, FR). No PAN stored: bin + last4 + token only.
 -- Test cards: bin 400000 + last4; the full test PAN 400000 000000 <last4> is Luhn-valid (research/09 decision 12).
 -- Source of truth: app/server/tools/sample/cards-sample.sql. build_cards_db.py copies it to app/web/data/ and builds cards.db.

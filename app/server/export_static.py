@@ -1,4 +1,4 @@
-"""Export Analyst Kit as a static demo (for GitHub Pages or any static host).
+"""Export Skills Portal as a static demo (for GitHub Pages or any static host).
 
     python3 app/server/export_static.py dist
 

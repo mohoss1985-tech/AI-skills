@@ -836,7 +836,7 @@ function promptGenerate(st, r) {
   const b = L.buildRequest(st.req, L.varsOf(st.env, st.vars));
   const sample = r && r.kind === 'send' && r.res.ok ? `\nObserved answer: ${r.res.status} ${r.res.reason}\n${String(r.res.body || '').slice(0, 3000)}\n` : '';
   return [
-    'Use the testing-apis skill. Design the test matrix for this endpoint (happy path, validation, boundaries, business rules, auth/BOLA, idempotency, errors) and return it as JSON for the Analyst Kit API tester.',
+    'Use the testing-apis skill. Design the test matrix for this endpoint (happy path, validation, boundaries, business rules, auth/BOLA, idempotency, errors) and return it as JSON for the Skills Portal API tester.',
     `Language for case names: ${getLang() === 'fr' ? 'French' : 'English'}. Test data: demo test cards only (never a real PAN). Keep {{base_url}} and {{api_key}} as variables.`,
     '', `Endpoint: ${b.method} ${st.req.url}`, `Auth: ${st.req.auth.type}${st.req.auth.type === 'apikey' ? ' header ' + st.req.auth.key : ''}`,
     st.req.body ? `Body:\n${st.req.body}` : '', sample,

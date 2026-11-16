@@ -1,8 +1,8 @@
 # Skills Portal · Compétences IA pour la monétique et les API
 
-> **V2 · des outils qui travaillent.** Vingt outils pour BA / PO en monétique : testeur d'API (4 champs, contrôles sans code, export curl / Postman / pytest), SQL sur une base carte, BPMN modifiable, WSJF, recette avec go / no-go, **simulateur de tokenisation** (carte → jeton Apple Pay) et **cycle de vie du paiement et impayés**. [Démo en ligne](https://mohoss1985-tech.github.io/AI-skills/?lang=fr) · [V1 figée](https://mohoss1985-tech.github.io/AI-skills/v1/) · [Journal des versions](CHANGELOG.md)
+> **V3 · Skills Portal.** Chaque outil affiche ses arguments de démo (*Remplace …*, ce qu'il fait, comment il marche), la démo est guidée (vous lancez l'exécution) et les 20 outils ont été testés et corrigés. **V2 · des outils qui travaillent.** Vingt outils pour BA / PO en monétique : testeur d'API (4 champs, contrôles sans code, export curl / Postman / pytest), SQL sur une base carte, BPMN modifiable, WSJF, recette avec go / no-go, **simulateur de tokenisation** (carte → jeton Apple Pay) et **cycle de vie du paiement et impayés**. [Démo en ligne](https://mohoss1985-tech.github.io/AI-skills/?lang=fr) · [V1 figée](https://mohoss1985-tech.github.io/AI-skills/v1/) · [Journal des versions](CHANGELOG.md)
 
-**Dix-huit compétences IA qui font le travail d'un Business Analyst / Product Owner en monétique, dans une application locale où chaque livrable part de quelques questions précises et de vos propres documents. Les exemples en français suivent les règles CB (Cartes Bancaires) ; les exemples en anglais suivent les règles Visa.**
+**Vingt compétences IA qui font le travail d'un Business Analyst / Product Owner en monétique, dans une application locale où chaque livrable part de quelques questions précises et de vos propres documents. Les exemples en français suivent les règles CB (Cartes Bancaires) ; les exemples en anglais suivent les règles Visa.**
 
 [![Ouvrir la démo en ligne](https://img.shields.io/badge/%E2%96%B6%20Ouvrir%20la%20d%C3%A9mo%20en%20ligne-5e6ad2?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
 
@@ -10,13 +10,27 @@
 
 🇬🇧 [English version](README.md)
 
-J'ai travaillé dans un réseau de paiement par carte français. Le métier se situe entre les **émetteurs**, les **acquéreurs** et le réseau : **autorisation**, **mise en opposition et déclaration de fraude** d'un PAN, **impayés**, interchange, compensation et règlement, et les API qui les relient.
+Je travaille dans les réseaux de paiement par carte. Le métier se situe entre les **émetteurs**, les **acquéreurs** et le réseau : **autorisation**, **mise en opposition et déclaration de fraude** d'un PAN, **impayés**, interchange, compensation et règlement, et les API qui les relient.
 
 Le travail suit toujours la même boucle : atelier, spécification, test d'API, planification, recette, analyse d'impact de la prochaine règle. Et il est fait trois fois : on le **fait** dans un outil, on le **documente**, puis on l'**automatise**.
 
 Ce dépôt le fait une seule fois. Chaque compétence contient la méthode ; l'application la transforme en formulaire guidé : quelques questions courtes, vos documents, et Claude produit le livrable et les fichiers importables (CSV Jira, Xray, SQL, `.bpmn`, pytest).
 
 ---
+
+## V2 → V3 (Skills Portal, 16 nov.)
+
+La V2 reste en ligne sur [/v2/](https://mohoss1985-tech.github.io/AI-skills/v2/) et la V1 sur [/v1/](https://mohoss1985-tech.github.io/AI-skills/v1/). Chaque outil de la V2 a été utilisé pour de vrai dans un navigateur, noté puis corrigé (audit : `research/v3/`).
+
+| | V2 | V3 (Skills Portal) |
+|---|---|---|
+| Outils cassés / faibles | 2 / 13 | 0 / aucun bug connu |
+| Arguments de démo | aucun | sur chaque outil : *Remplace …*, ce qu'il fait, comment il marche (FR + EN) |
+| Démo | exemples déjà calculés | guidée : l'exemple remplit les champs, **vous** lancez (⌘↵) |
+| Registre des risques IA | pouvait classer un scoring de crédit en « Minimal » | arbre de décision AI Act avec numéros d'articles et dates à jour |
+| Évaluation RAG | comparaison de mots | contrôle affirmation par affirmation (négations, unités, hallucinations) + prompt de juge LLM |
+| Tokenisation | état final seulement | séquence pas à pas (Suivant ▸) + cycle de vie du jeton |
+| Exports Jira / Xray | lien vers l'epic perdu ; Cucumber ignoré | epic relié par ID ; Manual + Cucumber + Generic ; règles SFD importables en recette et dans Xray |
 
 ## Trois cas d'usage, deux schémas
 

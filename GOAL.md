@@ -1,7 +1,7 @@
 # Analyst Kit V2 · from document generators to working tools — goal
 
 **Product:** Analyst Kit (repo `mohoss1985-tech/AI-skills`, live demo https://mohoss1985-tech.github.io/AI-skills/).
-18 AI skills (`skills/*/SKILL.md`) for Business Analyst / Product Owner work in card payments (authorisation,
+20 AI skills (`skills/*/SKILL.md`) for Business Analyst / Product Owner work in card payments (authorisation,
 PAN declaration, chargebacks; Visa samples in English, CB samples in French) + a local app (`app/`: Python stdlib
 server `server.py` on :4317, vanilla JS `static/`, SQLite `data/kit.db`, Claude Code answers requests through `kit.py`)
 + a read-only static demo exported by `export_static.py` and published by `.github/workflows/pages.yml`.

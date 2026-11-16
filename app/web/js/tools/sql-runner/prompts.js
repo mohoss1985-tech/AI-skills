@@ -2,7 +2,7 @@
    Each takes (state, run, ctx) where ctx = {schema, lang} and returns the prompt text. */
 import { DIALECT_LABEL, JOINS, schemaText, translate } from './logic.js';
 
-const FIXED = `Database: the Analyst Kit sample (SQLite 3, fictional Harbor Bank = Visa, Banque Lumière = CB, October 2026).
+const FIXED = `Database: the Skills Portal sample (SQLite 3, fictional Harbor Bank = Visa, Banque Lumière = CB, October 2026).
 No PAN is stored (bin + last4 + token only). Timestamps are ISO 8601 UTC text ("2026-10-18T10:15:00Z"); amounts are integer minor units (cents, EUR);
 response_code is ISO 8583 field 39 ('00' approved); stip = 1 means decided by Visa stand-in.`;
 
@@ -17,7 +17,7 @@ const preview = (run, n = 10) => {
 
 export function draftPrompt(state, run, { schema = [], lang = 'en' } = {}) {
   const dialect = state.dialect || 'sqlite';
-  return `Act as the "generating-sql" skill (Analyst Kit). Write the SQL for this business question.
+  return `Act as the "generating-sql" skill (Skills Portal). Write the SQL for this business question.
 
 Question: ${state.question || '(not given: ask me for it)'}
 Tables to use: ${(state.tables || []).join(', ') || 'choose from the schema'}
@@ -45,7 +45,7 @@ If you can patch the workspace, put the SQLite query in {"sql": "…"} (kit.py p
 }
 
 export function explainPrompt(state, run, { lang = 'en' } = {}) {
-  return `Act as the "generating-sql" skill in review mode (Analyst Kit). Explain this query to a business analyst.
+  return `Act as the "generating-sql" skill in review mode (Skills Portal). Explain this query to a business analyst.
 
 Question it should answer: ${state.question || '(not stated)'}
 
@@ -70,7 +70,7 @@ export function translatePrompt(state, run) {
     const tr = translate(state.sql || '', d);
     return `Rule-based ${DIALECT_LABEL[d]} draft (notes: ${tr.notes.join(', ') || 'none'}):\n\`\`\`sql\n${tr.sql}\n\`\`\``;
   }).join('\n\n');
-  return `Translate this SQLite query to ${targets.map((d) => DIALECT_LABEL[d]).join(' and ')} (Analyst Kit, "generating-sql" skill).
+  return `Translate this SQLite query to ${targets.map((d) => DIALECT_LABEL[d]).join(' and ')} (Skills Portal, "generating-sql" skill).
 
 \`\`\`sql
 ${state.sql || ''}

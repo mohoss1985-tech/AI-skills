@@ -233,7 +233,7 @@ def build(spec):
   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
   xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0"
   xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0"
-  id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Analyst Kit" exporterVersion="1.0">
+  id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Skills Portal" exporterVersion="1.0">
   <bpmn:collaboration id="Collaboration_1">
     <bpmn:participant id="Participant_1" name="{pool}" processRef="Process_1"/>
   </bpmn:collaboration>

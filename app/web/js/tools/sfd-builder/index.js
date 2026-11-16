@@ -156,7 +156,7 @@ function paintResults(ctx) {
 const langLine = (s) => (s.lang === 'fr' ? 'Write in French with the French headings (Suivi du document, Règles de gestion…), Banque Lumière, CB terms.' : 'Write in English, Harbor Bank, Visa terms.');
 function prosePrompt(s) {
   return [
-    'You are an AMOA business analyst (writing-functional-specs skill, Analyst Kit). Write the full SFD around the tables below:',
+    'You are an AMOA business analyst (writing-functional-specs skill, Skills Portal). Write the full SFD around the tables below:',
     'context, scope, actors and rights, target process with error paths, interfaces (system, direction, trigger, fields, errors and timeouts), NFR, acceptance test ideas (one per rule plus boundary values), open points.',
     'Keep the RG / MSG / E- ids and the tables unchanged; "must" for requirements; no "should ideally", no "etc."; numbers not in the input are marked *(to confirm)*.',
     'End with the review box: number of rules, screens, messages, open points, and the 3 riskiest assumptions. Fictional data, test cards only.', langLine(s), '', '---', md(s),

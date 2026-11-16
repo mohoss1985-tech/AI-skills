@@ -1,9 +1,34 @@
 # Changelog
 
-All notable changes to Analyst Kit. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
+All notable changes to Skills Portal (named Analyst Kit until V2). Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — 2.0.0
+## [3.0.0] — 2026-11-16 · Skills Portal
+
+V3 renames the project **Skills Portal** and makes every one of the 20 tools work end to end. V2 stays published at
+`/v2/` (git tag `v2.0.0`), V1 at `/v1/`. Audit, scores and per-tool reports: `research/v3/`.
+
+### Added
+- Talking points on every tool (EN + FR): *Replaces …*, what it does, how it works in 3 steps; "Replaces …" on Home cards.
+- Guided demo: a sample fills the inputs only; the presenter presses Run (⌘↵ / Ctrl+↵ everywhere); visible **New** button.
+- Tokenization simulator: step-by-step sequence (Next ▸ / Back / Play all, ←/→) with green, yellow and red paths and a token lifecycle panel.
+- RAG eval: claim-level checks (polarity and yes/no flips, unit-normalised numbers, terms not in the context), per-claim explainer, "How each score is computed", LLM-judge prompt export.
+- AI risk register: EU AI Act decision tree (Art. 5 → Art. 6 / Annex I / Annex III incl. 5(b) fraud carve-out and Art. 6(3) → Art. 50), reasoning path with article numbers, dates per Regulation (EU) 2026/1744.
+- SFD rules CSV imports into the UAT tracker and the Xray builder; SQL runner builds SQL from a plain question offline.
+- Skills `tokenizing-cards` and `handling-chargebacks` in the catalog (20 skills).
+- Pages publishes V3 at `/`, V2 at `/v2/` and V1 at `/v1/`.
+
+### Fixed
+- AI risk register: credit scoring with a fraud purpose returned "Minimal"; a blank profiling answer granted the Art. 6(3) derogation.
+- Use-case scorer: stale score and roadmap after a weight change. WSJF: Add item re-sorted and overwrote IDs; wrong cut line.
+- Story builder: ungrammatical stories, nonsense splits; Jira CSV lost the epic link (now `Work item ID` + `Parent`).
+- PRD builder: leading digits dropped ("3DS" → "DS"); French metric names split.
+- Xray builder: Cucumber and Generic tests dropped; download allowed with validation errors.
+- UAT tracker: requirements shown as covered when tests had failed or were blocked.
+- API tester: second Send on the demo gave 409. BPMN editor: tiny canvas and 30 % Fit. Journey builder: chat below the fold, test phrases never ran.
+- Mapping grid false warnings, impact heatmap "null" text, KB audit silent corruption on commas and DD/MM dates, workshop kit lost its timer on reload, payment lifecycle missed-deadline outcome and €0.00 tiles.
+
+## [2.0.0] — 2026-11-09
 
 V2 turns each skill into a working tool. V1 stays published at `/v1/` (git tag `v1.0.0`).
 

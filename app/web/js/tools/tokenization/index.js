@@ -394,7 +394,7 @@ function prompt(kind, s, r) {
   const fr = getLang() === 'fr';
   const last = res.log[res.log.length - 1];
   const steps = res.log.map((l, i) => `${i + 1}. ${tr(l.title)}${l.detail ? ' — ' + tr(l.detail) : ''}${l.rule ? ` [${l.rule}]` : ''}${l.api ? ` (${l.api.method} ${l.api.path} → ${l.status})` : ''}`).join('\n');
-  const ctxText = `Simulator: tokenization (Analyst Kit, skill tokenizing-cards). Fictional data; all tokens, PAR and cryptograms are DEMO values.
+  const ctxText = `Simulator: tokenization (Skills Portal, skill tokenizing-cards). Fictional data; all tokens, PAR and cryptograms are DEMO values.
 Card: ${s.cardId} (${val(s.wallet)}, ${val(s.device)}, TRID ${s.trid}, device risk ${s.deviceRisk}, wallet account ${s.accountAgeDays} days).
 Token: ${res.token?.token_ref || 'none'} · decision ${res.token?.decision || '—'} · status ${res.token?.status || '—'}.
 Steps so far:

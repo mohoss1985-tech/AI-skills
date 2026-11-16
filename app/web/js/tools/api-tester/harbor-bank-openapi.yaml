@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Harbor Bank Card API (demo mock)
   version: 2.0.0-demo
-  summary: Fictional issuer card API for the Analyst Kit V2 API tester. Runs as an in-browser mock.
+  summary: Fictional issuer card API for the Skills Portal API tester. Runs as an in-browser mock.
   description: |
     **Fictional.** Harbor Bank (Visa, English) and Banque Lumière (CB, French) do not exist. No real card
     numbers, no scheme-confidential content. Every PAN below is a Luhn-valid number in the `400000` test
@@ -22,7 +22,7 @@ info:
 
     **CB / French twin (Banque Lumière):** same paths and rules, server `/lumiere/v1`, key `bl_test_demo_key`,
     labels in French (opposition, déclaration de fraude, impayé). Differences are listed in `x-cb-twin`.
-  contact: { name: Analyst Kit, url: "https://mohoss1985-tech.github.io/AI-skills/" }
+  contact: { name: Skills Portal, url: "https://mohoss1985-tech.github.io/AI-skills/" }
   license: { name: MIT (spec and fixtures only), identifier: MIT }
 
 servers:

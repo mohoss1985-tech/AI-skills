@@ -146,6 +146,16 @@ QUESTIONS = {
         q("users", "Users", "Utilisateurs", ph=("e.g. authenticated customers", "ex. clients authentifiés")),
         q("hosting", "Model provider and hosting", "Fournisseur du modèle et hébergement"),
     ],
+    "tokenizing-cards": [
+        q("flow", "Wallets and token service", "Wallets et service de tokenisation", req=True, ph=("e.g. Apple Pay via Visa VTS", "ex. Apple Pay via le service CB")),
+        q("idv", "ID&V methods (yellow path)", "Méthodes d'ID&V (parcours jaune)"),
+        q("block", "What happens when the card is blocked or replaced", "Que se passe-t-il à l'opposition ou au remplacement"),
+    ],
+    "handling-chargebacks": [
+        q("case", "The payment problem", "Le problème de paiement", req=True, ph=("e.g. goods not received, 240 EUR", "ex. marchandise non reçue, 240 EUR")),
+        q("scheme", "Scheme", "Réseau", "select", opts=[("Visa", "Visa"), ("CB", "CB"), ("Mastercard", "Mastercard")]),
+        q("side", "Your side", "Votre côté", "select", opts=[("Issuer", "Émetteur"), ("Acquirer", "Acquéreur")]),
+    ],
     "curating-knowledge-bases": [
         q("sources", "Content sources and owners", "Sources de contenu et responsables", req=True),
         q("questions", "Top customer questions (with volumes)", "Principales questions clients (avec volumes)"),

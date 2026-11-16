@@ -5,7 +5,8 @@ GROUPS = [
     {"id": "frame", "en": "Discover & frame", "fr": "Cadrer",
      "types": ["facilitating-workshops", "analysing-gaps-and-impacts", "modeling-processes", "writing-prds"]},
     {"id": "specify", "en": "Specify & build", "fr": "Spécifier",
-     "types": ["writing-functional-specs", "writing-user-stories", "testing-apis", "mapping-data", "generating-sql"]},
+     "types": ["writing-functional-specs", "writing-user-stories", "testing-apis", "mapping-data", "generating-sql",
+               "tokenizing-cards", "handling-chargebacks"]},
     {"id": "deliver", "en": "Plan, test & deliver", "fr": "Planifier, tester, livrer",
      "types": ["managing-backlog", "running-uat", "managing-xray-tests", "aligning-stakeholders"]},
     {"id": "ai", "en": "Conversational AI", "fr": "IA conversationnelle",
@@ -14,6 +15,14 @@ GROUPS = [
 ]
 
 TYPES_FR = {
+    "tokenizing-cards": {"name": "Spécification de tokenisation",
+        "gives": "Le parcours wallet ou carte enregistrée à couvrir, et les règles de l'émetteur",
+        "gets": "Diagramme de séquence, règles de décision vert/jaune/rouge, cycle de vie du jeton, spécification d'API et cas de test",
+        "placeholder": "Décrivez les wallets (Apple Pay, Google Pay, carte enregistrée), le service de tokenisation (VTS, MDES, CB), vos méthodes d'ID&V et ce qui se passe à la mise en opposition…"},
+    "handling-chargebacks": {"name": "Impayés et remboursements",
+        "gives": "Le problème de paiement (annulation, remboursement, impayé) et les règles applicables",
+        "gets": "Chronologie, qui paie à chaque étape, tableau des règles et délais, pièces à fournir, spécification d'API et cas de test",
+        "placeholder": "Décrivez le cas : annulation, remboursement ou impayé, Visa ou CB, motif, délais, transfert de responsabilité 3-D Secure ou wallet…"},
     "modeling-processes": {"name": "Processus (BPMN)",
         "gives": "Une description de processus, une procédure ou des notes de réunion",
         "gets": "Un diagramme BPMN, le tableau des étapes et les questions ouvertes à poser",

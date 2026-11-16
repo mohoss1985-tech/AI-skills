@@ -222,7 +222,7 @@ export function translate(sql, dialect) {
     if (/\bAS\s+[a-z_]+\s+(JOIN|ON|WHERE)\b/i.test(maskSql(s))) notes.push('table_as');
   }
   notes.push('types');
-  const head = `-- ${DIALECT_LABEL[dialect]} translation of a SQLite query (Analyst Kit, rule-based). Check before running.\n`;
+  const head = `-- ${DIALECT_LABEL[dialect]} translation of a SQLite query (Skills Portal, rule-based). Check before running.\n`;
   return { sql: head + s.replace(/^-- (PostgreSQL|Oracle) translation[^\n]*\n/, ''), notes: [...new Set(notes)] };
 }
 

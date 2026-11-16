@@ -3,6 +3,7 @@
 **Twenty tools that do the job of a Business Analyst / Product Owner in card payments: test an API, run SQL, draw a BPMN, plan a PI, run a UAT, tokenise a card, follow a chargeback. Each one needs 3–4 inputs and about 60 seconds, works without AI, and Claude drafts, critiques and explains on top. English samples follow Visa rules (Harbor Bank); French samples follow CB rules (Banque Lumière).**
 
 [![Open the live demo](https://img.shields.io/badge/%E2%96%B6%20Open%20the%20live%20demo-2563eb?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/)
+[![V2](https://img.shields.io/badge/V2%20(frozen)-gray?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/v2/)
 [![V1](https://img.shields.io/badge/V1%20(frozen)-gray?style=for-the-badge)](https://mohoss1985-tech.github.io/AI-skills/v1/)
 
 🇫🇷 [Version française](README.fr.md) · [Changelog](CHANGELOG.md)

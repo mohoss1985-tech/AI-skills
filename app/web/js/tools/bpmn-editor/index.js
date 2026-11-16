@@ -288,7 +288,7 @@ const GRAMMAR = `Steps grammar (one step per line):
 
 function promptDraft(state) {
   const notes = (state.notes || '').trim() || (state.steps || '').trim();
-  return [`You are a senior business process analyst (skill: modeling-processes). Turn the notes below into a BPMN process for the Analyst Kit BPMN editor.`,
+  return [`You are a senior business process analyst (skill: modeling-processes). Turn the notes below into a BPMN process for the Skills Portal BPMN editor.`,
     langLine(), '',
     'Method: list participants as lanes in hand-off order (roles, not people), the trigger, activities as verb + object, decisions as questions with every exit labelled, exceptions and rejections as branches, every path ending in a named end event. Anything the notes do not say goes into open_questions, never silently into the model.', '',
     GRAMMAR, '',

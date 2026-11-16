@@ -54,7 +54,7 @@ Anything the process needs but the text does not say (who approves, what happens
 Always return, in this order:
 
 1. **Diagram choice:** one line.
-2. **Process model:** for BPMN, a real BPMN 2.0 file built with the script in section 5, in a fenced `bpmn` block. It opens in Camunda Modeler, bpmn.io, Signavio and Bizagi, and renders coloured and zoomable in Analyst Kit. For UML views, use Mermaid (section 6).
+2. **Process model:** for BPMN, a real BPMN 2.0 file built with the script in section 5, in a fenced `bpmn` block. It opens in Camunda Modeler, bpmn.io, Signavio and Bizagi, and renders coloured and zoomable in Skills Portal. For UML views, use Mermaid (section 6).
 3. **Element inventory:** the table from step 2, with a `Source` column quoting the text. Mark assumptions in bold.
 4. **Open questions:** numbered, each tied to the step it blocks, phrased so a stakeholder can answer yes/no or with a name.
 5. **Improvement notes** (optional, max 5): bottlenecks, redundant hand-offs, missing controls, automation candidates. Keep these separate from the as-is model.
