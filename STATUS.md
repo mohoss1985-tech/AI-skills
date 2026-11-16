@@ -56,3 +56,5 @@ Waves (2 agents max):
 - 15:53 R3 DONE (tokenization guided steps + lifecycle, 10/10 tests). ALL BUILDERS DONE → lead integration.
 - 15:57 Integration: static export OK; Edge smoke 20 tools × EN/FR → 0 console errors, no NaN/null/undefined text; screenshots checked (tokenization, rag-eval, sql-runner). Local commit done. NEXT: owner 'push' → tag v2.0.0 already exists; sync into AI-skills clone, tag v3.0.0, keep V2 at /v2/?, push.
 - 15:57 Integration: static export OK; Edge smoke 20 tools × EN/FR → 0 console errors, no NaN/null/undefined text; screenshots checked. Local commit done (identity: Claude, as in AI-skills). NEXT on owner "push": sync into AI-skills clone, tag v3.0.0, push → Pages.
+- 16:02 SHIPPED: pushed main 523af8c (merged owner's Nov 9 README edit), tag v3.0.0, Pages run 43891909002 success. Live check: / (V3), /v2/, /v1/ load with 0 errors.
+- 16:12 CLEANUP shipped (a457652): catalog 20 skills, Skills Portal name in exports/server/skills, CHANGELOG 3.0.0, FR README, V2 badge; repo description updated (+topic payments); GitHub Release v3.0.1 = Latest (force-moving v3.0.0 was blocked, so new tag). Live: 20 skills, 0 'Analyst Kit' in tool strings.
